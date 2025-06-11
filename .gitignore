@@ -1,0 +1,63 @@
+# ===========================
+#   .NET & Visual Studio
+# ===========================
+
+# Build artifacts
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains Rider
+.idea/
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+
+# Backup files
+*~
+*.bak
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Env files
+.env
+
+# NuGet
+*.nupkg
+.nuget/
+
+# Paket yönetimi
+packages/
+
+# Publish output
+publish/
+
+# Test results
+TestResults/
+
+# Coverage
+coverage/
+
+
+# Bunlar normalde ignore edilir ama senin isteğinle dahil ediliyorlar:
+!secrets.json
+!appsettings.Development.json
+!appsettings.Local.json
+!appsettings.*.local.json
+!Properties/launchSettings.json
+!wwwroot/uploads/
+
