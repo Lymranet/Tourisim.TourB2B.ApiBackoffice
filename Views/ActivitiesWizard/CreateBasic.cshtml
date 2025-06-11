@@ -1,0 +1,260 @@
+@model TourManagementApi.Models.ViewModels.ActivityBasicViewModel
+
+@{
+    ViewData["Title"] = Model.ActivityId.HasValue ? "Tur Düzenle - Temel Bilgiler" : "Yeni Tur Ekle - Temel Bilgiler";
+    var categories = new[] {
+        new { Value = "Adventure", Text = "Adventure", Subcategories = new[] { "Hiking", "Rock Climbing", "Rafting", "Kayaking", "Camping", "Zip-lining", "Paragliding" } },
+        new { Value = "Cultural", Text = "Cultural", Subcategories = new[] { "Museum", "Historical Site", "Art Tour" } },
+        new { Value = "Nature", Text = "Nature", Subcategories = new[] { "Wildlife", "Botanical", "Eco Tour" } },
+        new { Value = "Sports", Text = "Sports", Subcategories = new[] { "Football", "Basketball", "Tennis" } },
+        new { Value = "Food", Text = "Food & Drink", Subcategories = new[] { "Wine Tasting", "Cooking Class", "Street Food" } },
+        new { Value = "Wellness", Text = "Wellness", Subcategories = new[] { "Spa", "Yoga", "Retreat" } }
+    };
+    var roles = new[] { "Guide", "Tour Operator", "Manager", "Tour Coordinator", "Tour Assistant" };
+    var languages = new[] { "tr", "en", "de", "fr", "es", "it", "ru", "ar" };
+}
+
+<h2>@ViewData["Title"]</h2>
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<form asp-action="CreateBasic" method="post" enctype="multipart/form-data" autocomplete="off">
+    @if (Model.ActivityId.HasValue) { <input type="hidden" name="ActivityId" value="@Model.ActivityId" /> }
+    <div class="form-group mb-3">
+        <label asp-for="Title"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Category">Category</label>
+        <select asp-for="Category" class="form-control" id="categorySelect" onchange="updateSubcategories(this.value)">
+            <option value="">Select a category</option>
+            @foreach (var cat in categories) {
+                <option value="@cat.Value">@cat.Text</option>
+            }
+        </select>
+        <span asp-validation-for="Category" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Subcategory">Subcategory</label>
+        <select asp-for="Subcategory" class="form-control" id="subcategorySelect">
+            <option value="">First select a category</option>
+        </select>
+        <span asp-validation-for="Subcategory" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div class="form-group mb-3">
+        <label asp-for="Status">Status</label>
+        <select asp-for="Status" class="form-control">
+            <option value="draft">Taslak</option>
+            <option value="published">Yayında</option>
+            <option value="inactive">Pasif</option>
+        </select>
+        <span asp-validation-for="Status" class="text-danger"></span>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Medya Yükleme</h5></div>
+        <div class="card-body">
+            <div class="mb-2">
+                <strong>Görsel Yükleme Kuralları:</strong>
+                <ul>
+                    <li>En az 1280 piksel genişliğinde manzara görselleri.</li>
+                    <li>JPG, JPEG, PNG veya GIF dosya türleri (maksimum 7 MB).</li>
+                    <li>Fotoğrafçı imzası, logolar veya okunabilir plakalar bulunmamalıdır.</li>
+                    <li>Yapay zeka tarafından oluşturulan görsellerden, basılı haritaların fotoğraflarından ve markalı otobüs güzergahlarından kaçının.</li>
+                    <li>Portre/dikey format, özçekim veya siyah beyaz fotoğraflar olmamalıdır.</li>
+                </ul>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-4 mb-2">
+                    <label>Kapak Fotoğrafı</label>
+                    @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+                    {
+                        <div class="mb-1"><img src="@Model.CoverImageUrl" alt="Kapak" style="max-width: 100px; max-height: 60px; border:1px solid #ccc;" /></div>
+                    }
+                    <input asp-for="CoverImage" type="file" accept="image/*" class="form-control" />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label>Önizleme Fotoğrafı</label>
+                    @if (!string.IsNullOrEmpty(Model.PreviewImageUrl))
+                    {
+                        <div class="mb-1"><img src="@Model.PreviewImageUrl" alt="Önizleme" style="max-width: 100px; max-height: 60px; border:1px solid #ccc;" /></div>
+                    }
+                    <input asp-for="PreviewImage" type="file" accept="image/*" class="form-control" />
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label>Galeri Fotoğrafları</label>
+                    @if (Model.GalleryImageUrls != null && Model.GalleryImageUrls.Any())
+                    {
+                        <div class="mb-1 d-flex flex-wrap" style="gap:4px;">
+                            @foreach (var url in Model.GalleryImageUrls)
+                            {
+                                <img src="@url" alt="Galeri" style="max-width: 60px; max-height: 40px; border:1px solid #ccc;" />
+                            }
+                        </div>
+                    }
+                    <input asp-for="GalleryImages" type="file" accept="image/*" class="form-control" multiple />
+                </div>
+            </div>
+            <div class="mb-2">
+                <label>Video URL</label>
+                <div class="input-group mb-2">
+                    <input id="videoUrlInput" type="url" class="form-control" placeholder="https://..." />
+                    <button type="button" class="btn btn-outline-primary" id="addVideoUrlBtn">Ekle</button>
+                </div>
+                <ul id="videoUrlsList" class="list-group mb-2"></ul>
+                <small class="text-muted">En fazla 3 video ekleyebilirsiniz.</small>
+                <input type="hidden" name="VideoUrls" id="videoUrlsHidden" />
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Available Languages</h5></div>
+        <div class="card-body">
+            <div id="languagesList">
+                <!-- Dinamik olarak JS ile eklenecek -->
+            </div>
+            <div class="input-group mb-2">
+                <select class="form-control" id="languageSelect">
+                    <option value="">Select a language</option>
+                    @foreach (var lang in languages) {
+                        <option value="@lang">@lang</option>
+                    }
+                </select>
+                <button type="button" class="btn btn-primary" onclick="addLanguage()">Add Language</button>
+            </div>
+            <span class="text-danger" id="languagesValidation"></span>
+        </div>
+    </div>
+    <h5 class="mt-4">Contact Information</h5>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="ContactInfo.Name">Contact Name</label>
+                <input asp-for="ContactInfo.Name" class="form-control" />
+                <span asp-validation-for="ContactInfo.Name" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="ContactInfo.Role">Role</label>
+                <select asp-for="ContactInfo.Role" class="form-control">
+                    <option value="">Select a role</option>
+                    @foreach (var role in roles) {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+                <span asp-validation-for="ContactInfo.Role" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="ContactInfo.Email">Email</label>
+                <input asp-for="ContactInfo.Email" class="form-control" />
+                <span asp-validation-for="ContactInfo.Email" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label asp-for="ContactInfo.Phone">Phone</label>
+                <input asp-for="ContactInfo.Phone" class="form-control" />
+                <span asp-validation-for="ContactInfo.Phone" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-primary">@((Model.ActivityId.HasValue) ? "Kaydet" : "Kaydet ve Listeye Dön")</button>
+    <a asp-action="Index" class="btn btn-secondary">İptal</a>
+</form>
+
+@section Scripts {
+<script>
+    // Kategori ve alt kategori bağlantısı
+    const categories = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(categories));
+    function updateSubcategories(selectedSubcategory) {
+        const cat = document.getElementById('categorySelect').value;
+        const subSelect = document.getElementById('subcategorySelect');
+        subSelect.innerHTML = '<option value="">First select a category</option>';
+        const found = categories.find(x => x.Value === cat);
+        if (found) {
+            found.Subcategories.forEach(function (sub) {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.text = sub;
+                if(selectedSubcategory && selectedSubcategory === sub) opt.selected = true;
+                subSelect.appendChild(opt);
+            });
+        }
+    }
+    // Diller dinamik ekleme/çıkarma
+    let selectedLanguages = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Languages ?? new List<string>()));
+    function addLanguage() {
+        const lang = document.getElementById('languageSelect').value;
+        if (!lang || selectedLanguages.includes(lang)) return;
+        selectedLanguages.push(lang);
+        renderLanguages();
+    }
+    function removeLanguage(lang) {
+        selectedLanguages = selectedLanguages.filter(l => l !== lang);
+        renderLanguages();
+    }
+    function renderLanguages() {
+        const list = document.getElementById('languagesList');
+        list.innerHTML = '';
+        selectedLanguages.forEach(function (lang) {
+            const div = document.createElement('div');
+            div.className = 'input-group mb-2';
+            div.innerHTML = `<input type="hidden" name="Languages" value="${lang}" />
+                <input type="text" class="form-control" value="${lang}" readonly />
+                <button type="button" class="btn btn-danger" onclick="removeLanguage('${lang}')">Remove</button>`;
+            list.appendChild(div);
+        });
+        // Validasyon
+        document.getElementById('languagesValidation').innerText = selectedLanguages.length === 0 ? 'En az bir dil seçilmelidir.' : '';
+    }
+    // Sayfa yüklendiğinde eski değerleri yükle
+    document.addEventListener('DOMContentLoaded', function () {
+        const selectedCategory = '@Model.Category';
+        const selectedSubcategory = '@Model.Subcategory';
+        if(selectedCategory) {
+            document.getElementById('categorySelect').value = selectedCategory;
+            updateSubcategories(selectedSubcategory);
+        }
+        // Video URL'ler için mevcut değerleri yükle
+        let videoUrls = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.VideoUrls ?? new List<string>()));
+        renderVideoUrls();
+        document.getElementById('addVideoUrlBtn').onclick = function() {
+            const input = document.getElementById('videoUrlInput');
+            const url = input.value.trim();
+            if(url && videoUrls.length < 3 && !videoUrls.includes(url)) {
+                videoUrls.push(url);
+                input.value = '';
+                renderVideoUrls();
+            }
+        };
+        document.getElementById('videoUrlInput').addEventListener('keydown', function(e) {
+            if(e.key === 'Enter') { e.preventDefault(); document.getElementById('addVideoUrlBtn').click(); }
+        });
+        function renderVideoUrls() {
+            const list = document.getElementById('videoUrlsList');
+            list.innerHTML = '';
+            videoUrls.forEach((url, idx) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `<span>${url}</span><button type='button' class='btn btn-danger btn-sm' onclick='removeVideoUrl(${idx})'>Sil</button>`;
+                list.appendChild(li);
+            });
+            document.getElementById('videoUrlsHidden').value = videoUrls.join(',');
+        }
+        window.removeVideoUrl = function(idx) {
+            videoUrls.splice(idx, 1);
+            renderVideoUrls();
+        }
+        renderLanguages();
+    });
+</script>
+} 

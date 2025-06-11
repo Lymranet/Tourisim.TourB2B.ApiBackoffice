@@ -1,0 +1,136 @@
+@model TourManagementApi.Models.ViewModels.ActivityAddonsViewModel
+
+@{
+    ViewData["Title"] = "Ek Ürünler";
+    var typeOptions = new[] { "guest", "group", "person", "item" };
+    var currencyOptions = new[] { "TRY", "USD", "EUR", "GBP" };
+    var languages = new[] { "tr", "en", "de", "fr", "es", "it", "ru", "ar" };
+}
+
+<h2>Ek Ürünler</h2>
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<form asp-action="CreateAddons" method="post" autocomplete="off">
+    <input type="hidden" asp-for="ActivityId" />
+    <div id="addonsList">
+        @for (int i = 0; i < Model.Addons.Count; i++)
+        {
+            <div class="card mb-3 addon-item">
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-6 mb-2">
+                            <label>Ürün Adı</label>
+                            <input name="Addons[@i].Title" class="form-control" value="@Model.Addons[i].Title" />
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label>Ürün Tipi</label>
+                            <select name="Addons[@i].Type" class="form-control addon-type-select" data-value="@Model.Addons[i].Type">
+                                @foreach (var opt in typeOptions)
+                                {
+                                    <option value="@opt">@opt</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2 text-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-addon"> <i class="fa fa-trash"></i> </button>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Açıklama</label>
+                        <textarea name="Addons[@i].Description" class="form-control">@Model.Addons[i].Description</textarea>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3 mb-2">
+                            <label>Fiyat</label>
+                            <input name="Addons[@i].Price.Amount" type="number" step="0.01" class="form-control" value="@Model.Addons[i].Price.Amount" />
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label>Para Birimi</label>
+                            <select name="Addons[@i].Price.Currency" class="form-control addon-currency-select" data-value="@Model.Addons[i].Price.Currency">
+                                @foreach (var c in currencyOptions)
+                                {
+                                    <option value="@c">@c</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Çeviriler</label>
+                        <div class="translations-list">
+                            @for (int t = 0; t < Model.Addons[i].Translations.Count; t++)
+                            {
+                                <div class="row mb-1 translation-item">
+                                    <div class="col-md-3">
+                                        <select name="Addons[@i].Translations[@t].Language" class="form-control translation-lang-select" data-value="@Model.Addons[i].Translations[t].Language">
+                                            <option value="">Dil</option>
+                                            @foreach (var lang in languages)
+                                            {
+                                                <option value="@lang">@lang</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input name="Addons[@i].Translations[@t].Title" class="form-control" placeholder="Başlık" value="@Model.Addons[i].Translations[t].Title" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input name="Addons[@i].Translations[@t].Description" class="form-control" placeholder="Açıklama" value="@Model.Addons[i].Translations[t].Description" />
+                                    </div>
+                                    <div class="col-md-1 text-end">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-translation"> <i class="fa fa-trash"></i> </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm add-translation">Çeviri Ekle</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <button type="button" class="btn btn-outline-primary" id="addAddonBtn">+ Ek Ürün Ekle</button>
+    <button type="submit" class="btn btn-primary float-end">Kaydet</button>
+</form>
+
+@section Scripts {
+    <script>
+        // Razor'dan gelen dilleri JS'ye aktar
+        var languages = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(languages));
+        document.getElementById('addAddonBtn').onclick = function () {
+            const container = document.getElementById('addonsList');
+            const idx = container.querySelectorAll('.addon-item').length;
+            const html = `<div class='card mb-3 addon-item'><div class='card-body'><div class='row mb-2'><div class='col-md-6 mb-2'><label>Ürün Adı</label><input name='Addons[${idx}].Title' class='form-control' /></div><div class='col-md-3 mb-2'><label>Ürün Tipi</label><select name='Addons[${idx}].Type' class='form-control'><option value='guest'>guest</option><option value='group'>group</option><option value='person'>person</option><option value='item'>item</option></select></div><div class='col-md-3 mb-2 text-end'><button type='button' class='btn btn-danger btn-sm remove-addon'><i class='fa fa-trash'></i></button></div></div><div class='mb-2'><label>Açıklama</label><textarea name='Addons[${idx}].Description' class='form-control'></textarea></div><div class='row mb-2'><div class='col-md-3 mb-2'><label>Fiyat</label><input name='Addons[${idx}].Price.Amount' type='number' step='0.01' class='form-control' /></div><div class='col-md-3 mb-2'><label>Para Birimi</label><select name='Addons[${idx}].Price.Currency' class='form-control'><option value='TRY'>TRY</option><option value='USD'>USD</option><option value='EUR'>EUR</option><option value='GBP'>GBP</option></select></div></div><div class='mb-2'><label>Çeviriler</label><div class='translations-list'></div><button type='button' class='btn btn-outline-primary btn-sm add-translation'>Çeviri Ekle</button></div></div></div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        };
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-addon')) {
+                e.target.closest('.addon-item').remove();
+            }
+            if (e.target.classList.contains('add-translation')) {
+                const addonItem = e.target.closest('.addon-item');
+                const translationsList = addonItem.querySelector('.translations-list');
+                const idx = Array.from(document.querySelectorAll('.addon-item')).indexOf(addonItem);
+                const tIdx = translationsList.querySelectorAll('.translation-item').length;
+                let langOptions = `<option value=''>Dil</option>`;
+                languages.forEach(function(lang) {
+                    langOptions += `<option value='${lang}'>${lang}</option>`;
+                });
+                const html = `<div class='row mb-1 translation-item'><div class='col-md-3'><select name='Addons[${idx}].Translations[${tIdx}].Language' class='form-control translation-lang-select'>${langOptions}</select></div><div class='col-md-4'><input name='Addons[${idx}].Translations[${tIdx}].Title' class='form-control' placeholder='Başlık' /></div><div class='col-md-4'><input name='Addons[${idx}].Translations[${tIdx}].Description' class='form-control' placeholder='Açıklama' /></div><div class='col-md-1 text-end'><button type='button' class='btn btn-outline-danger btn-sm remove-translation'><i class='fa fa-trash'></i></button></div></div>`;
+                translationsList.insertAdjacentHTML('beforeend', html);
+            }
+            if (e.target.classList.contains('remove-translation')) {
+                e.target.closest('.translation-item').remove();
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.addon-type-select').forEach(function (el) {
+                if (el.dataset.value) el.value = el.dataset.value;
+            });
+            document.querySelectorAll('.addon-currency-select').forEach(function (el) {
+                if (el.dataset.value) el.value = el.dataset.value;
+            });
+            document.querySelectorAll('.translation-lang-select').forEach(function (el) {
+                if (el.dataset.value) el.value = el.dataset.value;
+            });
+        });
+    </script>
+} 

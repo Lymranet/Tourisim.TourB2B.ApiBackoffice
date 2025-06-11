@@ -1,0 +1,92 @@
+@model TourManagementApi.Models.ViewModels.ActivityTimeViewModel
+
+@{
+    ViewData["Title"] = "Zaman Yönetimi";
+    var days = new[] { "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar" };
+}
+
+<h2>Zaman Yönetimi</h2>
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<form asp-action="CreateTime" method="post" autocomplete="off">
+    <input type="hidden" asp-for="ActivityId" />
+    <div class="card mb-4">
+        <div class="card-header">Süre</div>
+        <div class="card-body">
+            <label asp-for="Duration">Süre (dakika)</label>
+            <input asp-for="Duration" type="number" class="form-control" />
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">Sezon Bilgileri</div>
+        <div class="card-body row">
+            <div class="col-md-6 mb-2">
+                <label>Sezon Başlangıç Tarihi</label>
+                <input asp-for="SeasonalAvailability.StartDate" type="date" class="form-control" />
+            </div>
+            <div class="col-md-6 mb-2">
+                <label>Sezon Bitiş Tarihi</label>
+                <input asp-for="SeasonalAvailability.EndDate" type="date" class="form-control" />
+            </div>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">Zaman Dilimleri</div>
+        <div class="card-body" id="timeSlotsContainer">
+            @for (int i = 0; i < Model.TimeSlots.Count; i++)
+            {
+                <div class="border rounded p-3 mb-3 time-slot-item">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <label>Başlangıç Saati</label>
+                            <input name="TimeSlots[@i].StartTime" type="time" class="form-control" value="@Model.TimeSlots[i].StartTime" />
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label>Bitiş Saati</label>
+                            <input name="TimeSlots[@i].EndTime" type="time" class="form-control" value="@Model.TimeSlots[i].EndTime" />
+                        </div>
+                        <div class="col-md-5 mb-2">
+                            <label>Günler</label>
+                            <div class="d-flex flex-wrap">
+                                @foreach (var day in days)
+                                {
+                                    <div class="form-check me-2">
+                                        <input type="checkbox" name="TimeSlots[@i].DaysOfWeek" value="@day" class="form-check-input" @(Model.TimeSlots[i].DaysOfWeek.Contains(day) ? "checked" : "") />
+                                        <label class="form-check-label">@day</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-1 mb-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-timeslot">Sil</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+        <button type="button" class="btn btn-outline-primary" id="addTimeSlotBtn">Zaman Dilimi Ekle</button>
+    </div>
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+    <a asp-action="Index" asp-route-id="@Model.ActivityId" class="btn btn-secondary">İptal</a>
+</form>
+
+@section Scripts {
+    <script>
+        document.getElementById('addTimeSlotBtn').onclick = function () {
+            const container = document.getElementById('timeSlotsContainer');
+            const idx = container.querySelectorAll('.time-slot-item').length;
+            const days = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+            let daysHtml = '';
+            days.forEach(day => {
+                daysHtml += `<div class='form-check me-2'><input type='checkbox' name='TimeSlots[${idx}].DaysOfWeek' value='${day}' class='form-check-input' /><label class='form-check-label'>${day}</label></div>`;
+            });
+            const html = `<div class='border rounded p-3 mb-3 time-slot-item'><div class='row'><div class='col-md-3 mb-2'><label>Başlangıç Saati</label><input name='TimeSlots[${idx}].StartTime' type='time' class='form-control' /></div><div class='col-md-3 mb-2'><label>Bitiş Saati</label><input name='TimeSlots[${idx}].EndTime' type='time' class='form-control' /></div><div class='col-md-5 mb-2'><label>Günler</label><div class='d-flex flex-wrap'>${daysHtml}</div></div><div class='col-md-1 mb-2 d-flex align-items-end'><button type='button' class='btn btn-danger btn-sm remove-timeslot'>Sil</button></div></div></div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        };
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-timeslot')) {
+                e.target.closest('.time-slot-item').remove();
+            }
+        });
+    </script>
+} 

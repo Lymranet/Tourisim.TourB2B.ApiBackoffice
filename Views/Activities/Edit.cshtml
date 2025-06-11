@@ -1,0 +1,95 @@
+@model TourManagementApi.Models.Activity
+
+@{
+    ViewData["Title"] = "Edit Activity";
+}
+
+<div class="container">
+    <h2>Edit Activity</h2>
+    <form id="editForm" class="mt-4">
+        <input type="hidden" id="id" value="@Model.Id">
+        
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" class="form-control" id="title" name="title" value="@Model.Title" required>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3" required>@Model.Description</textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category</label>
+            <input type="text" class="form-control" id="category" name="category" value="@Model.Category" required>
+        </div>
+
+        <div class="form-group">
+            <label for="duration">Duration (minutes)</label>
+            <input type="number" class="form-control" id="duration" name="duration" value="@Model.Duration" required>
+        </div>
+
+        <h4 class="mt-4">Location</h4>
+        <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" class="form-control" id="city" name="location.city" value="@(Model.Location?.City ?? "")">
+        </div>
+        <div class="form-group">
+            <label for="country">Country</label>
+            <input type="text" class="form-control" id="country" name="location.country" value="@(Model.Location?.Country ?? "")">
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-4">Save Changes</button>
+        <a asp-action="Index" class="btn btn-secondary mt-4">Back to List</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('id').value;
+            const formData = {
+                id: parseInt(id),
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                category: document.getElementById('category').value,
+                duration: parseInt(document.getElementById('duration').value),
+                location: {
+                    city: document.getElementById('city').value,
+                    country: document.getElementById('country').value,
+                    address: ""
+                },
+                status: '@Model.Status',
+                rating: @Model.Rating,
+                languages: @Json.Serialize(Model.Languages),
+                requirements: @Json.Serialize(Model.Requirements),
+                included: @Json.Serialize(Model.Included),
+                excluded: @Json.Serialize(Model.Excluded),
+                meetingPoints: @Json.Serialize(Model.MeetingPoints),
+                timeSlots: @Json.Serialize(Model.TimeSlots),
+                guestFields: @Json.Serialize(Model.GuestFields)
+            };
+
+            fetch(`/api/ActivitiesApi/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/Activities';
+                } else {
+                    throw new Error('Failed to update activity');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating activity');
+            });
+        });
+    </script>
+} 

@@ -1,0 +1,220 @@
+@model TourManagementApi.Models.ViewModels.ActivityPricingViewModel
+
+@{
+    ViewData["Title"] = "Fiyatlandırma";
+    var categoryOptions = new[] { "Adult", "Child", "Infant", "Senior", "Youth", "Student", "Military", "Group", "Traveller", "Family", "Transfer", "Room", "Other" };
+    var priceTypeOptions = new[] { "Sabit", "Değişken" };
+}
+
+<h2>Fiyatlandırma</h2>
+@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+<form asp-action="CreatePricing" method="post" autocomplete="off">
+    <input type="hidden" asp-for="ActivityId" />
+    <div class="card mb-4">
+        <div class="card-header">Genel Fiyatlandırma Ayarları</div>
+        <div class="card-body row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="DefaultCurrency">Varsayılan Para Birimi</label>
+                <select asp-for="DefaultCurrency" class="form-control">
+                    <option value="TRY">TRY - Türk Lirası</option>
+                    <option value="USD">USD - Amerikan Doları</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - İngiliz Sterlini</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label asp-for="TaxRate">KDV Oran (%)</label>
+                <input asp-for="TaxRate" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">Fiyat Kategorileri</div>
+        <div class="card-body" id="categoriesContainer">
+            @for (int i = 0; i < Model.Categories.Count; i++)
+            {
+                <div class="border rounded p-3 mb-3 category-item">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <label>Kategori Tipi</label>
+                            <select name="Categories[@i].Type" class="form-control category-type-select">
+                                <option value="">Kategori seçin</option>
+                                @foreach (var opt in categoryOptions)
+                                {
+                                    <option value="@opt">@opt</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label>Fiyat Tipi</label>
+                            <select name="Categories[@i].PriceType" class="form-control price-type-select">
+                                <option value="">Fiyat tipi seçin</option>
+                                @foreach (var opt in priceTypeOptions)
+                                {
+                                    <option value="@opt">@opt</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label>Tutar</label>
+                            <input name="Categories[@i].Amount" type="number" step="0.01" class="form-control" value="@Model.Categories[i].Amount" />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label>Min Yaş</label>
+                            <input name="Categories[@i].MinAge" type="number" class="form-control min-age-input" value="@Model.Categories[i].MinAge" />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label>Max Yaş</label>
+                            <input name="Categories[@i].MaxAge" type="number" class="form-control max-age-input" value="@Model.Categories[i].MaxAge" />
+                        </div>
+                        <div class="col-md-1 mb-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-category">Kategoriyi Sil</button>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label>Açıklama</label>
+                        <textarea name="Categories[@i].Description" class="form-control">@Model.Categories[i].Description</textarea>
+                    </div>
+                </div>
+            }
+        </div>
+        <button type="button" class="btn btn-outline-primary" id="addCategoryBtn">Yeni Fiyat Kategorisi Ekle</button>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">Services & Requirements</div>
+        <div class="card-body row">
+            <div class="col-md-4 mb-2">
+                <label>Included Services</label>
+                <div id="includedList">
+                    @foreach (var item in Model.Included)
+                    {
+                        <div class="input-group mb-1 included-item">
+                            <input type="text" name="Included" class="form-control" value="@item" />
+                            <button type="button" class="btn btn-danger btn-sm remove-included">Sil</button>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="addIncludedBtn">Ekle</button>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label>Excluded Services</label>
+                <div id="excludedList">
+                    @foreach (var item in Model.Excluded)
+                    {
+                        <div class="input-group mb-1 excluded-item">
+                            <input type="text" name="Excluded" class="form-control" value="@item" />
+                            <button type="button" class="btn btn-danger btn-sm remove-excluded">Sil</button>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="addExcludedBtn">Ekle</button>
+            </div>
+            <div class="col-md-4 mb-2">
+                <label>Requirements</label>
+                <div id="requirementsList">
+                    @foreach (var item in Model.Requirements)
+                    {
+                        <div class="input-group mb-1 requirement-item">
+                            <input type="text" name="Requirements" class="form-control" value="@item" />
+                            <button type="button" class="btn btn-danger btn-sm remove-requirement">Sil</button>
+                        </div>
+                    }
+                </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="addRequirementBtn">Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">Additional Information</div>
+        <div class="card-body row">
+            <div class="col-md-6 mb-2">
+                <label>Cancellation Policy</label>
+                <textarea asp-for="CancellationPolicy" class="form-control"></textarea>
+            </div>
+            <div class="col-md-6 mb-2">
+                <label>Additional Notes</label>
+                <textarea asp-for="AdditionalNotes" class="form-control"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+    <a asp-action="Index" asp-route-id="@Model.ActivityId" class="btn btn-secondary">İptal</a>
+</form>
+
+@section Scripts {
+    <script>
+        // Kategori tipi seçilince yaş aralığı otomatik dolsun
+        const categoryAgeMap = {
+            "Adult": { min: 18, max: 99 },
+            "Child": { min: 2, max: 17 },
+            "Infant": { min: 0, max: 1 }
+        };
+        // Select'leri modelden gelen değere göre seçili yap
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.category-item').forEach(function (item, idx) {
+                var type = '@(Model.Categories.Count > 0 ? string.Join(",", Model.Categories.Select(c => c.Type)) : "")'.split(',')[idx];
+                var priceType = '@(Model.Categories.Count > 0 ? string.Join(",", Model.Categories.Select(c => c.PriceType)) : "")'.split(',')[idx];
+                if (type) item.querySelector('.category-type-select').value = type;
+                if (priceType) item.querySelector('.price-type-select').value = priceType;
+            });
+        });
+        document.addEventListener('change', function (e) {
+            if (e.target.classList.contains('category-type-select')) {
+                const val = e.target.value;
+                const parent = e.target.closest('.category-item');
+                if (categoryAgeMap[val]) {
+                    parent.querySelector('.min-age-input').value = categoryAgeMap[val].min;
+                    parent.querySelector('.max-age-input').value = categoryAgeMap[val].max;
+                }
+            }
+        });
+        // Fiyat kategorisi ekle/sil
+        document.getElementById('addCategoryBtn').onclick = function () {
+            const container = document.getElementById('categoriesContainer');
+            const idx = container.querySelectorAll('.category-item').length;
+            const html = `<div class='border rounded p-3 mb-3 category-item'>
+                <div class='row'>
+                    <div class='col-md-3 mb-2'><label>Kategori Tipi</label><select name='Categories[${idx}].Type' class='form-control category-type-select'><option value=''>Kategori seçin</option><option value='Adult'>Adult</option><option value='Child'>Child</option><option value='Infant'>Infant</option><option value='Senior'>Senior</option><option value='Youth'>Youth</option><option value='Student'>Student</option><option value='Military'>Military</option><option value='Group'>Group</option><option value='Traveller'>Traveller</option><option value='Family'>Family</option><option value='Transfer'>Transfer</option><option value='Room'>Room</option><option value='Other'>Other</option></select></div>
+                    <div class='col-md-2 mb-2'><label>Fiyat Tipi</label><select name='Categories[${idx}].PriceType' class='form-control price-type-select'><option value=''>Fiyat tipi seçin</option><option value='Sabit'>Sabit</option><option value='Değişken'>Değişken</option></select></div>
+                    <div class='col-md-2 mb-2'><label>Tutar</label><input name='Categories[${idx}].Amount' type='number' step='0.01' class='form-control' /></div>
+                    <div class='col-md-2 mb-2'><label>Min Yaş</label><input name='Categories[${idx}].MinAge' type='number' class='form-control min-age-input' /></div>
+                    <div class='col-md-2 mb-2'><label>Max Yaş</label><input name='Categories[${idx}].MaxAge' type='number' class='form-control max-age-input' /></div>
+                    <div class='col-md-1 mb-2 d-flex align-items-end'><button type='button' class='btn btn-danger btn-sm remove-category'>Kategoriyi Sil</button></div>
+                </div>
+                <div class='mb-2'><label>Açıklama</label><textarea name='Categories[${idx}].Description' class='form-control'></textarea></div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        };
+        document.addEventListener('click', function (e) {
+            if (e.target.classList.contains('remove-category')) {
+                e.target.closest('.category-item').remove();
+            }
+            if (e.target.classList.contains('remove-included')) {
+                e.target.closest('.included-item').remove();
+            }
+            if (e.target.classList.contains('remove-excluded')) {
+                e.target.closest('.excluded-item').remove();
+            }
+            if (e.target.classList.contains('remove-requirement')) {
+                e.target.closest('.requirement-item').remove();
+            }
+        });
+        // Included ekle
+        document.getElementById('addIncludedBtn').onclick = function () {
+            document.getElementById('includedList').insertAdjacentHTML('beforeend', `<div class='input-group mb-1 included-item'><input type='text' name='Included' class='form-control' /><button type='button' class='btn btn-danger btn-sm remove-included'>Sil</button></div>`);
+        };
+        // Excluded ekle
+        document.getElementById('addExcludedBtn').onclick = function () {
+            document.getElementById('excludedList').insertAdjacentHTML('beforeend', `<div class='input-group mb-1 excluded-item'><input type='text' name='Excluded' class='form-control' /><button type='button' class='btn btn-danger btn-sm remove-excluded'>Sil</button></div>`);
+        };
+        // Requirement ekle
+        document.getElementById('addRequirementBtn').onclick = function () {
+            document.getElementById('requirementsList').insertAdjacentHTML('beforeend', `<div class='input-group mb-1 requirement-item'><input type='text' name='Requirements' class='form-control' /><button type='button' class='btn btn-danger btn-sm remove-requirement'>Sil</button></div>`);
+        };
+    </script>
+} 
