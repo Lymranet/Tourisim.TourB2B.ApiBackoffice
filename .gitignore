@@ -61,3 +61,5 @@ coverage/
 !Properties/launchSettings.json
 !wwwroot/uploads/
 
+/appsettings.json
+/Properties/PublishProfiles/Default Settings.pubxml
