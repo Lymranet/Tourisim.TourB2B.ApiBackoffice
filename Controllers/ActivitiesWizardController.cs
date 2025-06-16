@@ -55,7 +55,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreateBasic(ActivityBasicViewModel model, string VideoUrls)
         {
             if (!ModelState.IsValid)
@@ -172,7 +172,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreateLocation(Models.ViewModels.ActivityLocationViewModel model)
         {
             try
@@ -260,7 +260,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreatePricing(ActivityPricingViewModel model)
         {
             if (!ModelState.IsValid)
@@ -323,7 +323,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreateTime(ActivityTimeViewModel model)
         {
             if (!ModelState.IsValid)
@@ -371,7 +371,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreateMeetingPoints(ActivityMeetingPointsViewModel model)
         {
             if (!ModelState.IsValid)
@@ -421,7 +421,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreateAddons(ActivityAddonsViewModel model)
         {
             if (!ModelState.IsValid)

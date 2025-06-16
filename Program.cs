@@ -32,6 +32,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+});
+
 // Add SQL Server Configuration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -56,10 +61,25 @@ else
 }
 
 app.UseStaticFiles();
-app.UseRouting();
 
-// Use CORS
-app.UseCors();
+app.Use(async (context, next) =>
+{
+    var allowedOrigins = new[]
+    {
+        "https://b2b.hotelwidget.com",
+        "http://localhost:44392"
+    };
+
+    context.Response.Headers.Remove("X-Frame-Options");
+
+    // frame-ancestors 'self' + izinli URL'leri string olarak birleþtir
+    var policy = "frame-ancestors 'self' " + string.Join(" ", allowedOrigins);
+    context.Response.Headers["Content-Security-Policy"] = policy;
+
+    await next();
+});
+app.UseStatusCodePages("text/plain", "Status Code: {0}");
+app.UseRouting();
 
 app.UseAuthorization();
 
