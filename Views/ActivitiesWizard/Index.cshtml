@@ -4,6 +4,7 @@
     ViewData["Title"] = "Turlar";
 }
 
+
 <h2>Turlar</h2>
 <a asp-action="CreateBasic" class="btn btn-primary mb-3">Yeni Tur Ekle</a>
 
@@ -37,4 +38,13 @@
     </tbody>
 </table>
 
-@ViewBag.Count 
+@ViewBag.Count
+
+<script type="text/javascript">
+    function sendHeight() {
+        parent.postMessage(document.body.scrollHeight, "*");
+    }
+
+    window.addEventListener("load", sendHeight);
+    window.addEventListener("resize", sendHeight); // sayfa yeniden boyutlandırılırsa
+</script>
