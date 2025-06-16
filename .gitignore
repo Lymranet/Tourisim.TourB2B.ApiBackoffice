@@ -52,6 +52,8 @@ TestResults/
 # Coverage
 coverage/
 
+#cursorrules
+.cursorrules
 
 # Bunlar normalde ignore edilir ama senin isteğinle dahil ediliyorlar:
 !secrets.json
