@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace TourManagementApi.Controllers
 {
@@ -18,11 +19,16 @@ namespace TourManagementApi.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<ActivitiesWizardController> _logger;
 
-        public ActivitiesWizardController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public ActivitiesWizardController(
+            ApplicationDbContext context, 
+            IWebHostEnvironment environment,
+            ILogger<ActivitiesWizardController> logger)
         {
             _context = context;
             _environment = environment;
+            _logger = logger;
         }
 
         public IActionResult Index()
@@ -100,42 +106,42 @@ namespace TourManagementApi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateBasic(ActivityBasicViewModel vm, List<IFormFile> GalleryImages)
+        public async Task<IActionResult> CreateBasic(ActivityBasicViewModel model, string VideoUrls)
         {
             if (!ModelState.IsValid)
-                return View(vm);
+                return View(model);
 
             try
             {
-                var activity = vm.ActivityId.HasValue
-                    ? await _context.Activities.FindAsync(vm.ActivityId.Value)
+                var activity = model.ActivityId.HasValue
+                    ? await _context.Activities.FindAsync(model.ActivityId.Value)
                     : new Activity();
 
                 if (activity == null)
                     return NotFound();
 
                 // Temel bilgileri güncelle
-                activity.Title = vm.Title ?? string.Empty;
-                activity.Category = vm.Category ?? string.Empty;
-                activity.Subcategory = vm.Subcategory ?? string.Empty;
-                activity.Description = vm.Description ?? string.Empty;
-                activity.Languages = vm.Languages ?? new List<string>();
+                activity.Title = model.Title ?? string.Empty;
+                activity.Category = model.Category ?? string.Empty;
+                activity.Subcategory = model.Subcategory ?? string.Empty;
+                activity.Description = model.Description ?? string.Empty;
+                activity.Languages = model.Languages ?? new List<string>();
 
                 // Medya işlemleri
-                if (vm.CoverImage != null)
+                if (model.CoverImage != null)
                 {
-                    activity.CoverImage = await SaveImage(vm.CoverImage, "cover");
+                    activity.CoverImage = await SaveImage(model.CoverImage, "cover");
                 }
 
-                if (vm.PreviewImage != null)
+                if (model.PreviewImage != null)
                 {
-                    activity.PreviewImage = await SaveImage(vm.PreviewImage, "preview");
+                    activity.PreviewImage = await SaveImage(model.PreviewImage, "preview");
                 }
 
-                if (GalleryImages != null && GalleryImages.Any())
+                if (model.GalleryImages != null && model.GalleryImages.Any())
                 {
                     activity.GalleryImages = new List<string>();
-                    foreach (var image in GalleryImages.Take(10)) // En fazla 10 galeri görseli
+                    foreach (var image in model.GalleryImages.Take(10)) // En fazla 10 galeri görseli
                     {
                         var imagePath = await SaveImage(image, "gallery");
                         if (!string.IsNullOrEmpty(imagePath))
@@ -145,30 +151,30 @@ namespace TourManagementApi.Controllers
                     }
                 }
 
-                activity.VideoUrls = vm.VideoUrls?.Where(url => !string.IsNullOrEmpty(url)).ToList() ?? new List<string>();
+                activity.VideoUrls = model.VideoUrls?.Where(url => !string.IsNullOrEmpty(url)).ToList() ?? new List<string>();
 
                 // İletişim bilgileri
                 activity.ContactInfo = new ContactInfo
                 {
-                    Name = vm.ContactInfo.Name ?? string.Empty,
-                    Role = vm.ContactInfo.Role ?? string.Empty,
-                    Email = vm.ContactInfo.Email ?? string.Empty,
-                    Phone = vm.ContactInfo.Phone ?? string.Empty
+                    Name = model.ContactInfo.Name ?? string.Empty,
+                    Role = model.ContactInfo.Role ?? string.Empty,
+                    Email = model.ContactInfo.Email ?? string.Empty,
+                    Phone = model.ContactInfo.Phone ?? string.Empty
                 };
 
                 // Trekksoft uyumlu yeni alanlar
-                activity.Highlights = vm.Highlights;
-                activity.Inclusions = vm.Inclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
-                activity.Exclusions = vm.Exclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
-                activity.ImportantInfo = vm.ImportantInfo?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
-                activity.Itinerary = vm.Itinerary;
+                activity.Highlights = model.Highlights;
+                activity.Inclusions = model.Inclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
+                activity.Exclusions = model.Exclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
+                activity.ImportantInfo = model.ImportantInfo?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
+                activity.Itinerary = model.Itinerary;
 
                 // Destinasyon bilgileri
-                activity.CountryCode = vm.CountryCode;
-                activity.DestinationCode = vm.DestinationCode;
-                activity.DestinationName = vm.DestinationName;
+                activity.CountryCode = model.CountryCode;
+                activity.DestinationCode = model.DestinationCode;
+                activity.DestinationName = model.DestinationName;
 
-                if (!vm.ActivityId.HasValue)
+                if (!model.ActivityId.HasValue)
                 {
                     _context.Activities.Add(activity);
                 }
@@ -180,7 +186,7 @@ namespace TourManagementApi.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
-                return View(vm);
+                return View(model);
             }
         }
 
@@ -226,7 +232,7 @@ namespace TourManagementApi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateLocation(ActivityLocationViewModel model)
+        public async Task<IActionResult> CreateLocation(Models.ViewModels.ActivityLocationViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -307,7 +313,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreatePricing(ActivityPricingViewModel model)
         {
             if (!ModelState.IsValid)
@@ -366,7 +372,7 @@ namespace TourManagementApi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateTime(ActivityTimeViewModel vm)
+        public async Task<IActionResult> CreateTime(ActivityTimeViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(vm);
@@ -428,33 +434,57 @@ namespace TourManagementApi.Controllers
         // POST: ActivitiesWizard/CreateGuestFields
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateGuestFields(GuestFieldsViewModel vm)
+        public async Task<IActionResult> CreateMeetingPoints(ActivityMeetingPointsViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(vm);
-
-            try
+                return View(model);
+            var activity = await _context.Activities.Include(a => a.MeetingPoints).FirstOrDefaultAsync(a => a.Id == model.ActivityId);
+            if (activity == null) return NotFound();
+            activity.MeetingPoints = model.MeetingPoints?.Select(mp => new MeetingPoint
             {
-                var activity = await _context.Activities.FindAsync(vm.ActivityId);
-                if (activity == null)
-                    return NotFound();
-
-                activity.MinParticipants = vm.MinParticipants;
-                activity.MaxParticipants = vm.MaxParticipants;
-                activity.GuestFields = vm.GuestFields;
-
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Bir hata oluştu: " + ex.Message);
-                return View(vm);
-            }
+                Name = mp.Name,
+                Address = mp.Address,
+                Latitude = mp.Latitude,
+                Longitude = mp.Longitude
+            }).ToList() ?? new List<MeetingPoint>();
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Index");
         }
-        */
 
-        private async Task<string?> SaveImage(IFormFile file, string prefix)
+        // Ek Ürünler (Addons) Adımı
+        [HttpGet]
+        public async Task<IActionResult> CreateAddons(int id)
+        {
+            var activity = await _context.Activities.Include(a => a.Addons).FirstOrDefaultAsync(a => a.Id == id);
+            if (activity == null) return NotFound();
+            var vm = new ActivityAddonsViewModel
+            {
+                ActivityId = activity.Id,
+                Addons = activity.Addons?.Select(a => new AddonViewModel
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    Type = a.Type,
+                    Description = a.Description,
+                    Price = new AddonPriceViewModel
+                    {
+                        Amount = a.Price?.Amount ?? "0",
+                        Currency = a.Price?.Currency ?? "TRY"
+                    },
+                    Translations = a.Translations?.Select(t => new AddonTranslationViewModel
+                    {
+                        Language = t.Language,
+                        Title = t.Title,
+                        Description = t.Description
+                    }).ToList() ?? new List<AddonTranslationViewModel>()
+                }).ToList() ?? new List<AddonViewModel>()
+            };
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAddons(ActivityAddonsViewModel model)
         {
             if (file == null || file.Length == 0)
                 return null;
@@ -472,6 +502,47 @@ namespace TourManagementApi.Controllers
             }
 
             return uniqueFileName;
+        }
+
+        private async Task<string> SaveImage(IFormFile file, string folder)
+        {
+            if (file == null || file.Length == 0)
+                return null;
+
+            try
+            {
+                // Dosya uzantısını kontrol et
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (extension != ".jpg" && extension != ".jpeg" && extension != ".png" && extension != ".gif")
+                {
+                    throw new Exception("Geçersiz dosya formatı. Sadece JPG, JPEG, PNG ve GIF dosyaları yüklenebilir.");
+                }
+
+                // Klasör yolunu oluştur
+                var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", folder);
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                }
+
+                // Benzersiz dosya adı oluştur
+                var uniqueFileName = $"{Guid.NewGuid()}{extension}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                // Dosyayı kaydet
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // URL yolunu döndür
+                return $"/uploads/{folder}/{uniqueFileName}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Dosya yüklenirken hata oluştu");
+                throw new Exception("Dosya yüklenirken bir hata oluştu: " + ex.Message);
+            }
         }
     }
 } 
