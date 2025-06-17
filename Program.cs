@@ -79,7 +79,9 @@ else
 }
 
 app.UseStaticFiles();
+app.UseRouting();
 
+// Frame Policy Middleware
 app.Use(async (context, next) =>
 {
     var allowedOrigins = new[]
@@ -90,15 +92,14 @@ app.Use(async (context, next) =>
 
     context.Response.Headers.Remove("X-Frame-Options");
 
-    // frame-ancestors 'self' + izinli URL'leri string olarak birleþtir
-    var policy = "frame-ancestors 'self' " + string.Join(" ", allowedOrigins);
+    // Frame-ancestors policy'yi oluÅŸtur
+    var policy = $"frame-ancestors 'self' {string.Join(" ", allowedOrigins)}";
     context.Response.Headers["Content-Security-Policy"] = policy;
 
     await next();
 });
-app.UseStatusCodePages("text/plain", "Status Code: {0}");
-app.UseRouting();
 
+app.UseStatusCodePages("text/plain", "Status Code: {0}");
 app.UseAuthorization();
 
 app.MapControllerRoute(

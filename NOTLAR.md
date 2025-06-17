@@ -52,7 +52,7 @@ Form 6 ana adımdan oluşur. Her adımda farklı bilgiler toplanır ve kullanıc
   - Adı (meetingPointName)
   - Adres (meetingPointAddress)
   - Enlem/Boylam (meetingPointLat, meetingPointLng)
-- Birden fazla buluşma noktası eklenebilir
+- Birden fazla buluşma noktası eklenebilir 
 
 ### 6. Adım: Dil & Önizleme (Language & Preview)
 - **Durum (status)**: Taslak, Yayında, Pasif
