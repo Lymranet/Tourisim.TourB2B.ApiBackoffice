@@ -22,10 +22,6 @@ namespace TourManagementApi.Models.ViewModels
         [Required(ErrorMessage = "Açıklama zorunludur.")]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "Durum seçilmelidir.")]
-        [MaxLength(50)]
-        public string? Status { get; set; }
-
         [Required(ErrorMessage = "En az bir dil seçilmelidir.")]
         public List<string>? Languages { get; set; }
 
@@ -33,6 +29,7 @@ namespace TourManagementApi.Models.ViewModels
         [Required]
         public ContactInfoViewModel ContactInfo { get; set; } = new();
 
+        // Medya
         public IFormFile? CoverImage { get; set; }
         public IFormFile? PreviewImage { get; set; }
         public List<IFormFile>? GalleryImages { get; set; }
@@ -42,6 +39,18 @@ namespace TourManagementApi.Models.ViewModels
         public string? CoverImageUrl { get; set; }
         public string? PreviewImageUrl { get; set; }
         public List<string>? GalleryImageUrls { get; set; }
+
+        // Trekksoft uyumlu yeni alanlar
+        public string? Highlights { get; set; }
+        public List<string>? Inclusions { get; set; }
+        public List<string>? Exclusions { get; set; }
+        public List<string>? ImportantInfo { get; set; }
+        public string? Itinerary { get; set; }
+
+        // Destination bilgileri
+        public string? CountryCode { get; set; }
+        public string? DestinationCode { get; set; }
+        public string? DestinationName { get; set; }
     }
 
     public class ContactInfoViewModel

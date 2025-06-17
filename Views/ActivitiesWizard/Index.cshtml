@@ -25,13 +25,10 @@
                 <td>@(item?.Category ?? "-")</td>
                 <td>@(item?.Status ?? "-")</td>
                 <td>
-                    <a asp-action="CreateBasic" asp-route-id="@item.Id" class="btn btn-sm btn-info">Temel Bilgi</a>
-                    <a asp-action="CreateLocation" asp-route-id="@item.Id" class="btn btn-sm btn-secondary">Lokasyon</a>
-                    <a asp-action="CreatePricing" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Fiyatlandırma</a>
-                    <a asp-action="CreateAddons" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Ek Ürünler</a>
-                    <a asp-action="CreateTime" asp-route-id="@item.Id" class="btn btn-sm btn-success">Zaman Yönetimi</a>
-                    <a asp-action="CreateMeetingPoints" asp-route-id="@item.Id" class="btn btn-sm btn-dark">Buluşma Noktası</a>
-                    <a asp-action="CreateBasic" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Düzenle</a>
+                    <a asp-action="CreateBasic" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-info">Temel Bilgi</a>
+                    <a asp-action="CreateLocation" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-secondary">Lokasyon</a>
+                    <a asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.Id ?? 0)" class="btn btn-sm btn-warning">Seçenekler</a>
+                    <a asp-action="CreateBasic" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-primary">Düzenle</a>
                 </td>
             </tr>
         }

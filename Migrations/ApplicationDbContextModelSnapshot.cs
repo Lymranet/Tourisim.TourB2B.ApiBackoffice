@@ -33,13 +33,29 @@ namespace TourManagementApi.Migrations
                     b.Property<string>("AdditionalNotes")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("AverageRating")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)");
+
                     b.Property<string>("CancellationPolicy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Categories")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValueSql("'[]'");
+
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CoverImage")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -48,19 +64,88 @@ namespace TourManagementApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("DestinationCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DestinationName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Duration")
                         .HasColumnType("int");
 
-                    b.Property<string>("Excluded")
+                    b.Property<string>("Exclusions")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ExclusionsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExclusionsJson");
+
+                    b.Property<string>("GuestFields")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValueSql("'[]'");
+
+                    b.Property<string>("GuestFieldsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("GuestFieldsJson");
+
+                    b.Property<string>("Highlights")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImportantInfo")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValueSql("'[]'");
+
+                    b.Property<string>("ImportantInfoJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ImportantInfoJson");
 
                     b.Property<string>("Included")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Inclusions")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("nvarchar(max)")
+                        .HasDefaultValueSql("'[]'");
+
+                    b.Property<string>("InclusionsJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("InclusionsJson");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsFreeCancellation")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Itinerary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Languages")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PreviewImage")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("Rating")
@@ -77,13 +162,14 @@ namespace TourManagementApi.Migrations
 
                     b.Property<string>("Subcategory")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TotalRatingCount")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -93,96 +179,131 @@ namespace TourManagementApi.Migrations
                     b.ToTable("Activities");
                 });
 
+            modelBuilder.Entity("TourManagementApi.Models.OpeningHour", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FromTime")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OptionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToTime")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OptionId");
+
+                    b.ToTable("OpeningHours");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.Option", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("CanBeBookedAfterStartTime")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CutOff")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Duration")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FromDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("StartTime")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UntilDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Weekdays")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId");
+
+                    b.ToTable("Options");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.TicketCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("MaxAge")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MaxSeats")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MinAge")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinSeats")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OptionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PriceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OptionId");
+
+                    b.ToTable("TicketCategories");
+                });
+
             modelBuilder.Entity("TourManagementApi.Models.Activity", b =>
                 {
-                    b.OwnsMany("TourManagementApi.Models.Addon", "Addons", b1 =>
-                        {
-                            b1.Property<int>("ActivityId")
-                                .HasColumnType("int");
-
-                            b1.Property<string>("Id")
-                                .HasColumnType("nvarchar(450)");
-
-                            b1.Property<string>("Description")
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<string>("Title")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<string>("Type")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.HasKey("ActivityId", "Id");
-
-                            b1.ToTable("Addon");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ActivityId");
-
-                            b1.OwnsOne("TourManagementApi.Models.AddonPrice", "Price", b2 =>
-                                {
-                                    b2.Property<int>("AddonActivityId")
-                                        .HasColumnType("int");
-
-                                    b2.Property<string>("AddonId")
-                                        .HasColumnType("nvarchar(450)");
-
-                                    b2.Property<string>("Amount")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.Property<string>("Currency")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.HasKey("AddonActivityId", "AddonId");
-
-                                    b2.ToTable("Addon");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("AddonActivityId", "AddonId");
-                                });
-
-                            b1.OwnsMany("TourManagementApi.Models.AddonTranslation", "Translations", b2 =>
-                                {
-                                    b2.Property<int>("AddonActivityId")
-                                        .HasColumnType("int");
-
-                                    b2.Property<string>("AddonId")
-                                        .HasColumnType("nvarchar(450)");
-
-                                    b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("int");
-
-                                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b2.Property<int>("Id"));
-
-                                    b2.Property<string>("Description")
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.Property<string>("Language")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.Property<string>("Title")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.HasKey("AddonActivityId", "AddonId", "Id");
-
-                                    b2.ToTable("AddonTranslation");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("AddonActivityId", "AddonId");
-                                });
-
-                            b1.Navigation("Price");
-
-                            b1.Navigation("Translations");
-                        });
-
                     b.OwnsOne("TourManagementApi.Models.Common.ActivityPricing", "Pricing", b1 =>
                         {
                             b1.Property<int>("ActivityId")
@@ -458,143 +579,6 @@ namespace TourManagementApi.Migrations
                                 .HasForeignKey("ActivityId");
                         });
 
-                    b.OwnsMany("TourManagementApi.Models.GuestField", "GuestFields", b1 =>
-                        {
-                            b1.Property<int>("ActivityId")
-                                .HasColumnType("int");
-
-                            b1.Property<int>("Id")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("int");
-
-                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
-
-                            b1.Property<string>("Code")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<string>("Label")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.Property<bool>("Required")
-                                .HasColumnType("bit");
-
-                            b1.Property<string>("Type")
-                                .IsRequired()
-                                .HasColumnType("nvarchar(max)");
-
-                            b1.HasKey("ActivityId", "Id");
-
-                            b1.ToTable("GuestField");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ActivityId");
-
-                            b1.OwnsMany("TourManagementApi.Models.GuestFieldOption", "Options", b2 =>
-                                {
-                                    b2.Property<int>("GuestFieldActivityId")
-                                        .HasColumnType("int");
-
-                                    b2.Property<int>("GuestFieldId")
-                                        .HasColumnType("int");
-
-                                    b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("int");
-
-                                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b2.Property<int>("Id"));
-
-                                    b2.Property<string>("Key")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.Property<string>("Value")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.HasKey("GuestFieldActivityId", "GuestFieldId", "Id");
-
-                                    b2.ToTable("GuestFieldOption");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("GuestFieldActivityId", "GuestFieldId");
-
-                                    b2.OwnsMany("TourManagementApi.Models.GuestFieldOptionTranslation", "Translations", b3 =>
-                                        {
-                                            b3.Property<int>("GuestFieldOptionGuestFieldActivityId")
-                                                .HasColumnType("int");
-
-                                            b3.Property<int>("GuestFieldOptionGuestFieldId")
-                                                .HasColumnType("int");
-
-                                            b3.Property<int>("GuestFieldOptionId")
-                                                .HasColumnType("int");
-
-                                            b3.Property<int>("Id")
-                                                .ValueGeneratedOnAdd()
-                                                .HasColumnType("int");
-
-                                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b3.Property<int>("Id"));
-
-                                            b3.Property<string>("Label")
-                                                .IsRequired()
-                                                .HasColumnType("nvarchar(max)");
-
-                                            b3.Property<string>("Language")
-                                                .IsRequired()
-                                                .HasColumnType("nvarchar(max)");
-
-                                            b3.Property<string>("Value")
-                                                .IsRequired()
-                                                .HasColumnType("nvarchar(max)");
-
-                                            b3.HasKey("GuestFieldOptionGuestFieldActivityId", "GuestFieldOptionGuestFieldId", "GuestFieldOptionId", "Id");
-
-                                            b3.ToTable("GuestFieldOptionTranslation");
-
-                                            b3.WithOwner()
-                                                .HasForeignKey("GuestFieldOptionGuestFieldActivityId", "GuestFieldOptionGuestFieldId", "GuestFieldOptionId");
-                                        });
-
-                                    b2.Navigation("Translations");
-                                });
-
-                            b1.OwnsMany("TourManagementApi.Models.GuestFieldTranslation", "Translations", b2 =>
-                                {
-                                    b2.Property<int>("GuestFieldActivityId")
-                                        .HasColumnType("int");
-
-                                    b2.Property<int>("GuestFieldId")
-                                        .HasColumnType("int");
-
-                                    b2.Property<int>("Id")
-                                        .ValueGeneratedOnAdd()
-                                        .HasColumnType("int");
-
-                                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b2.Property<int>("Id"));
-
-                                    b2.Property<string>("Label")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.Property<string>("Language")
-                                        .IsRequired()
-                                        .HasColumnType("nvarchar(max)");
-
-                                    b2.HasKey("GuestFieldActivityId", "GuestFieldId", "Id");
-
-                                    b2.ToTable("GuestFieldTranslation");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("GuestFieldActivityId", "GuestFieldId");
-                                });
-
-                            b1.Navigation("Options");
-
-                            b1.Navigation("Translations");
-                        });
-
                     b.OwnsMany("TourManagementApi.Models.MeetingPoint", "MeetingPoints", b1 =>
                         {
                             b1.Property<int>("ActivityId")
@@ -625,6 +609,37 @@ namespace TourManagementApi.Migrations
                             b1.HasKey("ActivityId", "Id");
 
                             b1.ToTable("MeetingPoint");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ActivityId");
+                        });
+
+                    b.OwnsMany("TourManagementApi.Models.RoutePoint", "RoutePoints", b1 =>
+                        {
+                            b1.Property<int>("ActivityId")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("Id")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("int");
+
+                            SqlServerPropertyBuilderExtensions.UseIdentityColumn(b1.Property<int>("Id"));
+
+                            b1.Property<string>("Latitude")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Longitude")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasColumnType("nvarchar(max)");
+
+                            b1.HasKey("ActivityId", "Id");
+
+                            b1.ToTable("RoutePoint");
 
                             b1.WithOwner()
                                 .HasForeignKey("ActivityId");
@@ -676,11 +691,7 @@ namespace TourManagementApi.Migrations
                                 .HasForeignKey("ActivityId");
                         });
 
-                    b.Navigation("Addons");
-
                     b.Navigation("ContactInfo");
-
-                    b.Navigation("GuestFields");
 
                     b.Navigation("Location");
 
@@ -692,11 +703,58 @@ namespace TourManagementApi.Migrations
 
                     b.Navigation("Pricing");
 
+                    b.Navigation("RoutePoints");
+
                     b.Navigation("SalesAvailability");
 
                     b.Navigation("SeasonalAvailability");
 
                     b.Navigation("TimeSlots");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.OpeningHour", b =>
+                {
+                    b.HasOne("TourManagementApi.Models.Option", "Option")
+                        .WithMany("OpeningHours")
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Option");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.Option", b =>
+                {
+                    b.HasOne("TourManagementApi.Models.Activity", "Activity")
+                        .WithMany("Options")
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.TicketCategory", b =>
+                {
+                    b.HasOne("TourManagementApi.Models.Option", "Option")
+                        .WithMany("TicketCategories")
+                        .HasForeignKey("OptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Option");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.Activity", b =>
+                {
+                    b.Navigation("Options");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.Option", b =>
+                {
+                    b.Navigation("OpeningHours");
+
+                    b.Navigation("TicketCategories");
                 });
 #pragma warning restore 612, 618
         }

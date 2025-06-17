@@ -52,6 +52,7 @@ namespace TourManagementApi.Controllers
                 .Include(a => a.TimeSlots)
                 .Include(a => a.MeetingPoints)
                 .Include(a => a.GuestFields)
+                .Include(a => a.Options)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (activity == null)
@@ -85,7 +86,7 @@ namespace TourManagementApi.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(IFormCollection form)
         {
-            Activity activity = null;
+            Activity? activity = null;
 
             // 1. JSON ile mi geldi?
             if (Request.ContentType != null && Request.ContentType.Contains("application/json"))
@@ -128,6 +129,17 @@ namespace TourManagementApi.Controllers
                 return Json(new { success = true, id = activity.Id });
 
             return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatus(int id, string status)
+        {
+            var activity = await _context.Activities.FindAsync(id);
+            if (activity == null)
+                return NotFound();
+            activity.Status = status;
+            await _context.SaveChangesAsync();
+            return Ok();
         }
     }
 

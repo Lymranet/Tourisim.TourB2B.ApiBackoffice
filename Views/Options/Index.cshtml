@@ -1,0 +1,55 @@
+@model IEnumerable<TourManagementApi.Models.Option>
+@{
+    ViewData["Title"] = "Seçenekler";
+    var activityId = ViewBag.ActivityId as int?;
+    var activityTitle = ViewBag.ActivityTitle as string;
+}
+
+@if (activityId.HasValue && !string.IsNullOrEmpty(activityTitle))
+{
+    <h1>@activityTitle - Seçenekler</h1>
+}
+else
+{
+    <h2>Tüm Seçenekler</h2>
+}
+
+@if (activityId.HasValue)
+{
+    <p>
+        <a class="btn btn-primary" asp-action="Create" asp-route-activityId="@ViewBag.ActivityId">Yeni Seçenek Ekle</a>
+        <a class="btn btn-secondary" asp-controller="Activities" asp-action="Index">Tur Listesine Dön</a>
+    </p>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Adı</th>
+            <th>Başlangıç Saati</th>
+            <th>Satış Başlangıç Tarihi</th>
+            <th>Satış Bitiş Tarihi</th>
+            <th>İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@(string.IsNullOrEmpty(item.StartTime) ? "-" : item.StartTime)</td>
+                <td>@item.FromDate.ToString("dd.MM.yyyy")</td>
+                <td>@item.UntilDate.ToString("dd.MM.yyyy")</td>
+                <td>
+                    <a class="btn btn-warning btn-sm" asp-action="Edit" asp-route-id="@item.Id">Düzenle</a>
+                    <a class="btn btn-danger btn-sm" asp-action="Delete" asp-route-id="@item.Id" onclick="return confirm('Seçeneği silmek istediğinize emin misiniz?')">Sil</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <p>Henüz seçenek eklenmemiş.</p>
+} 

@@ -5,20 +5,18 @@
 }
 
 <div class="container">
-    <h2>Activities</h2>
+    <h2>Turlar</h2>
     <p>
-        <a asp-action="Create" class="btn btn-primary">Create New</a>
+        <a asp-action="Create" class="btn btn-primary">Yeni Tur Ekle</a>
     </p>
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>Location</th>
-                    <th>Duration</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                    <th>Başlık</th>
+                    <th>Kategori</th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
                 </tr>
             </thead>
             <tbody>
@@ -27,12 +25,17 @@
                     <tr>
                         <td>@item.Title</td>
                         <td>@item.Category</td>
-                        <td>@(item.Location != null ? $"{item.Location.City}, {item.Location.Country}" : "-")</td>
-                        <td>@item.Duration minutes</td>
-                        <td>@item.Status</td>
                         <td>
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info">Edit</a>
-                            <button class="btn btn-sm btn-danger" onclick="deleteActivity(@item.Id)">Delete</button>
+                            <select class="status-select btn btn-outline-secondary btn-sm" data-id="@item.Id" style="min-width: 100px;">
+                                <option value="draft" selected="@(item.Status == "draft")">Taslak</option>
+                                <option value="inactive" selected="@(item.Status == "inactive")">Pasif</option>
+                                <option value="active" selected="@(item.Status == "active")">Aktif</option>
+                            </select>
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-info">Düzenle</a>
+                            <a class="btn btn-sm btn-secondary" href="@Url.Action("Index", "Options", new { activityId = item.Id })">Seçenekler</a>
+                            <button class="btn btn-sm btn-danger" onclick="deleteActivity(@item.Id)">Sil</button>
                         </td>
                     </tr>
                 }
@@ -44,7 +47,7 @@
 @section Scripts {
     <script>
         function deleteActivity(id) {
-            if (confirm('Are you sure you want to delete this activity?')) {
+            if (confirm('Bu turu silmek istediğinize emin misiniz?')) {
                 fetch(`/api/ActivitiesApi/${id}`, {
                     method: 'DELETE',
                 })
@@ -52,14 +55,30 @@
                     if (response.ok) {
                         window.location.reload();
                     } else {
-                        alert('Error deleting activity');
+                        alert('Tur silinirken bir hata oluştu');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error deleting activity');
+                    alert('Tur silinirken bir hata oluştu');
                 });
             }
         }
+
+        $('.status-select').on('change', function() {
+            var id = $(this).data('id');
+            var status = $(this).val();
+            $.ajax({
+                url: '/Activities/UpdateStatus',
+                method: 'POST',
+                data: { id: id, status: status },
+                success: function(res) {
+                    // Başarılıysa bir şey yapmaya gerek yok
+                },
+                error: function() {
+                    alert('Durum güncellenemedi!');
+                }
+            });
+        });
     </script>
 } 

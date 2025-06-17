@@ -1,0 +1,320 @@
+@model TourManagementApi.Models.ViewModels.OptionViewModel
+
+@{
+    ViewData["Title"] = "Yeni Seçenek (Option) Ekle";
+    var today = DateTime.Now.ToString("yyyy-MM-dd");
+}
+
+<h2 class="mb-4 fw-bold">@ViewData["Title"]</h2>
+@Html.ValidationSummary(true, "Lütfen aşağıdaki hataları düzeltin:", new { @class = "alert alert-danger" })
+
+<form asp-action="Create" method="post" autocomplete="off">
+    <input type="hidden" asp-for="ActivityId" />
+    
+    <!-- Temel Bilgiler Kartı -->
+    <div class="card shadow-sm mb-5 border-0">
+        <div class="card-header bg-light fw-semibold fs-5">Temel Bilgiler</div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label">Seçenek Adı</label>
+                    <input asp-for="Name" class="form-control" placeholder="Örn: Sabah Turu" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="StartTime" class="form-label">Başlangıç Saati</label>
+                    <input asp-for="StartTime" class="form-control" type="time" id="startTime" />
+                    <span asp-validation-for="StartTime" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bitiş Saati</label>
+                    <input class="form-control" type="time" id="endTime" name="EndTime" />
+                </div>
+            </div>
+            <div class="row g-4 mt-1">
+                <div class="col-md-3">
+                    <label class="form-label">Süre (saat:dakika)</label>
+                    <input class="form-control bg-light" type="text" id="duration" name="Duration" readonly />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="FromDate" class="form-label">Başlangıç Tarihi</label>
+                    <input asp-for="FromDate" class="form-control" type="date" min="@today" value="@today" />
+                    <span asp-validation-for="FromDate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="UntilDate" class="form-label">Bitiş Tarihi</label>
+                    <input asp-for="UntilDate" class="form-control" type="date" min="@today" value="@today" />
+                    <span asp-validation-for="UntilDate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="CutOff" class="form-label">Rezervasyon Kesim Süresi (Saat)</label>
+                    <input asp-for="CutOff" class="form-control" type="number" min="0" />
+                    <span asp-validation-for="CutOff" class="text-danger small"></span>
+                </div>
+            </div>
+            <div class="row g-4 mt-1">
+                <div class="col-md-6 d-flex align-items-center">
+                    <div class="form-check mt-3">
+                        <input asp-for="CanBeBookedAfterStartTime" class="form-check-input" type="checkbox" />
+                        <label asp-for="CanBeBookedAfterStartTime" class="form-check-label ms-1">Başlangıç Saatinden Sonra Rezervasyon Yapılabilir</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Haftanın Günleri Kartı -->
+    <div class="card shadow-sm mb-5 border-0">
+        <div class="card-header bg-light fw-semibold fs-5">Haftanın Günleri</div>
+        <div class="card-body">
+            <div class="row g-2">
+                @{
+                    var days = new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+                    var dayNames = new[] { "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar" };
+                }
+                @for (var i = 0; i < days.Length; i++)
+                {
+                    <div class="col-md-2 col-6">
+                        <div class="form-check">
+                            <input type="checkbox" name="Weekdays" value="@days[i]" class="form-check-input" id="day_@days[i]" />
+                            <label class="form-check-label" for="day_@days[i]">@dayNames[i]</label>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Açılış Saatleri Kartı -->
+    <div class="card shadow-sm mb-5 border-0">
+        <div class="card-header bg-light fw-semibold fs-5 d-flex justify-content-between align-items-center">
+            <span>Açılış Saatleri</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="addOpeningHour">
+                <i class="fa fa-plus"></i> Açılış Saati Ekle
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="openingHours">
+                <div class="opening-hour-row row mb-2">
+                    <div class="col-md-5">
+                        <label>Başlangıç Saati</label>
+                        <input type="time" name="OpeningHours[0].FromTime" class="form-control" />
+                    </div>
+                    <div class="col-md-5">
+                        <label>Bitiş Saati</label>
+                        <input type="time" name="OpeningHours[0].ToTime" class="form-control" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-opening-hour w-100">Kaldır</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bilet Kategorileri Kartı -->
+    <div class="card shadow-sm mb-5 border-0">
+        <div class="card-header bg-light fw-semibold fs-5 d-flex justify-content-between align-items-center">
+            <span>Bilet Kategorileri</span>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="addTicketCategory">
+                <i class="fa fa-plus"></i> Bilet Kategorisi Ekle
+            </button>
+        </div>
+        <div class="card-body">
+            <div id="ticketCategories">
+                <div class="ticket-category-row card mb-3 border-0 bg-light-subtle">
+                    <div class="card-body">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-4">
+                                <label>Kategori Adı</label>
+                                <input type="text" name="TicketCategories[0].Name" class="form-control" placeholder="Örn: Yetişkin" />
+                            </div>
+                            <div class="col-md-4">
+                                <label>Kategori Tipi</label>
+                                <select name="TicketCategories[0].Type" class="form-control">
+                                    <option value="Adult">Yetişkin</option>
+                                    <option value="Child">Çocuk</option>
+                                    <option value="Group">Grup</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Para Birimi</label>
+                                <select name="TicketCategories[0].Currency" class="form-control">
+                                    <option value="TRY">TRY</option>
+                                    <option value="USD">USD</option>
+                                    <option value="EUR">EUR</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-3">
+                                <label>Min. Koltuk</label>
+                                <input type="number" name="TicketCategories[0].MinSeats" class="form-control" min="0" />
+                            </div>
+                            <div class="col-md-3">
+                                <label>Maks. Koltuk</label>
+                                <input type="number" name="TicketCategories[0].MaxSeats" class="form-control" min="0" />
+                            </div>
+                            <div class="col-md-3">
+                                <label>Min. Yaş</label>
+                                <input type="number" name="TicketCategories[0].MinAge" class="form-control" min="0" />
+                            </div>
+                            <div class="col-md-3">
+                                <label>Maks. Yaş</label>
+                                <input type="number" name="TicketCategories[0].MaxAge" class="form-control" min="0" />
+                            </div>
+                        </div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-4">
+                                <label>Fiyat</label>
+                                <input type="number" name="TicketCategories[0].Amount" class="form-control" placeholder="0.00" step="0.01" min="0" />
+                            </div>
+                            <div class="col-md-4">
+                                <label>Fiyat Tipi</label>
+                                <select name="TicketCategories[0].PriceType" class="form-control">
+                                    <option value="">Fiyat tipi seçin</option>
+                                    <option value="Sabit">Sabit</option>
+                                    <option value="Kişi Başı">Kişi Başı</option>
+                                    <option value="Grup">Grup</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-ticket-category w-100">Kategoriyi Kaldır</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alt Butonlar -->
+    <div class="d-flex gap-3 justify-content-end mt-4">
+        <button type="submit" class="btn btn-success px-4">Kaydet</button>
+        <a asp-action="Index" asp-route-activityId="@Model.ActivityId" class="btn btn-outline-secondary px-4">İptal</a>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+$(document).ready(function () {
+    let openingHourIndex = 1;
+    let ticketCategoryIndex = 1;
+
+    $("#addOpeningHour").click(function () {
+        const template = `
+            <div class="opening-hour-row row mb-2">
+                <div class="col-md-5">
+                    <label>Başlangıç Saati</label>
+                    <input type="time" name="OpeningHours[${openingHourIndex}].FromTime" class="form-control" />
+                </div>
+                <div class="col-md-5">
+                    <label>Bitiş Saati</label>
+                    <input type="time" name="OpeningHours[${openingHourIndex}].ToTime" class="form-control" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-opening-hour w-100">Kaldır</button>
+                </div>
+            </div>
+        `;
+        $("#openingHours").append(template);
+        openingHourIndex++;
+    });
+
+    $("#addTicketCategory").click(function () {
+        const template = `
+            <div class="ticket-category-row card mb-3">
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-4">
+                            <label>Kategori Adı</label>
+                            <input type="text" name="TicketCategories[${ticketCategoryIndex}].Name" class="form-control" placeholder="Örn: Yetişkin" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>Kategori Tipi</label>
+                            <select name="TicketCategories[${ticketCategoryIndex}].Type" class="form-control">
+                                <option value="Adult">Yetişkin</option>
+                                <option value="Child">Çocuk</option>
+                                <option value="Group">Grup</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Para Birimi</label>
+                            <select name="TicketCategories[${ticketCategoryIndex}].Currency" class="form-control">
+                                <option value="TRY">TRY</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-3">
+                            <label>Min. Koltuk</label>
+                            <input type="number" name="TicketCategories[${ticketCategoryIndex}].MinSeats" class="form-control" min="0" />
+                        </div>
+                        <div class="col-md-3">
+                            <label>Maks. Koltuk</label>
+                            <input type="number" name="TicketCategories[${ticketCategoryIndex}].MaxSeats" class="form-control" min="0" />
+                        </div>
+                        <div class="col-md-3">
+                            <label>Min. Yaş</label>
+                            <input type="number" name="TicketCategories[${ticketCategoryIndex}].MinAge" class="form-control" min="0" />
+                        </div>
+                        <div class="col-md-3">
+                            <label>Maks. Yaş</label>
+                            <input type="number" name="TicketCategories[${ticketCategoryIndex}].MaxAge" class="form-control" min="0" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>Fiyat</label>
+                            <input type="number" name="TicketCategories[${ticketCategoryIndex}].Amount" class="form-control" placeholder="0.00" step="0.01" min="0" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>Fiyat Tipi</label>
+                            <select name="TicketCategories[${ticketCategoryIndex}].PriceType" class="form-control">
+                                <option value="">Fiyat tipi seçin</option>
+                                <option value="Sabit">Sabit</option>
+                                <option value="Kişi Başı">Kişi Başı</option>
+                                <option value="Grup">Grup</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger btn-sm remove-ticket-category w-100">Kategoriyi Kaldır</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        $("#ticketCategories").append(template);
+        ticketCategoryIndex++;
+    });
+
+    $(document).on("click", ".remove-opening-hour", function() {
+        $(this).closest(".opening-hour-row").remove();
+    });
+
+    $(document).on("click", ".remove-ticket-category", function() {
+        $(this).closest(".ticket-category-row").remove();
+    });
+
+    document.getElementById('startTime').addEventListener('change', calculateDuration);
+    document.getElementById('endTime').addEventListener('change', calculateDuration);
+    function calculateDuration() {
+        var start = document.getElementById('startTime').value;
+        var end = document.getElementById('endTime').value;
+        if (start && end) {
+            var startParts = start.split(":");
+            var endParts = end.split(":");
+            var startDate = new Date(0,0,0,parseInt(startParts[0]),parseInt(startParts[1]));
+            var endDate = new Date(0,0,0,parseInt(endParts[0]),parseInt(endParts[1]));
+            var diff = (endDate - startDate) / 60000; // dakika
+            if (diff < 0) diff += 24*60;
+            var hours = Math.floor(diff/60);
+            var mins = diff%60;
+            document.getElementById('duration').value = (hours<10?"0":"")+hours+":"+(mins<10?"0":"")+mins;
+        }
+    }
+});
+</script>
+} 

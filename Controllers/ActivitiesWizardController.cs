@@ -9,15 +9,52 @@ using System;
 using TourManagementApi.Models.Common;
 using System.Collections.Generic;
 using System.IO;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
 
 namespace TourManagementApi.Controllers
 {
     public class ActivitiesWizardController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public ActivitiesWizardController(ApplicationDbContext context)
+        private readonly IWebHostEnvironment _environment;
+
+        public ActivitiesWizardController(ApplicationDbContext context, IWebHostEnvironment environment)
         {
             _context = context;
+            _environment = environment;
+        }
+
+        public IActionResult Index()
+        {
+            try
+            {
+                var activities = _context.Activities
+                    .Include(a => a.Options)
+                    .Select(a => new Activity
+                    {
+                        Id = a.Id,
+                        Title = a.Title ?? string.Empty,
+                        Description = a.Description ?? string.Empty,
+                        Category = a.Category ?? string.Empty,
+                        Subcategory = a.Subcategory ?? string.Empty,
+                        Language = a.Language ?? string.Empty,
+                        Label = a.Label ?? string.Empty,
+                        Status = a.Status ?? "draft",
+                        Options = a.Options ?? new List<Option>(),
+                        CountryCode = a.CountryCode ?? string.Empty,
+                        DestinationCode = a.DestinationCode ?? string.Empty,
+                        DestinationName = a.DestinationName ?? string.Empty
+                    })
+                    .ToList();
+
+                return View(activities);
+            }
+            catch (Exception ex)
+            {
+                // Hata durumunda boş liste döndür
+                return View(new List<Activity>());
+            }
         }
 
         // 1. Adım: Temel Bilgiler (Basic Information)
@@ -35,7 +72,6 @@ namespace TourManagementApi.Controllers
                     Category = activity.Category,
                     Subcategory = activity.Subcategory,
                     Description = activity.Description,
-                    Status = activity.Status,
                     Languages = activity.Languages,
                     ContactInfo = activity.ContactInfo != null ? new ContactInfoViewModel
                     {
@@ -44,10 +80,18 @@ namespace TourManagementApi.Controllers
                         Email = activity.ContactInfo.Email,
                         Phone = activity.ContactInfo.Phone
                     } : new ContactInfoViewModel(),
-                    CoverImageUrl = activity.Media?.Images?.Header,
-                    PreviewImageUrl = activity.Media?.Images?.Teaser,
-                    GalleryImageUrls = activity.Media?.Images?.Gallery,
-                    VideoUrls = activity.Media?.Videos ?? new List<string>()
+                    CoverImageUrl = activity.CoverImage,
+                    PreviewImageUrl = activity.PreviewImage,
+                    GalleryImageUrls = activity.GalleryImages,
+                    VideoUrls = activity.VideoUrls,
+                    Highlights = activity.Highlights,
+                    Inclusions = activity.Inclusions,
+                    Exclusions = activity.Exclusions,
+                    ImportantInfo = activity.ImportantInfo,
+                    Itinerary = activity.Itinerary,
+                    CountryCode = activity.CountryCode,
+                    DestinationCode = activity.DestinationCode,
+                    DestinationName = activity.DestinationName
                 };
                 return View(vm);
             }
@@ -56,307 +100,110 @@ namespace TourManagementApi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateBasic(ActivityBasicViewModel model, string VideoUrls)
+        public async Task<IActionResult> CreateBasic(ActivityBasicViewModel vm, List<IFormFile> GalleryImages)
         {
             if (!ModelState.IsValid)
-            {
-                var errors = ModelState
-                    .Where(x => x.Value.Errors.Count > 0)
-                    .Select(x => new { x.Key, Errors = x.Value.Errors.Select(e => e.ErrorMessage).ToList() })
-                    .ToList();
-                Console.WriteLine("ModelState Errors: " + Newtonsoft.Json.JsonConvert.SerializeObject(errors));
-                return View(model);
-            }
+                return View(vm);
 
-            Activity activity;
-            if (model.ActivityId.HasValue)
-            {
-                // Güncelleme
-                activity = await _context.Activities.FindAsync(model.ActivityId.Value);
-                if (activity == null) return NotFound();
-            }
-            else
-            {
-                // Yeni kayıt
-                activity = new Activity();
-                _context.Activities.Add(activity);
-            }
-            // Alanları güncelle
-            activity.Title = model.Title;
-            activity.Category = model.Category;
-            activity.Subcategory = model.Subcategory;
-            activity.Description = model.Description;
-            activity.Status = model.Status;
-            activity.Languages = model.Languages;
-            activity.ContactInfo = new ContactInfo
-            {
-                Name = model.ContactInfo.Name,
-                Role = model.ContactInfo.Role,
-                Email = model.ContactInfo.Email,
-                Phone = model.ContactInfo.Phone
-            };
-
-            // Medya yükleme
-            var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-            if (!Directory.Exists(uploadsRoot)) Directory.CreateDirectory(uploadsRoot);
-            activity.Media ??= new Media();
-            // Kapak
-            if (model.CoverImage != null && model.CoverImage.Length > 0)
-            {
-                var fileName = $"cover_{Guid.NewGuid()}{Path.GetExtension(model.CoverImage.FileName)}";
-                var filePath = Path.Combine(uploadsRoot, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.CoverImage.CopyToAsync(stream);
-                }
-                activity.Media.Images.Header = "/uploads/" + fileName;
-            }
-            // Önizleme
-            if (model.PreviewImage != null && model.PreviewImage.Length > 0)
-            {
-                var fileName = $"preview_{Guid.NewGuid()}{Path.GetExtension(model.PreviewImage.FileName)}";
-                var filePath = Path.Combine(uploadsRoot, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await model.PreviewImage.CopyToAsync(stream);
-                }
-                activity.Media.Images.Teaser = "/uploads/" + fileName;
-            }
-            // Galeri
-            if (model.GalleryImages != null && model.GalleryImages.Count > 0)
-            {
-                activity.Media.Images.Gallery = new List<string>();
-                foreach (var img in model.GalleryImages)
-                {
-                    if (img != null && img.Length > 0)
-                    {
-                        var fileName = $"gallery_{Guid.NewGuid()}{Path.GetExtension(img.FileName)}";
-                        var filePath = Path.Combine(uploadsRoot, fileName);
-                        using (var stream = new FileStream(filePath, FileMode.Create))
-                        {
-                            await img.CopyToAsync(stream);
-                        }
-                        activity.Media.Images.Gallery.Add("/uploads/" + fileName);
-                    }
-                }
-            }
-            // Video URL'ler
-            if (!string.IsNullOrWhiteSpace(VideoUrls))
-            {
-                activity.Media.Videos = VideoUrls.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-            }
-            else
-            {
-                activity.Media.Videos = new List<string>();
-            }
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
-        }
-
-        // 2. Adım: Lokasyon
-        [HttpGet]
-        public async Task<IActionResult> CreateLocation(int id)
-        {
-            var activity = await _context.Activities.FindAsync(id);
-            if (activity == null) return NotFound();
-            var vm = new ActivityLocationViewModel
-            {
-                ActivityId = activity.Id,
-                Address = activity.Location?.Address,
-                City = activity.Location?.City,
-                Country = activity.Location?.Country,
-                Latitude = activity.Location?.Coordinates?.Latitude,
-                Longitude = activity.Location?.Coordinates?.Longitude
-            };
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateLocation(Models.ViewModels.ActivityLocationViewModel model)
-        {
             try
             {
-                if (!ModelState.IsValid || !model.Latitude.HasValue || !model.Longitude.HasValue)
+                var activity = vm.ActivityId.HasValue
+                    ? await _context.Activities.FindAsync(vm.ActivityId.Value)
+                    : new Activity();
+
+                if (activity == null)
+                    return NotFound();
+
+                // Temel bilgileri güncelle
+                activity.Title = vm.Title ?? string.Empty;
+                activity.Category = vm.Category ?? string.Empty;
+                activity.Subcategory = vm.Subcategory ?? string.Empty;
+                activity.Description = vm.Description ?? string.Empty;
+                activity.Languages = vm.Languages ?? new List<string>();
+
+                // Medya işlemleri
+                if (vm.CoverImage != null)
                 {
-                    if (!model.Latitude.HasValue || !model.Longitude.HasValue)
-                        ModelState.AddModelError("", "Lütfen haritadan bir konum seçin.");
-                    return View(model);
+                    activity.CoverImage = await SaveImage(vm.CoverImage, "cover");
                 }
-                var activity = await _context.Activities
-                    .Include(a => a.Location)
-                    .ThenInclude(l => l.Coordinates)
-                    .FirstOrDefaultAsync(a => a.Id == model.ActivityId);
-                if (activity == null) return NotFound();
-                if (activity.Location == null)
+
+                if (vm.PreviewImage != null)
                 {
-                    activity.Location = new Location
+                    activity.PreviewImage = await SaveImage(vm.PreviewImage, "preview");
+                }
+
+                if (GalleryImages != null && GalleryImages.Any())
+                {
+                    activity.GalleryImages = new List<string>();
+                    foreach (var image in GalleryImages.Take(10)) // En fazla 10 galeri görseli
                     {
-                        Address = model.Address ?? string.Empty,
-                        City = model.City ?? string.Empty,
-                        Country = model.Country ?? string.Empty,
-                        Coordinates = new Coordinates
+                        var imagePath = await SaveImage(image, "gallery");
+                        if (!string.IsNullOrEmpty(imagePath))
                         {
-                            Latitude = model.Latitude ?? 0,
-                            Longitude = model.Longitude ?? 0
+                            activity.GalleryImages.Add(imagePath);
                         }
-                    };
-                }
-                else
-                {
-                    activity.Location.Address = model.Address ?? string.Empty;
-                    activity.Location.City = model.City ?? string.Empty;
-                    activity.Location.Country = model.Country ?? string.Empty;
-                    if (activity.Location.Coordinates == null)
-                    {
-                        activity.Location.Coordinates = new Coordinates();
                     }
-                    activity.Location.Coordinates.Latitude = model.Latitude ?? 0;
-                    activity.Location.Coordinates.Longitude = model.Longitude ?? 0;
                 }
+
+                activity.VideoUrls = vm.VideoUrls?.Where(url => !string.IsNullOrEmpty(url)).ToList() ?? new List<string>();
+
+                // İletişim bilgileri
+                activity.ContactInfo = new ContactInfo
+                {
+                    Name = vm.ContactInfo.Name ?? string.Empty,
+                    Role = vm.ContactInfo.Role ?? string.Empty,
+                    Email = vm.ContactInfo.Email ?? string.Empty,
+                    Phone = vm.ContactInfo.Phone ?? string.Empty
+                };
+
+                // Trekksoft uyumlu yeni alanlar
+                activity.Highlights = vm.Highlights;
+                activity.Inclusions = vm.Inclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
+                activity.Exclusions = vm.Exclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
+                activity.ImportantInfo = vm.ImportantInfo?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
+                activity.Itinerary = vm.Itinerary;
+
+                // Destinasyon bilgileri
+                activity.CountryCode = vm.CountryCode;
+                activity.DestinationCode = vm.DestinationCode;
+                activity.DestinationName = vm.DestinationName;
+
+                if (!vm.ActivityId.HasValue)
+                {
+                    _context.Activities.Add(activity);
+                }
+
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                Console.WriteLine("CreateLocation Exception: " + ex.ToString());
-                ModelState.AddModelError("", "Bir hata oluştu: " + ex.Message);
-                return View(model);
+                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
+                return View(vm);
             }
         }
 
-        // 3. Adım: Fiyatlandırma
+        // 2. Adım: Lokasyon
         [HttpGet]
-        public async Task<IActionResult> CreatePricing(int id)
+        public async Task<IActionResult> CreateLocation(int? id)
         {
-            var activity = await _context.Activities.Include(a => a.Pricing).FirstOrDefaultAsync(a => a.Id == id);
-            if (activity == null) return NotFound();
-            var vm = new ActivityPricingViewModel
+            if (!id.HasValue)
             {
-                ActivityId = activity.Id,
-                DefaultCurrency = activity.Pricing?.DefaultCurrency ?? "TRY",
-                TaxRate = activity.Pricing?.TaxRate ?? 18,
-                Categories = activity.Pricing?.Categories?.Select(c => new PriceCategoryViewModel
-                {
-                    Type = c.Type,
-                    PriceType = c.PriceType,
-                    Amount = c.Amount,
-                    Currency = c.Currency,
-                    MinAge = c.MinAge,
-                    MaxAge = c.MaxAge,
-                    Description = c.Description,
-                    MinParticipants = c.MinParticipants,
-                    MaxParticipants = c.MaxParticipants,
-                    DiscountType = c.DiscountType,
-                    DiscountValue = c.DiscountValue
-                }).ToList() ?? new List<PriceCategoryViewModel>(),
-                Included = activity.Included ?? new List<string>(),
-                Excluded = activity.Excluded ?? new List<string>(),
-                Requirements = activity.Requirements ?? new List<string>(),
-                CancellationPolicy = activity.CancellationPolicy,
-                AdditionalNotes = activity.AdditionalNotes
-            };
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreatePricing(ActivityPricingViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-            var activity = await _context.Activities.Include(a => a.Pricing).FirstOrDefaultAsync(a => a.Id == model.ActivityId);
-            if (activity == null) return NotFound();
-            // Fiyatlandırma
-            if (activity.Pricing == null)
-                activity.Pricing = new ActivityPricing();
-            activity.Pricing.DefaultCurrency = model.DefaultCurrency;
-            activity.Pricing.TaxRate = model.TaxRate;
-            activity.Pricing.Categories = model.Categories?.Select(c => new PriceCategory
-            {
-                Type = c.Type,
-                PriceType = c.PriceType,
-                Amount = c.Amount,
-                Currency = c.Currency,
-                MinAge = c.MinAge,
-                MaxAge = c.MaxAge,
-                Description = c.Description,
-                MinParticipants = c.MinParticipants,
-                MaxParticipants = c.MaxParticipants,
-                DiscountType = c.DiscountType,
-                DiscountValue = c.DiscountValue
-            }).ToList() ?? new List<PriceCategory>();
-            // Servisler ve gereksinimler
-            activity.Included = model.Included ?? new List<string>();
-            activity.Excluded = model.Excluded ?? new List<string>();
-            activity.Requirements = model.Requirements ?? new List<string>();
-            // Ek bilgi
-            activity.CancellationPolicy = model.CancellationPolicy;
-            activity.AdditionalNotes = model.AdditionalNotes;
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
-        }
-
-        // 4. Adım: Zaman Yönetimi
-        [HttpGet]
-        public async Task<IActionResult> CreateTime(int id)
-        {
-            var activity = await _context.Activities.Include(a => a.TimeSlots).FirstOrDefaultAsync(a => a.Id == id);
-            if (activity == null) return NotFound();
-            var vm = new ActivityTimeViewModel
-            {
-                ActivityId = activity.Id,
-                Duration = activity.Duration,
-                SeasonalAvailability = new SeasonalAvailabilityViewModel
-                {
-                    StartDate = DateTime.TryParse(activity.SeasonalAvailability?.StartDate, out var sd) ? sd : (DateTime?)null,
-                    EndDate = DateTime.TryParse(activity.SeasonalAvailability?.EndDate, out var ed) ? ed : (DateTime?)null
-                },
-                TimeSlots = activity.TimeSlots?.Select(ts => new TimeSlotViewModel
-                {
-                    StartTime = ts.StartTime,
-                    EndTime = ts.EndTime,
-                    DaysOfWeek = ts.DaysOfWeek?.ToList() ?? new List<string>()
-                }).ToList() ?? new List<TimeSlotViewModel>()
-            };
-            return View(vm);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateTime(ActivityTimeViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-            var activity = await _context.Activities.Include(a => a.TimeSlots).FirstOrDefaultAsync(a => a.Id == model.ActivityId);
-            if (activity == null) return NotFound();
-            // Süre
-            activity.Duration = model.Duration;
-            // Sezon
-            if (model.SeasonalAvailability != null)
-            {
-                activity.SeasonalAvailability ??= new SeasonalAvailability();
-                activity.SeasonalAvailability.StartDate = model.SeasonalAvailability.StartDate?.ToString("yyyy-MM-dd");
-                activity.SeasonalAvailability.EndDate = model.SeasonalAvailability.EndDate?.ToString("yyyy-MM-dd");
+                return RedirectToAction(nameof(Index));
             }
-            // Zaman dilimleri
-            activity.TimeSlots = model.TimeSlots?.Select(ts => new Models.Common.TimeSlot
-            {
-                StartTime = ts.StartTime,
-                EndTime = ts.EndTime,
-                DaysOfWeek = ts.DaysOfWeek?.ToList() ?? new List<string>()
-            }).ToList() ?? new List<Models.Common.TimeSlot>();
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
-        }
 
-        // 5. Adım: Buluşma Noktaları
-        [HttpGet]
-        public async Task<IActionResult> CreateMeetingPoints(int id)
-        {
-            var activity = await _context.Activities.Include(a => a.MeetingPoints).FirstOrDefaultAsync(a => a.Id == id);
-            if (activity == null) return NotFound();
-            var vm = new ActivityMeetingPointsViewModel
+            var activity = await _context.Activities
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.RoutePoints)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new ActivityLocationViewModel
             {
                 ActivityId = activity.Id,
                 MeetingPoints = activity.MeetingPoints?.Select(mp => new MeetingPointViewModel
@@ -365,99 +212,266 @@ namespace TourManagementApi.Controllers
                     Address = mp.Address,
                     Latitude = mp.Latitude,
                     Longitude = mp.Longitude
-                }).ToList() ?? new List<MeetingPointViewModel>()
+                }).ToList() ?? new List<MeetingPointViewModel>(),
+                RoutePoints = activity.RoutePoints?.Select(rp => new RoutePointViewModel
+                {
+                    Name = rp.Name,
+                    Latitude = rp.Latitude,
+                    Longitude = rp.Longitude
+                }).ToList() ?? new List<RoutePointViewModel>()
             };
-            return View(vm);
+
+            return View(viewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateMeetingPoints(ActivityMeetingPointsViewModel model)
+        public async Task<IActionResult> CreateLocation(ActivityLocationViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(model);
-            var activity = await _context.Activities.Include(a => a.MeetingPoints).FirstOrDefaultAsync(a => a.Id == model.ActivityId);
-            if (activity == null) return NotFound();
-            activity.MeetingPoints = model.MeetingPoints?.Select(mp => new MeetingPoint
             {
-                Name = mp.Name,
-                Address = mp.Address,
-                Latitude = mp.Latitude,
-                Longitude = mp.Longitude
-            }).ToList() ?? new List<MeetingPoint>();
-            await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
+                return View(model);
+            }
+
+            try
+            {
+                var activity = await _context.Activities
+                    .Include(a => a.MeetingPoints)
+                    .Include(a => a.RoutePoints)
+                    .FirstOrDefaultAsync(a => a.Id == model.ActivityId);
+
+                if (activity == null)
+                {
+                    return NotFound();
+                }
+
+                // Buluşma noktalarını güncelle
+                activity.MeetingPoints.Clear();
+                if (model.MeetingPoints != null)
+                {
+                    foreach (var mp in model.MeetingPoints)
+                    {
+                        activity.MeetingPoints.Add(new MeetingPoint
+                        {
+                            Name = mp.Name,
+                            Address = mp.Address,
+                            Latitude = mp.Latitude,
+                            Longitude = mp.Longitude
+                        });
+                    }
+                }
+
+                // Rota noktalarını güncelle
+                activity.RoutePoints.Clear();
+                if (model.RoutePoints != null)
+                {
+                    foreach (var rp in model.RoutePoints)
+                    {
+                        activity.RoutePoints.Add(new RoutePoint
+                        {
+                            Name = rp.Name,
+                            Latitude = rp.Latitude,
+                            Longitude = rp.Longitude
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
+                return View(model);
+            }
         }
 
-        // Ek Ürünler (Addons) Adımı
+        // 3. Adım: Fiyatlandırma
         [HttpGet]
-        public async Task<IActionResult> CreateAddons(int id)
+        public async Task<IActionResult> CreatePricing(int id)
         {
-            var activity = await _context.Activities.Include(a => a.Addons).FirstOrDefaultAsync(a => a.Id == id);
-            if (activity == null) return NotFound();
-            var vm = new ActivityAddonsViewModel
+            var activity = await _context.Activities.FindAsync(id);
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new ActivityPricingViewModel
             {
                 ActivityId = activity.Id,
-                Addons = activity.Addons?.Select(a => new AddonViewModel
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    Type = a.Type,
-                    Description = a.Description,
-                    Price = new AddonPriceViewModel
-                    {
-                        Amount = a.Price?.Amount ?? "0",
-                        Currency = a.Price?.Currency ?? "TRY"
-                    },
-                    Translations = a.Translations?.Select(t => new AddonTranslationViewModel
-                    {
-                        Language = t.Language,
-                        Title = t.Title,
-                        Description = t.Description
-                    }).ToList() ?? new List<AddonTranslationViewModel>()
-                }).ToList() ?? new List<AddonViewModel>()
+                Pricing = activity.Pricing ?? new ActivityPricing()
             };
-            return View(vm);
+
+            return View(viewModel);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateAddons(ActivityAddonsViewModel model)
+        public async Task<IActionResult> CreatePricing(ActivityPricingViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(model);
-            var activity = await _context.Activities.Include(a => a.Addons).FirstOrDefaultAsync(a => a.Id == model.ActivityId);
-            if (activity == null) return NotFound();
-            activity.Addons = model.Addons?.Select(a => new Addon
             {
-                Id = a.Id ?? Guid.NewGuid().ToString(),
-                Title = a.Title,
-                Type = a.Type,
-                Description = a.Description,
-                Price = new AddonPrice
+                return View(model);
+            }
+
+            try
+            {
+                var activity = await _context.Activities.FindAsync(model.ActivityId);
+                if (activity == null)
                 {
-                    Amount = a.Price?.Amount ?? "0",
-                    Currency = a.Price?.Currency ?? "TRY"
-                },
-                Translations = a.Translations?.Select(t => new AddonTranslation
-                {
-                    Language = t.Language,
-                    Title = t.Title,
-                    Description = t.Description
-                }).ToList() ?? new List<AddonTranslation>()
-            }).ToList() ?? new List<Addon>();
-            await _context.SaveChangesAsync();
-            return RedirectToAction("CreateLocation", new { id = model.ActivityId });
+                    return NotFound();
+                }
+
+                activity.Pricing = model.Pricing;
+                await _context.SaveChangesAsync();
+
+                return RedirectToAction("CreateTime", new { id = activity.Id });
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
+                return View(model);
+            }
         }
 
-        // Tur Listesi (Index)
+        // 4. Adım: Zaman Yönetimi
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> CreateTime(int? id)
         {
-            var activities = await _context.Activities.ToListAsync();
-            return View(activities);
+            if (id.HasValue)
+            {
+                var activity = await _context.Activities.FindAsync(id.Value);
+                if (activity == null) return NotFound();
+                var vm = new ActivityTimeViewModel
+                {
+                    ActivityId = activity.Id,
+                    Duration = activity.Duration,
+                    SeasonalAvailability = activity.SeasonalAvailability != null ? new SeasonalAvailabilityViewModel
+                    {
+                        StartDate = DateTime.TryParse(activity.SeasonalAvailability.StartDate, out var sd) ? sd : (DateTime?)null,
+                        EndDate = DateTime.TryParse(activity.SeasonalAvailability.EndDate, out var ed) ? ed : (DateTime?)null
+                    } : new SeasonalAvailabilityViewModel(),
+                    TimeSlots = activity.TimeSlots.Select(ts => new TimeSlotViewModel
+                    {
+                        StartTime = ts.StartTime,
+                        EndTime = ts.EndTime,
+                        DaysOfWeek = ts.DaysOfWeek
+                    }).ToList()
+                };
+                return View(vm);
+            }
+            return View(new ActivityTimeViewModel());
         }
 
-        // Diğer adımlar için şablonlar...
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateTime(ActivityTimeViewModel vm)
+        {
+            if (!ModelState.IsValid)
+                return View(vm);
+
+            try
+            {
+                var activity = await _context.Activities.FindAsync(vm.ActivityId);
+                if (activity == null)
+                    return NotFound();
+
+                activity.Duration = vm.Duration;
+                activity.SeasonalAvailability = new SeasonalAvailability
+                {
+                    StartDate = vm.SeasonalAvailability.StartDate?.ToString("yyyy-MM-dd"),
+                    EndDate = vm.SeasonalAvailability.EndDate?.ToString("yyyy-MM-dd")
+                };
+
+                activity.TimeSlots = vm.TimeSlots.Select(ts => new TimeSlot
+                {
+                    StartTime = ts.StartTime,
+                    EndTime = ts.EndTime,
+                    DaysOfWeek = ts.DaysOfWeek
+                }).ToList();
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index", new { id = activity.Id });
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Zaman bilgileri kaydedilirken bir hata oluştu: " + ex.Message);
+                return View(vm);
+            }
+        }
+
+        // 5. Adım: Misafir Tanımlamaları
+        // GET: ActivitiesWizard/CreateGuestFields/5
+        /*
+        [HttpGet]
+        public async Task<IActionResult> CreateGuestFields(int? id)
+        {
+            if (id == null)
+                return NotFound();
+
+            var activity = await _context.Activities.FindAsync(id.Value);
+            if (activity == null)
+                return NotFound();
+
+            var vm = new GuestFieldsViewModel
+            {
+                ActivityId = activity.Id,
+                MinParticipants = activity.MinParticipants,
+                MaxParticipants = activity.MaxParticipants,
+                GuestFields = activity.GuestFields
+            };
+
+            return View(vm);
+        }
+
+        // POST: ActivitiesWizard/CreateGuestFields
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateGuestFields(GuestFieldsViewModel vm)
+        {
+            if (!ModelState.IsValid)
+                return View(vm);
+
+            try
+            {
+                var activity = await _context.Activities.FindAsync(vm.ActivityId);
+                if (activity == null)
+                    return NotFound();
+
+                activity.MinParticipants = vm.MinParticipants;
+                activity.MaxParticipants = vm.MaxParticipants;
+                activity.GuestFields = vm.GuestFields;
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Bir hata oluştu: " + ex.Message);
+                return View(vm);
+            }
+        }
+        */
+
+        private async Task<string?> SaveImage(IFormFile file, string prefix)
+        {
+            if (file == null || file.Length == 0)
+                return null;
+
+            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = $"{prefix}_{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(fileStream);
+            }
+
+            return uniqueFileName;
+        }
     }
 } 

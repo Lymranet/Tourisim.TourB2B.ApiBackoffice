@@ -46,15 +46,13 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<ApplicationDbContext>();
-        // Önce veritabanını sil
-        context.Database.EnsureDeleted();
-        // Sonra migration'ları uygula
+        // Sadece migration'ları uygula, veritabanını silme
         context.Database.Migrate();
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Veritabanı oluşturulurken bir hata oluştu.");
+        logger.LogError(ex, "Veritabanı güncellenirken bir hata oluştu.");
     }
 }
 
@@ -85,7 +83,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=ActivitiesWizard}/{action=Index}/{id?}");
 
 // Configure custom URLs
 builder.WebHost.UseUrls("http://localhost:5050");

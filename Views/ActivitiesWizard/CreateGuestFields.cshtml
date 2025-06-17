@@ -1,0 +1,506 @@
+@model TourManagementApi.Models.ViewModels.GuestFieldsViewModel
+
+@{
+    ViewData["Title"] = "Misafir Tanımlamaları";
+    var predefinedFields = new[]
+    {
+        new PredefinedField 
+        { 
+            Label = "Cinsiyet", 
+            Type = "radio", 
+            Options = new[] { 
+                new PredefinedOption { Key = "m", Value = "Erkek" }, 
+                new PredefinedOption { Key = "f", Value = "Kadın" }
+            }
+        },
+        new PredefinedField { Label = "E-posta", Type = "text" },
+        new PredefinedField { Label = "Telefon", Type = "text" },
+        new PredefinedField { Label = "Doğum Tarihi", Type = "date" },
+        new PredefinedField { Label = "Uyruk", Type = "text" },
+        new PredefinedField { Label = "Pasaport Numarası", Type = "text" },
+        new PredefinedField 
+        { 
+            Label = "Diyet Gereksinimleri", 
+            Type = "select", 
+            Options = new[] {
+                new PredefinedOption { Key = "none", Value = "Yok" },
+                new PredefinedOption { Key = "vegetarian", Value = "Vejetaryen" },
+                new PredefinedOption { Key = "vegan", Value = "Vegan" },
+                new PredefinedOption { Key = "glutenFree", Value = "Glutensiz" },
+                new PredefinedOption { Key = "dairyFree", Value = "Süt Ürünsüz" }
+            }
+        },
+        new PredefinedField { Label = "Acil Durum İletişim", Type = "text" },
+        new PredefinedField { Label = "Özel Gereksinimler", Type = "text" }
+    };
+}
+
+@functions {
+    public class PredefinedField
+    {
+        public string Label { get; set; } = "";
+        public string Type { get; set; } = "";
+        public PredefinedOption[]? Options { get; set; }
+    }
+
+    public class PredefinedOption
+    {
+        public string Key { get; set; } = "";
+        public string Value { get; set; } = "";
+    }
+}
+
+<div class="container">
+    <h2 class="mb-4">@ViewData["Title"]</h2>
+
+    <form asp-action="CreateGuestFields" method="post">
+        <input type="hidden" asp-for="ActivityId" />
+
+        <div class="mb-3">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#predefinedFieldsModal">
+                Hazır Alan Ekle
+            </button>
+            <button type="button" class="btn btn-success" onclick="addCustomField()">Özel Alan Ekle</button>
+        </div>
+
+        <div id="guestFieldsContainer">
+            @if (Model?.GuestFields != null)
+            {
+                for (var i = 0; i < Model.GuestFields.Count; i++)
+                {
+                    var field = Model.GuestFields[i];
+                    <div class="guest-field-item border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <h6>Alan #@(i + 1)</h6>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeGuestField(this)">Sil</button>
+                        </div>
+
+                        <input type="hidden" name="GuestFields[@i].Code" value="@field.Code" />
+                        <input type="hidden" name="GuestFields[@i].Label" value="@field.Label" />
+                        <input type="hidden" name="GuestFields[@i].Type" value="@field.Type" />
+                        <input type="hidden" name="GuestFields[@i].Required" value="@field.Required.ToString().ToLower()" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Alan Adı</label>
+                                    <input class="form-control" value="@field.Label" onchange="updateGuestField(this, 'Label')" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Alan Tipi</label>
+                                    <select class="form-control" onchange="updateGuestField(this, 'Type')">
+                                        <option value="text" selected="@(field.Type == "text")">Metin</option>
+                                        <option value="radio" selected="@(field.Type == "radio")">Radyo Buton</option>
+                                        <option value="select" selected="@(field.Type == "select")">Açılır Liste</option>
+                                        <option value="checkbox" selected="@(field.Type == "checkbox")">Onay Kutusu</option>
+                                        <option value="date" selected="@(field.Type == "date")">Tarih</option>
+                                        <option value="number" selected="@(field.Type == "number")">Sayı</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Zorunlu Alan</label>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" checked="@field.Required" onchange="updateGuestField(this, 'Required')" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="options-section" style="display: @(field.Type == "radio" || field.Type == "select" ? "block" : "none")">
+                            <h6 class="mb-3">Seçenekler</h6>
+                            <div class="options-container">
+                                @if (field.Options != null)
+                                {
+                                    for (var j = 0; j < field.Options.Count; j++)
+                                    {
+                                        var option = field.Options[j];
+                                        <div class="option-item mb-2">
+                                            <div class="row">
+                                                <div class="col-md-5">
+                                                    <input type="text" class="form-control" name="GuestFields[@i].Options[@j].Key" value="@option.Key" placeholder="Anahtar" />
+                                                </div>
+                                                <div class="col-md-5">
+                                                    <input type="text" class="form-control" name="GuestFields[@i].Options[@j].Value" value="@option.Value" placeholder="Değer" />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeOption(this)">Sil</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Seçenek Çevirileri -->
+                                            <div class="translations-container mt-2">
+                                                @if (option.Translations != null)
+                                                {
+                                                    for (var k = 0; k < option.Translations.Count; k++)
+                                                    {
+                                                        var translation = option.Translations[k];
+                                                        <div class="translation-item">
+                                                            <div class="row">
+                                                                <div class="col-md-3">
+                                                                    <input type="text" class="form-control" name="GuestFields[@i].Options[@j].Translations[@k].Language" value="@translation.Language" placeholder="Dil" />
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <input type="text" class="form-control" name="GuestFields[@i].Options[@j].Translations[@k].Value" value="@translation.Value" placeholder="Değer" />
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <input type="text" class="form-control" name="GuestFields[@i].Options[@j].Translations[@k].Label" value="@translation.Label" placeholder="Etiket" />
+                                                                </div>
+                                                                <div class="col-md-1">
+                                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeTranslation(this)">Sil</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                }
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-info mt-1" onclick="addOptionTranslation(this)">Çeviri Ekle</button>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <button type="button" class="btn btn-sm btn-info mt-2" onclick="addOption(this)">Seçenek Ekle</button>
+                        </div>
+
+                        <!-- Alan Çevirileri -->
+                        <div class="translations-section mt-3">
+                            <h6 class="mb-3">Alan Çevirileri</h6>
+                            <div class="translations-container">
+                                @if (field.Translations != null)
+                                {
+                                    for (var t = 0; t < field.Translations.Count; t++)
+                                    {
+                                        var translation = field.Translations[t];
+                                        <div class="translation-item mb-2">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <input type="text" class="form-control" name="GuestFields[@i].Translations[@t].Language" value="@translation.Language" placeholder="Dil" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <input type="text" class="form-control" name="GuestFields[@i].Translations[@t].Label" value="@translation.Label" placeholder="Etiket" />
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeTranslation(this)">Sil</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                            <button type="button" class="btn btn-sm btn-info mt-2" onclick="addFieldTranslation(this)">Çeviri Ekle</button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="mt-4">
+            <button type="submit" class="btn btn-primary">Kaydet</button>
+            <a asp-action="Index" class="btn btn-secondary">İptal</a>
+        </div>
+    </form>
+</div>
+
+<!-- Hazır Alanlar Modal -->
+<div class="modal fade" id="predefinedFieldsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Hazır Alan Seç</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    @foreach (var field in predefinedFields)
+                    {
+                        var optionsJson = field.Options != null ? 
+                            System.Text.Json.JsonSerializer.Serialize(field.Options) : 
+                            "null";
+                            
+                        <button type="button" class="list-group-item list-group-item-action"
+                                onclick='addPredefinedField("@field.Label", "@field.Type", @Html.Raw(optionsJson))'>
+                            @field.Label
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function generateCode(label) {
+            return label
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '_')
+                .replace(/^_+|_+$/g, '');
+        }
+
+        function addPredefinedField(label, type, options) {
+            const container = document.getElementById('guestFieldsContainer');
+            const index = container.children.length;
+            const code = generateCode(label);
+            
+            const html = `
+                <div class="guest-field-item border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h6>Alan #${index + 1}</h6>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeGuestField(this)">Sil</button>
+                    </div>
+
+                    <input type="hidden" name="GuestFields[${index}].Code" value="${code}" />
+                    <input type="hidden" name="GuestFields[${index}].Label" value="${label}" />
+                    <input type="hidden" name="GuestFields[${index}].Type" value="${type}" />
+                    <input type="hidden" name="GuestFields[${index}].Required" value="false" />
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Alan Adı</label>
+                                <input class="form-control" value="${label}" onchange="updateGuestField(this, 'Label')" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Alan Tipi</label>
+                                <select class="form-control" onchange="updateGuestField(this, 'Type')">
+                                    <option value="text" ${type === 'text' ? 'selected' : ''}>Metin</option>
+                                    <option value="radio" ${type === 'radio' ? 'selected' : ''}>Radyo Buton</option>
+                                    <option value="select" ${type === 'select' ? 'selected' : ''}>Açılır Liste</option>
+                                    <option value="checkbox" ${type === 'checkbox' ? 'selected' : ''}>Onay Kutusu</option>
+                                    <option value="date" ${type === 'date' ? 'selected' : ''}>Tarih</option>
+                                    <option value="number" ${type === 'number' ? 'selected' : ''}>Sayı</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Zorunlu Alan</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" onchange="updateGuestField(this, 'Required')" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="options-section" style="display: ${type === 'radio' || type === 'select' ? 'block' : 'none'}">
+                        <h6 class="mb-3">Seçenekler</h6>
+                        <div class="options-container">
+                            ${options ? generateOptionsHtml(options) : ''}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-info mt-2" onclick="addOption(this)">Seçenek Ekle</button>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            bootstrap.Modal.getInstance(document.getElementById('predefinedFieldsModal')).hide();
+        }
+
+        function addCustomField() {
+            const container = document.getElementById('guestFieldsContainer');
+            const index = container.children.length;
+            const code = `field_${Math.random().toString(36).substring(2, 10)}`;
+            
+            const html = `
+                <div class="guest-field-item border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <h6>Alan #${index + 1}</h6>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeGuestField(this)">Sil</button>
+                    </div>
+
+                    <input type="hidden" name="GuestFields[${index}].Code" value="${code}" />
+                    <input type="hidden" name="GuestFields[${index}].Label" value="" />
+                    <input type="hidden" name="GuestFields[${index}].Type" value="text" />
+                    <input type="hidden" name="GuestFields[${index}].Required" value="false" />
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Alan Adı</label>
+                                <input class="form-control" onchange="updateGuestField(this, 'Label')" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Alan Tipi</label>
+                                <select class="form-control" onchange="updateGuestField(this, 'Type')">
+                                    <option value="text" selected>Metin</option>
+                                    <option value="radio">Radyo Buton</option>
+                                    <option value="select">Açılır Liste</option>
+                                    <option value="checkbox">Onay Kutusu</option>
+                                    <option value="date">Tarih</option>
+                                    <option value="number">Sayı</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>Zorunlu Alan</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" onchange="updateGuestField(this, 'Required')" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="options-section" style="display: none">
+                        <h6 class="mb-3">Seçenekler</h6>
+                        <div class="options-container"></div>
+                        <button type="button" class="btn btn-sm btn-info mt-2" onclick="addOption(this)">Seçenek Ekle</button>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function generateOptionsHtml(options) {
+            if (!Array.isArray(options)) return '';
+            
+            return options.map((option, index) => `
+                <div class="option-item mb-2">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" name="Options[${index}].Key" value="${option.Key}" placeholder="Anahtar" />
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" name="Options[${index}].Value" value="${option.Value}" placeholder="Değer" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeOption(this)">Sil</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateGuestField(element, property) {
+            const fieldItem = element.closest('.guest-field-item');
+            const input = fieldItem.querySelector(`input[name$="].${property}"]`);
+            
+            if (property === 'Required') {
+                input.value = element.checked;
+            } else if (property === 'Type') {
+                input.value = element.value;
+                const optionsSection = fieldItem.querySelector('.options-section');
+                optionsSection.style.display = (element.value === 'radio' || element.value === 'select') ? 'block' : 'none';
+            } else if (property === 'Label') {
+                input.value = element.value;
+                if (!fieldItem.querySelector('input[name$="].Code"]').value.startsWith('field_')) {
+                    fieldItem.querySelector('input[name$="].Code"]').value = generateCode(element.value);
+                }
+            }
+        }
+
+        function removeGuestField(button) {
+            button.closest('.guest-field-item').remove();
+            updateFieldNumbers();
+        }
+
+        function updateFieldNumbers() {
+            const container = document.getElementById('guestFieldsContainer');
+            container.querySelectorAll('.guest-field-item').forEach((item, index) => {
+                item.querySelector('h6').textContent = `Alan #${index + 1}`;
+                
+                item.querySelectorAll('input[name^="GuestFields["]').forEach(input => {
+                    input.name = input.name.replace(/GuestFields\[\d+\]/, `GuestFields[${index}]`);
+                });
+            });
+        }
+
+        function addOption(button) {
+            const container = button.previousElementSibling;
+            const fieldIndex = button.closest('.guest-field-item').querySelector('input[name$="].Code"]').name.match(/\d+/)[0];
+            const optionIndex = container.children.length;
+            
+            const html = `
+                <div class="option-item mb-2">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" name="GuestFields[${fieldIndex}].Options[${optionIndex}].Key" placeholder="Anahtar" />
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" class="form-control" name="GuestFields[${fieldIndex}].Options[${optionIndex}].Value" placeholder="Değer" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeOption(this)">Sil</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeOption(button) {
+            button.closest('.option-item').remove();
+        }
+
+        function addFieldTranslation(button) {
+            const translationsContainer = button.previousElementSibling;
+            const fieldItem = button.closest('.guest-field-item');
+            const fieldIndex = Array.from(fieldItem.parentElement.children).indexOf(fieldItem);
+            const translationIndex = translationsContainer.children.length;
+
+            const html = `
+                <div class="translation-item mb-2">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" name="GuestFields[${fieldIndex}].Translations[${translationIndex}].Language" placeholder="Dil" />
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" name="GuestFields[${fieldIndex}].Translations[${translationIndex}].Label" placeholder="Etiket" />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeTranslation(this)">Sil</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            translationsContainer.insertAdjacentHTML('beforeend', html);
+        }
+
+        function addOptionTranslation(button) {
+            const translationsContainer = button.previousElementSibling;
+            const optionItem = button.closest('.option-item');
+            const fieldItem = button.closest('.guest-field-item');
+            const fieldIndex = Array.from(fieldItem.parentElement.children).indexOf(fieldItem);
+            const optionIndex = Array.from(optionItem.parentElement.children).indexOf(optionItem);
+            const translationIndex = translationsContainer.children.length;
+
+            const html = `
+                <div class="translation-item">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <input type="text" class="form-control" name="GuestFields[${fieldIndex}].Options[${optionIndex}].Translations[${translationIndex}].Language" placeholder="Dil" />
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" name="GuestFields[${fieldIndex}].Options[${optionIndex}].Translations[${translationIndex}].Value" placeholder="Değer" />
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" name="GuestFields[${fieldIndex}].Options[${optionIndex}].Translations[${translationIndex}].Label" placeholder="Etiket" />
+                        </div>
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removeTranslation(this)">Sil</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            translationsContainer.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeTranslation(button) {
+            const translationItem = button.closest('.translation-item');
+            translationItem.remove();
+        }
+    </script>
+} 

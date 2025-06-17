@@ -39,6 +39,12 @@
             <input type="text" class="form-control" id="country" name="location.country" value="@(Model.Location?.Country ?? "")">
         </div>
 
+        <div class="form-group">
+            <label asp-for="Exclusions" class="control-label">Hariç Olanlar</label>
+            <input asp-for="Exclusions" class="form-control" />
+            <span asp-validation-for="Exclusions" class="text-danger"></span>
+        </div>
+
         <button type="submit" class="btn btn-primary mt-4">Save Changes</button>
         <a asp-action="Index" class="btn btn-secondary mt-4">Back to List</a>
     </form>
@@ -66,7 +72,7 @@
                 languages: @Json.Serialize(Model.Languages),
                 requirements: @Json.Serialize(Model.Requirements),
                 included: @Json.Serialize(Model.Included),
-                excluded: @Json.Serialize(Model.Excluded),
+                excluded: @Json.Serialize(Model.Exclusions),
                 meetingPoints: @Json.Serialize(Model.MeetingPoints),
                 timeSlots: @Json.Serialize(Model.TimeSlots),
                 guestFields: @Json.Serialize(Model.GuestFields)

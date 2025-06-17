@@ -15,10 +15,19 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<Activity> Activities { get; set; } = null!;
+    public DbSet<Option> Options { get; set; } = null!;
+    public DbSet<OpeningHour> OpeningHours { get; set; } = null!;
+    public DbSet<TicketCategory> TicketCategories { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        var jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = false,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
 
         modelBuilder.Entity<Activity>(entity =>
         {
@@ -26,27 +35,55 @@ public class ApplicationDbContext : DbContext
             
             // Convert collections to JSON with value comparers
             entity.Property(e => e.Languages)
-                .HasJsonConversion()
+                .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
             
             entity.Property(e => e.Requirements)
-                .HasJsonConversion()
+                .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
             
             entity.Property(e => e.Included)
-                .HasJsonConversion()
+                .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
             
-            entity.Property(e => e.Excluded)
-                .HasJsonConversion()
+            entity.Property(e => e.Exclusions)
+                .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
+
+            entity.Property(e => e.Categories)
+                .HasJsonConversion(jsonOptions)
+                .HasDefaultValueSql("'[]'")
+                .IsRequired()
+                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
+
+            entity.Property(e => e.Inclusions)
+                .HasJsonConversion(jsonOptions)
+                .HasDefaultValueSql("'[]'")
+                .IsRequired()
+                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
+
+            entity.Property(e => e.ImportantInfo)
+                .HasJsonConversion(jsonOptions)
+                .HasDefaultValueSql("'[]'")
+                .IsRequired()
+                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
+
+            entity.Property(e => e.GuestFields)
+                .HasJsonConversion(jsonOptions)
+                .HasDefaultValueSql("'[]'")
+                .IsRequired()
+                .Metadata.SetValueComparer(new CollectionValueComparer<GuestField>());
+
+            entity.Property(e => e.AverageRating)
+                .HasPrecision(4, 2);
             
             // Configure owned types that have collections
             entity.OwnsMany(e => e.MeetingPoints);
+            entity.OwnsMany(e => e.RoutePoints);
             entity.OwnsMany(e => e.TimeSlots, ts =>
             {
                 ts.Property(t => t.DaysOfWeek)
-                    .HasJsonConversion()
+                    .HasJsonConversion(jsonOptions)
                     .Metadata.SetValueComparer(new CollectionValueComparer<string>());
             });
             
@@ -82,15 +119,6 @@ public class ApplicationDbContext : DbContext
                 p.Property<bool>("_isNull").HasColumnName("PricingIsNull");
             });
             
-            entity.OwnsMany(e => e.GuestFields, gf =>
-            {
-                gf.OwnsMany(f => f.Options, o =>
-                {
-                    o.OwnsMany(opt => opt.Translations);
-                });
-                gf.OwnsMany(f => f.Translations);
-            });
-            
             entity.OwnsOne(e => e.ContactInfo, c =>
             {
                 c.Property(p => p.Name).IsRequired(false);
@@ -117,17 +145,51 @@ public class ApplicationDbContext : DbContext
                 s.Property<bool>("_isNull").HasColumnName("SalesAvailabilityIsNull");
             });
         });
+
+        modelBuilder.Entity<Option>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Activity)
+                .WithMany(a => a.Options)
+                .HasForeignKey(e => e.ActivityId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.Weekdays)
+                .HasJsonConversion(jsonOptions)
+                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
+
+            entity.HasMany(e => e.OpeningHours)
+                .WithOne(o => o.Option)
+                .HasForeignKey(o => o.OptionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(e => e.TicketCategories)
+                .WithOne(t => t.Option)
+                .HasForeignKey(t => t.OptionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OpeningHour>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+        });
+
+        modelBuilder.Entity<TicketCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Amount)
+                .HasPrecision(18, 2);
+        });
     }
 }
 
 public static class ModelBuilderExtensions
 {
-    public static PropertyBuilder<List<string>> HasJsonConversion(this PropertyBuilder<List<string>> propertyBuilder)
+    public static PropertyBuilder<T> HasJsonConversion<T>(this PropertyBuilder<T> propertyBuilder, JsonSerializerOptions options) where T : class
     {
-        var options = new JsonSerializerOptions();
         return propertyBuilder.HasConversion(
-            v => JsonSerializer.Serialize(v, options),
-            v => JsonSerializer.Deserialize<List<string>>(v, options) ?? new List<string>()
+            v => v == null ? "[]" : JsonSerializer.Serialize(v, options),
+            v => string.IsNullOrEmpty(v) ? null : JsonSerializer.Deserialize<T>(v, options)
         );
     }
 }
@@ -135,7 +197,7 @@ public static class ModelBuilderExtensions
 public class CollectionValueComparer<T> : ValueComparer<List<T>>
 {
     public CollectionValueComparer() : base(
-        (c1, c2) => c1 != null && c2 != null && c1.SequenceEqual(c2),
+        (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
         c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)) : 0,
         c => c != null ? new List<T>(c) : new List<T>())
     {

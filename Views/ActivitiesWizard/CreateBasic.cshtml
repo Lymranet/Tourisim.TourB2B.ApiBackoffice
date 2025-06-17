@@ -12,6 +12,18 @@
     };
     var roles = new[] { "Guide", "Tour Operator", "Manager", "Tour Coordinator", "Tour Assistant" };
     var languages = new[] { "tr", "en", "de", "fr", "es", "it", "ru", "ar" };
+    var cities = new[] {
+        new { Code = "TR-01", Name = "Adana" },
+        new { Code = "TR-06", Name = "Ankara" },
+        new { Code = "TR-07", Name = "Antalya" },
+        new { Code = "TR-09", Name = "Aydın" },
+        new { Code = "TR-16", Name = "Bursa" },
+        new { Code = "TR-20", Name = "Denizli" },
+        new { Code = "TR-34", Name = "İstanbul" },
+        new { Code = "TR-35", Name = "İzmir" },
+        new { Code = "TR-48", Name = "Muğla" },
+        new { Code = "TR-07", Name = "Nevşehir" }
+    };
 }
 
 <h2>@ViewData["Title"]</h2>
@@ -19,242 +31,415 @@
 
 <form asp-action="CreateBasic" method="post" enctype="multipart/form-data" autocomplete="off">
     @if (Model.ActivityId.HasValue) { <input type="hidden" name="ActivityId" value="@Model.ActivityId" /> }
-    <div class="form-group mb-3">
-        <label asp-for="Title"></label>
-        <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-3">
-        <label asp-for="Category">Category</label>
-        <select asp-for="Category" class="form-control" id="categorySelect" onchange="updateSubcategories(this.value)">
-            <option value="">Select a category</option>
-            @foreach (var cat in categories) {
-                <option value="@cat.Value">@cat.Text</option>
-            }
-        </select>
-        <span asp-validation-for="Category" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-3">
-        <label asp-for="Subcategory">Subcategory</label>
-        <select asp-for="Subcategory" class="form-control" id="subcategorySelect">
-            <option value="">First select a category</option>
-        </select>
-        <span asp-validation-for="Subcategory" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-3">
-        <label asp-for="Description"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
-    </div>
-    <div class="form-group mb-3">
-        <label asp-for="Status">Status</label>
-        <select asp-for="Status" class="form-control">
-            <option value="draft">Taslak</option>
-            <option value="published">Yayında</option>
-            <option value="inactive">Pasif</option>
-        </select>
-        <span asp-validation-for="Status" class="text-danger"></span>
-    </div>
+    
     <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0">Medya Yükleme</h5></div>
+        <div class="card-header">Temel Bilgiler</div>
         <div class="card-body">
-            <div class="mb-2">
-                <strong>Görsel Yükleme Kuralları:</strong>
-                <ul>
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label">Başlık</label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Category" class="form-label">Kategori</label>
+                    <select asp-for="Category" class="form-control" id="categorySelect" onchange="updateSubcategories(this.value)">
+                        <option value="">Kategori seçin</option>
+                        @foreach (var cat in categories) {
+                            <option value="@cat.Value">@cat.Text</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Category" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Subcategory" class="form-label">Alt Kategori</label>
+                    <select asp-for="Subcategory" class="form-control" id="subcategorySelect">
+                        <option value="">Önce kategori seçin</option>
+                    </select>
+                    <span asp-validation-for="Subcategory" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label">Açıklama</label>
+                <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Languages" class="form-label">Diller</label>
+                <div class="row">
+                    @foreach (var lang in languages) {
+                        <div class="col-md-3 col-sm-4 mb-2">
+                            <div class="form-check">
+                                <input type="checkbox" name="Languages" value="@lang" class="form-check-input" id="lang_@lang" 
+                                       @(Model.Languages != null && Model.Languages.Contains(lang) ? "checked" : "") />
+                                <label class="form-check-label" for="lang_@lang">@lang.ToUpper()</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <span asp-validation-for="Languages" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">Medya</div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h6 class="mb-2">Görsel Yükleme Kuralları:</h6>
+                <ul class="mb-0">
                     <li>En az 1280 piksel genişliğinde manzara görselleri.</li>
                     <li>JPG, JPEG, PNG veya GIF dosya türleri (maksimum 7 MB).</li>
                     <li>Fotoğrafçı imzası, logolar veya okunabilir plakalar bulunmamalıdır.</li>
-                    <li>Yapay zeka tarafından oluşturulan görsellerden, basılı haritaların fotoğraflarından ve markalı otobüs güzergahlarından kaçının.</li>
+                    <li>Yapay zeka tarafından oluşturulan görsellerden, basit haritaların fotoğraflarından ve markalı otobüs güzergahlarından kaçının.</li>
                     <li>Portre/dikey format, özçekim veya siyah beyaz fotoğraflar olmamalıdır.</li>
                 </ul>
             </div>
-            <div class="row mb-2">
-                <div class="col-md-4 mb-2">
-                    <label>Kapak Fotoğrafı</label>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label class="form-label">Kapak Fotoğrafı</label>
                     @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
                     {
-                        <div class="mb-1"><img src="@Model.CoverImageUrl" alt="Kapak" style="max-width: 100px; max-height: 60px; border:1px solid #ccc;" /></div>
+                        <div class="mb-2">
+                            <img src="/uploads/@Model.CoverImageUrl" alt="Kapak" class="img-thumbnail" style="max-height: 150px;" />
+                        </div>
                     }
                     <input asp-for="CoverImage" type="file" accept="image/*" class="form-control" />
                 </div>
-                <div class="col-md-4 mb-2">
-                    <label>Önizleme Fotoğrafı</label>
+                <div class="col-md-4">
+                    <label class="form-label">Önizleme Fotoğrafı</label>
                     @if (!string.IsNullOrEmpty(Model.PreviewImageUrl))
                     {
-                        <div class="mb-1"><img src="@Model.PreviewImageUrl" alt="Önizleme" style="max-width: 100px; max-height: 60px; border:1px solid #ccc;" /></div>
+                        <div class="mb-2">
+                            <img src="/uploads/@Model.PreviewImageUrl" alt="Önizleme" class="img-thumbnail" style="max-height: 150px;" />
+                        </div>
                     }
                     <input asp-for="PreviewImage" type="file" accept="image/*" class="form-control" />
                 </div>
-                <div class="col-md-4 mb-2">
-                    <label>Galeri Fotoğrafları</label>
+                <div class="col-md-4">
+                    <label class="form-label">Galeri Fotoğrafları (En fazla 10 adet)</label>
                     @if (Model.GalleryImageUrls != null && Model.GalleryImageUrls.Any())
                     {
-                        <div class="mb-1 d-flex flex-wrap" style="gap:4px;">
+                        <div class="mb-2 d-flex flex-wrap gap-2">
                             @foreach (var url in Model.GalleryImageUrls)
                             {
-                                <img src="@url" alt="Galeri" style="max-width: 60px; max-height: 40px; border:1px solid #ccc;" />
+                                <img src="/uploads/@url" alt="Galeri" class="img-thumbnail" style="height: 80px; width: 80px; object-fit: cover;" />
                             }
                         </div>
                     }
                     <input asp-for="GalleryImages" type="file" accept="image/*" class="form-control" multiple />
                 </div>
             </div>
-            <div class="mb-2">
-                <label>Video URL</label>
-                <div class="input-group mb-2">
-                    <input id="videoUrlInput" type="url" class="form-control" placeholder="https://..." />
-                    <button type="button" class="btn btn-outline-primary" id="addVideoUrlBtn">Ekle</button>
+
+            <div class="mb-3">
+                <label class="form-label">Video URL'leri (En fazla 3 adet)</label>
+                <div id="videoUrlsContainer">
+                    @if (Model.VideoUrls != null && Model.VideoUrls.Any())
+                    {
+                        @foreach (var url in Model.VideoUrls)
+                        {
+                            <div class="input-group mb-2">
+                                <input type="url" name="VideoUrls" class="form-control" value="@url" placeholder="https://..." />
+                                <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="input-group mb-2">
+                            <input type="url" name="VideoUrls" class="form-control" placeholder="https://..." />
+                            <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
+                        </div>
+                    }
                 </div>
-                <ul id="videoUrlsList" class="list-group mb-2"></ul>
-                <small class="text-muted">En fazla 3 video ekleyebilirsiniz.</small>
-                <input type="hidden" name="VideoUrls" id="videoUrlsHidden" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="addVideoUrl()">Video URL Ekle</button>
             </div>
         </div>
     </div>
+
     <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0">Available Languages</h5></div>
+        <div class="card-header">Detaylı Bilgiler</div>
         <div class="card-body">
-            <div id="languagesList">
-                <!-- Dinamik olarak JS ile eklenecek -->
+            <div class="mb-3">
+                <label asp-for="Highlights" class="form-label">Öne Çıkanlar</label>
+                <textarea asp-for="Highlights" class="form-control" rows="4"></textarea>
             </div>
-            <div class="input-group mb-2">
-                <select class="form-control" id="languageSelect">
-                    <option value="">Select a language</option>
-                    @foreach (var lang in languages) {
-                        <option value="@lang">@lang</option>
-                    }
-                </select>
-                <button type="button" class="btn btn-primary" onclick="addLanguage()">Add Language</button>
+
+            <div class="mb-3">
+                <label asp-for="Itinerary" class="form-label">Program Akışı</label>
+                <textarea asp-for="Itinerary" class="form-control" rows="6"></textarea>
             </div>
-            <span class="text-danger" id="languagesValidation"></span>
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Inclusions" class="form-label">Dahil Olanlar</label>
+                    <div class="inclusion-container">
+                        @if (Model.Inclusions != null && Model.Inclusions.Any())
+                        {
+                            @foreach (var item in Model.Inclusions)
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" name="Inclusions" class="form-control" value="@item" />
+                                    <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="input-group mb-2">
+                                <input type="text" name="Inclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
+                                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addInclusion()">Dahil Olan Ekle</button>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label asp-for="Exclusions" class="form-label">Dahil Olmayanlar</label>
+                    <div class="exclusion-container">
+                        @if (Model.Exclusions != null && Model.Exclusions.Any())
+                        {
+                            @foreach (var item in Model.Exclusions)
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" name="Exclusions" class="form-control" value="@item" />
+                                    <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="input-group mb-2">
+                                <input type="text" name="Exclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
+                                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addExclusion()">Dahil Olmayan Ekle</button>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <label asp-for="ImportantInfo" class="form-label">Önemli Bilgiler</label>
+                    <div class="important-info-container">
+                        @if (Model.ImportantInfo != null && Model.ImportantInfo.Any())
+                        {
+                            @foreach (var info in Model.ImportantInfo)
+                            {
+                                <div class="input-group mb-2">
+                                    <input type="text" name="ImportantInfo" class="form-control" value="@info" />
+                                    <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="input-group mb-2">
+                                <input type="text" name="ImportantInfo" class="form-control" placeholder="Örn: 18 yaşından küçüklere alkol servisi yapılmamaktadır" />
+                                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+                            </div>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addImportantInfo()">Önemli Bilgi Ekle</button>
+                </div>
+            </div>
         </div>
     </div>
-    <h5 class="mt-4">Contact Information</h5>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="ContactInfo.Name">Contact Name</label>
-                <input asp-for="ContactInfo.Name" class="form-control" />
-                <span asp-validation-for="ContactInfo.Name" class="text-danger"></span>
+
+    <div class="card mb-4">
+        <div class="card-header">Destinasyon</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Ülke</label>
+                    <select class="form-control" id="countrySelect" onchange="updateCities(this.value)">
+                        <option value="">Ülke seçin</option>
+                        <option value="TR" selected>Türkiye</option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Şehir</label>
+                    <select class="form-control" id="citySelect" onchange="updateDestination(this)">
+                        <option value="">Şehir seçin</option>
+                        @foreach (var city in cities)
+                        {
+                            <option value="@city.Code" 
+                                    data-name="@city.Name"
+                                    selected="@(city.Code == Model.DestinationCode)">
+                                @city.Name
+                            </option>
+                        }
+                    </select>
+                </div>
             </div>
+            <input type="hidden" asp-for="CountryCode" id="countryCode" />
+            <input type="hidden" asp-for="DestinationCode" id="destinationCode" />
+            <input type="hidden" asp-for="DestinationName" id="destinationName" />
         </div>
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="ContactInfo.Role">Role</label>
-                <select asp-for="ContactInfo.Role" class="form-control">
-                    <option value="">Select a role</option>
-                    @foreach (var role in roles) {
-                        <option value="@role">@role</option>
-                    }
-                </select>
-                <span asp-validation-for="ContactInfo.Role" class="text-danger"></span>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">İletişim Bilgileri</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ContactInfo.Name" class="form-label">İletişim Kişisi</label>
+                    <input asp-for="ContactInfo.Name" class="form-control" />
+                    <span asp-validation-for="ContactInfo.Name" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ContactInfo.Role" class="form-label">Görevi</label>
+                    <select asp-for="ContactInfo.Role" class="form-control">
+                        <option value="">Görev seçin</option>
+                        @foreach (var role in roles) {
+                            <option value="@role">@role</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ContactInfo.Role" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ContactInfo.Email" class="form-label">E-posta</label>
+                    <input asp-for="ContactInfo.Email" class="form-control" type="email" />
+                    <span asp-validation-for="ContactInfo.Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ContactInfo.Phone" class="form-label">Telefon</label>
+                    <input asp-for="ContactInfo.Phone" class="form-control" type="tel" />
+                    <span asp-validation-for="ContactInfo.Phone" class="text-danger"></span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="ContactInfo.Email">Email</label>
-                <input asp-for="ContactInfo.Email" class="form-control" />
-                <span asp-validation-for="ContactInfo.Email" class="text-danger"></span>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label asp-for="ContactInfo.Phone">Phone</label>
-                <input asp-for="ContactInfo.Phone" class="form-control" />
-                <span asp-validation-for="ContactInfo.Phone" class="text-danger"></span>
-            </div>
-        </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">@(Model.ActivityId.HasValue ? "Güncelle" : "Kaydet")</button>
+        <a asp-action="Index" class="btn btn-secondary">İptal</a>
     </div>
-    <button type="submit" class="btn btn-primary">@((Model.ActivityId.HasValue) ? "Kaydet" : "Kaydet ve Listeye Dön")</button>
-    <a asp-action="Index" class="btn btn-secondary">İptal</a>
 </form>
 
 @section Scripts {
 <script>
-    // Kategori ve alt kategori bağlantısı
-    const categories = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(categories));
-    function updateSubcategories(selectedSubcategory) {
-        const cat = document.getElementById('categorySelect').value;
-        const subSelect = document.getElementById('subcategorySelect');
-        subSelect.innerHTML = '<option value="">First select a category</option>';
-        const found = categories.find(x => x.Value === cat);
-        if (found) {
-            found.Subcategories.forEach(function (sub) {
-                const opt = document.createElement('option');
-                opt.value = sub;
-                opt.text = sub;
-                if(selectedSubcategory && selectedSubcategory === sub) opt.selected = true;
-                subSelect.appendChild(opt);
+    // Alt kategori güncelleme
+    function updateSubcategories(category) {
+        const subcats = @Html.Raw(Json.Serialize(categories.ToDictionary(c => c.Value, c => c.Subcategories)));
+        const select = document.getElementById('subcategorySelect');
+        select.innerHTML = '<option value="">Alt kategori seçin</option>';
+        
+        if (category && subcats[category]) {
+            subcats[category].forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                select.appendChild(option);
             });
         }
     }
-    // Diller dinamik ekleme/çıkarma
-    let selectedLanguages = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Languages ?? new List<string>()));
-    function addLanguage() {
-        const lang = document.getElementById('languageSelect').value;
-        if (!lang || selectedLanguages.includes(lang)) return;
-        selectedLanguages.push(lang);
-        renderLanguages();
+
+    // Şehir seçimi güncelleme
+    function updateCities(countryCode) {
+        const citySelect = document.getElementById('citySelect');
+        citySelect.disabled = !countryCode;
+        if (countryCode) {
+            updateDestination(citySelect);
+        } else {
+            document.getElementById('countryCode').value = '';
+            document.getElementById('destinationCode').value = '';
+            document.getElementById('destinationName').value = '';
+        }
     }
-    function removeLanguage(lang) {
-        selectedLanguages = selectedLanguages.filter(l => l !== lang);
-        renderLanguages();
+
+    // Destinasyon güncelleme
+    function updateDestination(select) {
+        const option = select.options[select.selectedIndex];
+        if (option && option.value) {
+            document.getElementById('countryCode').value = document.getElementById('countrySelect').value;
+            document.getElementById('destinationCode').value = option.value;
+            document.getElementById('destinationName').value = option.dataset.name;
+        }
     }
-    function renderLanguages() {
-        const list = document.getElementById('languagesList');
-        list.innerHTML = '';
-        selectedLanguages.forEach(function (lang) {
+
+    // Video URL ekleme/kaldırma
+    function addVideoUrl() {
+        const container = document.getElementById('videoUrlsContainer');
+        if (container.children.length < 3) {
             const div = document.createElement('div');
             div.className = 'input-group mb-2';
-            div.innerHTML = `<input type="hidden" name="Languages" value="${lang}" />
-                <input type="text" class="form-control" value="${lang}" readonly />
-                <button type="button" class="btn btn-danger" onclick="removeLanguage('${lang}')">Remove</button>`;
-            list.appendChild(div);
-        });
-        // Validasyon
-        document.getElementById('languagesValidation').innerText = selectedLanguages.length === 0 ? 'En az bir dil seçilmelidir.' : '';
+            div.innerHTML = `
+                <input type="url" name="VideoUrls" class="form-control" placeholder="https://..." />
+                <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
+            `;
+            container.appendChild(div);
+        }
     }
-    // Sayfa yüklendiğinde eski değerleri yükle
-    document.addEventListener('DOMContentLoaded', function () {
-        const selectedCategory = '@Model.Category';
-        const selectedSubcategory = '@Model.Subcategory';
-        if(selectedCategory) {
-            document.getElementById('categorySelect').value = selectedCategory;
-            updateSubcategories(selectedSubcategory);
+
+    function removeVideoUrl(button) {
+        button.closest('.input-group').remove();
+    }
+
+    // Dahil olan ekleme
+    function addInclusion() {
+        const container = document.querySelector('.inclusion-container');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" name="Inclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
+            <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // Dahil olmayan ekleme
+    function addExclusion() {
+        const container = document.querySelector('.exclusion-container');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" name="Exclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
+            <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // Önemli bilgi ekleme
+    function addImportantInfo() {
+        const container = document.querySelector('.important-info-container');
+        const div = document.createElement('div');
+        div.className = 'input-group mb-2';
+        div.innerHTML = `
+            <input type="text" name="ImportantInfo" class="form-control" placeholder="Örn: 18 yaşından küçüklere alkol servisi yapılmamaktadır" />
+            <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // Genel öğe kaldırma
+    function removeItem(button) {
+        button.closest('.input-group').remove();
+    }
+
+    // Sayfa yüklendiğinde
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mevcut kategori varsa alt kategorileri yükle
+        const category = document.getElementById('categorySelect').value;
+        if (category) {
+            updateSubcategories(category);
         }
-        // Video URL'ler için mevcut değerleri yükle
-        let videoUrls = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.VideoUrls ?? new List<string>()));
-        renderVideoUrls();
-        document.getElementById('addVideoUrlBtn').onclick = function() {
-            const input = document.getElementById('videoUrlInput');
-            const url = input.value.trim();
-            if(url && videoUrls.length < 3 && !videoUrls.includes(url)) {
-                videoUrls.push(url);
-                input.value = '';
-                renderVideoUrls();
+
+        // Mevcut ülke ve şehir varsa bilgileri güncelle
+        const countrySelect = document.getElementById('countrySelect');
+        const citySelect = document.getElementById('citySelect');
+        if (countrySelect.value) {
+            updateCities(countrySelect.value);
+            if (citySelect.value) {
+                updateDestination(citySelect);
             }
-        };
-        document.getElementById('videoUrlInput').addEventListener('keydown', function(e) {
-            if(e.key === 'Enter') { e.preventDefault(); document.getElementById('addVideoUrlBtn').click(); }
-        });
-        function renderVideoUrls() {
-            const list = document.getElementById('videoUrlsList');
-            list.innerHTML = '';
-            videoUrls.forEach((url, idx) => {
-                const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                li.innerHTML = `<span>${url}</span><button type='button' class='btn btn-danger btn-sm' onclick='removeVideoUrl(${idx})'>Sil</button>`;
-                list.appendChild(li);
-            });
-            document.getElementById('videoUrlsHidden').value = videoUrls.join(',');
         }
-        window.removeVideoUrl = function(idx) {
-            videoUrls.splice(idx, 1);
-            renderVideoUrls();
-        }
-        renderLanguages();
     });
 </script>
 } 

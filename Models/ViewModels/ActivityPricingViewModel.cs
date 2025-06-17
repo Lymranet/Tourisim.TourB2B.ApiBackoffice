@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using TourManagementApi.Models.Common;
 
 namespace TourManagementApi.Models.ViewModels
 {
@@ -23,6 +24,9 @@ namespace TourManagementApi.Models.ViewModels
         // Ek bilgi
         public string? CancellationPolicy { get; set; }
         public string? AdditionalNotes { get; set; }
+
+        // Pricing özelliği
+        public ActivityPricing? Pricing { get; set; }
     }
 
     public class PriceCategoryViewModel
