@@ -53,7 +53,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> Create(OptionViewModel model)
         {
             if (ModelState.IsValid)
@@ -159,7 +159,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> Edit(int id, OptionViewModel model)
         {
             if (id != model.Id)
@@ -234,7 +234,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             var option = await _context.Options

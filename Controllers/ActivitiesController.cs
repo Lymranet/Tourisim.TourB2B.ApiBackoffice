@@ -83,7 +83,7 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        [IgnoreAntiforgeryToken]
         public async Task<IActionResult> Create(IFormCollection form)
         {
             Activity? activity = null;
