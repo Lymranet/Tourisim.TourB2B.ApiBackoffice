@@ -1,0 +1,62 @@
+﻿@model List<TourManagementApi.Models.ReportModels.TourRevenueSummaryDto>
+@{
+    ViewData["Title"] = "Tura Göre Gelir ve Kişi Sayısı";
+    var labels = Model.Select(x => x.TourTitle).ToList();
+    var revenue = Model.Select(x => x.TotalAmount).ToList();
+    var guests = Model.Select(x => x.TotalGuests).ToList();
+}
+
+<h2>Tura Göre Gelir ve Kişi Sayısı</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Tur</th>
+            <th>Toplam Gelir</th>
+            <th>Kişi Sayısı</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.TourTitle</td>
+                <td>@item.TotalAmount.ToString("C2")</td>
+                <td>@item.TotalGuests</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<canvas id="revenueChart" height="300"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('revenueChart');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(labels)),
+                datasets: [
+                    {
+                        label: 'Toplam Gelir',
+                        data: @Html.Raw(Json.Serialize(revenue)),
+                        backgroundColor: 'blue'
+                    },
+                    {
+                        label: 'Kişi Sayısı',
+                        data: @Html.Raw(Json.Serialize(guests)),
+                        backgroundColor: 'orange'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+}

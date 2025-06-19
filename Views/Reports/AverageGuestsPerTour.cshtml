@@ -1,0 +1,49 @@
+﻿@model List<TourManagementApi.Models.ReportModels.TourAverageGuestsDto>
+@{
+    ViewData["Title"] = "Tura Göre Ortalama Kişi Sayısı";
+    var labels = Model.Select(x => x.TourTitle).ToList();
+    var values = Model.Select(x => x.AverageGuests).ToList();
+}
+
+<h2>Tura Göre Ortalama Kişi Sayısı</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Tur</th>
+            <th>Ortalama Kişi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.TourTitle</td>
+                <td>@item.AverageGuests.ToString("F2")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<canvas id="avgChart" height="200"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Chart(document.getElementById('avgChart'), {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(labels)),
+                datasets: [{
+                    label: 'Ortalama Kişi',
+                    data: @Html.Raw(Json.Serialize(values)),
+                    backgroundColor: 'green'
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true
+            }
+        });
+    </script>
+}

@@ -1,0 +1,76 @@
+﻿@model TourManagementApi.Models.ViewModels.ReservationFilterViewModel
+
+@{
+    ViewData["Title"] = "Rezervasyon Listesi";
+    var activityList = Model?.Activities ?? new List<TourManagementApi.Models.Activity>();
+}
+
+    <h2>Rezervasyonlar</h2>
+
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+            <label class="form-label">Tur</label>
+            <select asp-for="ActivityId" class="form-control" asp-items="@(new SelectList(activityList, "Id", "Title", Model.ActivityId))">
+                <option value="">Tümü</option>
+            </select>
+
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Durum</label>
+            <select asp-for="Status" class="form-control">
+                <option value="">Tümü</option>
+                <option value="Confirmed">Onaylandı</option>
+                <option value="Cancelled">İptal Edildi</option>
+                <option value="Pending">Bekliyor</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Başlangıç Tarihi</label>
+            <input asp-for="FromDate" type="date" class="form-control" />
+        </div>
+
+        <div class="col-md-3">
+            <label class="form-label">Bitiş Tarihi</label>
+            <input asp-for="ToDate" type="date" class="form-control" />
+        </div>
+
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary">Filtrele</button>
+        </div>
+    </form>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Tur</th>
+                <th>Seçenek</th>
+                <th>Rezervasyon Tarihi</th>
+                <th>Tur Tarihi</th>
+                <th>İsim</th>
+                <th>Kişi Sayısı</th>
+                <th>Tutar</th>
+                <th>Durum</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var res in Model.Reservations)
+            {
+            <tr>
+                <td>@res.Activity?.Title</td>
+                <td>@res.Option?.Name</td>
+                <td>@res.ReservationDate.ToString("dd.MM.yyyy")</td>
+                <td>@res.ScheduledDate.ToString("dd.MM.yyyy")</td>
+                <td>@res.ContactName</td>
+                <td>@res.GuestCount</td>
+                <td>@($"{res.TotalAmount} {res.Currency}")</td>
+                <td>@res.Status</td>
+                <td>
+                    <a asp-action="Detail" asp-route-id="@res.Id" class="btn btn-sm btn-info">Detay</a>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>

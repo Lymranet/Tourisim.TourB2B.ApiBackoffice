@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using TourManagementApi.Data;
+using TourManagementApi.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -101,7 +102,7 @@ app.Use(async (context, next) =>
 
 app.UseStatusCodePages("text/plain", "Status Code: {0}");
 app.UseAuthorization();
-
+app.UseMiddleware<RequestHeaderValidationMiddleware>();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=ActivitiesWizard}/{action=Index}/{id?}");

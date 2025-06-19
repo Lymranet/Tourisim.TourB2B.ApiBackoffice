@@ -18,7 +18,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Option> Options { get; set; } = null!;
     public DbSet<OpeningHour> OpeningHours { get; set; } = null!;
     public DbSet<TicketCategory> TicketCategories { get; set; } = null!;
-
+    public DbSet<Reservation> Reservations { get; set; }
+    public DbSet<ReservationGuest> ReservationGuests { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -32,20 +33,20 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Activity>(entity =>
         {
             entity.HasKey(e => e.Id);
-            
+
             // Convert collections to JSON with value comparers
             entity.Property(e => e.Languages)
                 .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-            
+
             entity.Property(e => e.Requirements)
                 .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-            
+
             entity.Property(e => e.Included)
                 .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-            
+
             entity.Property(e => e.Exclusions)
                 .HasJsonConversion(jsonOptions)
                 .Metadata.SetValueComparer(new CollectionValueComparer<string>());
@@ -76,7 +77,7 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.AverageRating)
                 .HasPrecision(4, 2);
-            
+
             // Configure owned types that have collections
             entity.OwnsMany(e => e.MeetingPoints);
             entity.OwnsMany(e => e.RoutePoints);
@@ -86,7 +87,7 @@ public class ApplicationDbContext : DbContext
                     .HasJsonConversion(jsonOptions)
                     .Metadata.SetValueComparer(new CollectionValueComparer<string>());
             });
-            
+
             // Configure optional owned types
             entity.OwnsOne(e => e.Location, l =>
             {
@@ -95,18 +96,18 @@ public class ApplicationDbContext : DbContext
                 l.Property(p => p.Country).IsRequired(false);
                 l.Property<bool>("_isNull").HasColumnName("LocationIsNull");
             });
-            
+
             entity.OwnsOne(e => e.SeasonalAvailability, s =>
             {
                 s.Property<bool>("_isNull").HasColumnName("SeasonalAvailabilityIsNull");
             });
-            
+
             entity.OwnsOne(e => e.PriceInfo, p =>
             {
                 p.Property(pi => pi.BasePrice).HasPrecision(18, 2);
                 p.Property<bool>("_isNull").HasColumnName("PriceInfoIsNull");
             });
-            
+
             entity.OwnsOne(e => e.Pricing, p =>
             {
                 p.Property(ap => ap.DefaultCurrency).IsRequired(false);
@@ -118,7 +119,7 @@ public class ApplicationDbContext : DbContext
                 });
                 p.Property<bool>("_isNull").HasColumnName("PricingIsNull");
             });
-            
+
             entity.OwnsOne(e => e.ContactInfo, c =>
             {
                 c.Property(p => p.Name).IsRequired(false);
@@ -127,7 +128,7 @@ public class ApplicationDbContext : DbContext
                 c.Property(p => p.Role).IsRequired(false);
                 c.Property<bool>("_isNull").HasColumnName("ContactInfoIsNull");
             });
-            
+
             entity.OwnsOne(e => e.Media, m =>
             {
                 m.Property(p => p.Videos).IsRequired(false);
@@ -139,7 +140,7 @@ public class ApplicationDbContext : DbContext
                 });
                 m.Property<bool>("_isNull").HasColumnName("MediaIsNull");
             });
-            
+
             entity.OwnsOne(e => e.SalesAvailability, s =>
             {
                 s.Property<bool>("_isNull").HasColumnName("SalesAvailabilityIsNull");
@@ -180,6 +181,24 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.Amount)
                 .HasPrecision(18, 2);
         });
+
+        modelBuilder.Entity<Reservation>()
+           .HasOne(r => r.Activity)
+           .WithMany()
+           .HasForeignKey(r => r.ActivityId)
+           .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Reservation>()
+            .HasOne(r => r.Option)
+            .WithMany()
+            .HasForeignKey(r => r.OptionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ReservationGuest>()
+            .HasOne(g => g.Reservation)
+            .WithMany(r => r.Guests)
+            .HasForeignKey(g => g.ReservationId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

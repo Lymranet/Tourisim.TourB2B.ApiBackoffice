@@ -1,0 +1,83 @@
+﻿@{
+    ViewData["Title"] = "Raporlar";
+    var cardStyle = "card shadow-sm border-0 rounded-3 h-100";
+    var buttonStyle = "btn btn-outline-primary mt-3 w-100";
+}
+
+<h2 class="mb-4">📊 Raporlar Paneli</h2>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+
+    <!-- 1. Aylık Rezervasyon Geliri -->
+    <div class="col">
+        <div class="@cardStyle">
+            <img src="https://cdn-icons-png.flaticon.com/512/1170/1170576.png" class="card-img-top p-3" style="height: 160px; object-fit: contain;" alt="Aylık Gelir">
+            <div class="card-body">
+                <h5 class="card-title">Aylık Rezervasyon Geliri</h5>
+                <p class="card-text">Her ay için toplam gelir performansını tablo ve grafikle görselleştirir.</p>
+                <a href="@Url.Action("MonthlyRevenue", "Reports")" class="@buttonStyle">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Tura Göre Ortalama Kişi Sayısı -->
+    <div class="col">
+        <div class="@cardStyle">
+            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135768.png" class="card-img-top p-3" style="height: 160px; object-fit: contain;" alt="Ortalama Kişi Sayısı">
+            <div class="card-body">
+                <h5 class="card-title">Tura Göre Ortalama Kişi Sayısı</h5>
+                <p class="card-text">Her turun ortalama kaç kişiyle gerçekleştiğini gösterir.</p>
+                <a href="@Url.Action("AverageGuestsPerTour", "Reports")" class="@buttonStyle">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Tura Göre Toplam Gelir ve Kişi Sayısı -->
+    <div class="col">
+        <div class="@cardStyle">
+            <img src="https://cdn-icons-png.flaticon.com/512/3105/3105791.png" class="card-img-top p-3" style="height: 160px; object-fit: contain;" alt="Gelir ve Kişi Sayısı">
+            <div class="card-body">
+                <h5 class="card-title">Tura Göre Gelir ve Kişi Sayısı</h5>
+                <p class="card-text">Her turdan kazanılan gelir ve katılan kişi sayısı.</p>
+                <a href="@Url.Action("RevenueAndGuestsPerTour", "Reports")" class="@buttonStyle">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Günlük Operasyonel Liste -->
+    <div class="col">
+        <div class="@cardStyle">
+            <img src="https://cdn-icons-png.flaticon.com/512/1250/1250620.png" class="card-img-top p-3" style="height: 160px; object-fit: contain;" alt="Operasyonel Liste">
+            <div class="card-body">
+                <h5 class="card-title">Günlük Operasyonel Liste</h5>
+                <p class="card-text">Bugün yapılacak turların listesi ve katılımcılar.</p>
+                <a href="@Url.Action("DailyOperationalList", "Reports")" class="@buttonStyle">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Tura Göre Rezervasyon Sayısı -->
+    <div class="col">
+        <div class="@cardStyle">
+            <img src="https://cdn-icons-png.flaticon.com/512/2920/2920216.png" class="card-img-top p-3" style="height: 160px; object-fit: contain;" alt="Tur Bazlı Rezervasyon">
+            <div class="card-body">
+                <h5 class="card-title">Tura Göre Rezervasyon Sayısı</h5>
+                <p class="card-text">En çok rezervasyon alan turları sıralar ve karşılaştırır.</p>
+                <a href="@Url.Action("TourReservationReport", "Reports")" class="@buttonStyle">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Duruma Göre Rezervasyon Dağılımı -->
+    <div class="col">
+        <div class="@cardStyle">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946429.png" class="card-img-top p-3" style="height: 160px; object-fit: contain;" alt="Rezervasyon Durumu">
+            <div class="card-body">
+                <h5 class="card-title">Duruma Göre Rezervasyon Dağılımı</h5>
+                <p class="card-text">Onaylı, iptal, beklemede gibi durumlara göre dağılımı gösterir.</p>
+                <a href="@Url.Action("StatusDistributionReport", "Reports")" class="@buttonStyle">Görüntüle</a>
+            </div>
+        </div>
+    </div>
+
+</div>

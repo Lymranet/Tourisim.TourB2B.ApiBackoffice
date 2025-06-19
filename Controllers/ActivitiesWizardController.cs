@@ -64,6 +64,8 @@ namespace TourManagementApi.Controllers
 
         // 1. Adım: Temel Bilgiler (Basic Information)
         [HttpGet]
+        [IgnoreAntiforgeryToken]
+
         public async Task<IActionResult> CreateBasic(int? id)
         {
             if (id.HasValue)

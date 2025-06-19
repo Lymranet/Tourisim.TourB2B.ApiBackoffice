@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Views\Activity\**" />
+    <Content Remove="Views\Activity\**" />
+    <EmbeddedResource Remove="Views\Activity\**" />
+    <None Remove="Views\Activity\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="appsettings.json" />
   </ItemGroup>
 
@@ -25,10 +32,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Views\" />
     <Folder Include="Views\Shared\" />
     <Folder Include="Views\Home\" />
-    <Folder Include="Views\Activity\" />
     <Folder Include="wwwroot\" />
     <Folder Include="wwwroot\css\" />
     <Folder Include="wwwroot\js\" />

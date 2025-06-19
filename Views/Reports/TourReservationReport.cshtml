@@ -1,0 +1,58 @@
+﻿@model List<TourManagementApi.Models.ReportModels.TourReservationReportDto>
+
+@{
+    ViewData["Title"] = "Tura Göre Rezervasyon Raporu";
+    var labels = Model.Select(x => x.TourTitle).ToList();
+    var values = Model.Select(x => x.ReservationCount).ToList();
+}
+
+<h2>Tura Göre Rezervasyon Sayısı</h2>
+
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Tur</th>
+            <th>Rezervasyon Sayısı</th>
+            <th>Toplam Kişi</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.TourTitle</td>
+                <td>@item.ReservationCount</td>
+                <td>@item.TotalGuests</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<canvas id="tourChart" width="600" height="300"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('tourChart').getContext('2d');
+        const tourChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: @Html.Raw(Json.Serialize(labels)),
+                datasets: [{
+                    label: 'Rezervasyon Sayısı',
+                    data: @Html.Raw(Json.Serialize(values)),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+}

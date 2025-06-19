@@ -1,0 +1,80 @@
+﻿@model TourManagementApi.Models.Reservation
+
+@{
+    ViewData["Title"] = "Rezervasyon Detayı";
+}
+
+<h2>Rezervasyon Detayı</h2>
+
+<a asp-action="Index" class="btn btn-secondary mb-3">← Listeye Dön</a>
+
+<table class="table table-bordered">
+    <tr>
+        <th>Tur</th>
+        <td>@Model.Activity?.Title</td>
+    </tr>
+    <tr>
+        <th>Seçenek</th>
+        <td>@Model.Option?.Name</td>
+    </tr>
+    <tr>
+        <th>Tur Tarihi</th>
+        <td>@Model.ScheduledDate.ToString("dd.MM.yyyy")</td>
+    </tr>
+    <tr>
+        <th>Rezervasyon Tarihi</th>
+        <td>@Model.ReservationDate.ToString("dd.MM.yyyy")</td>
+    </tr>
+    <tr>
+        <th>Kişi Sayısı</th>
+        <td>@Model.GuestCount</td>
+    </tr>
+    <tr>
+        <th>Tutar</th>
+        <td>@Model.TotalAmount @Model.Currency</td>
+    </tr>
+    <tr>
+        <th>Durum</th>
+        <td>@Model.Status</td>
+    </tr>
+    <tr>
+        <th>İsim</th>
+        <td>@Model.ContactName</td>
+    </tr>
+    <tr>
+        <th>Email</th>
+        <td>@Model.ContactEmail</td>
+    </tr>
+    <tr>
+        <th>Telefon</th>
+        <td>@Model.ContactPhone</td>
+    </tr>
+</table>
+
+<h4>Misafir Listesi</h4>
+@if (Model.Guests != null && Model.Guests.Any())
+{
+    <table class="table table-sm table-striped">
+        <thead>
+            <tr>
+                <th>İsim</th>
+                <th>Tür</th>
+                <th>Yaş</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var guest in Model.Guests)
+            {
+                <tr>
+                    <td>@guest.GuestName</td>
+                    <td>@guest.GuestType</td>
+                    <td>@guest.Age</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Bu rezervasyona ait misafir bilgisi yok.</p>
+}

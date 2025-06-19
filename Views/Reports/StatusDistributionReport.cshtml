@@ -1,0 +1,57 @@
+﻿@model List<TourManagementApi.Models.ReportModels.ReservationStatusReportDto>
+
+@{
+    ViewData["Title"] = "Duruma Göre Rezervasyon Dağılımı";
+    var statusLabels = Model.Select(x => x.Status).ToList();
+    var statusCounts = Model.Select(x => x.ReservationCount).ToList();
+}
+
+<h2>Duruma Göre Rezervasyon Dağılımı</h2>
+
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Durum</th>
+            <th>Rezervasyon Sayısı</th>
+            <th>Toplam Tutar</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Status</td>
+                <td>@item.ReservationCount</td>
+                <td>@item.TotalAmount.ToString("C2")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<canvas id="statusChart" width="600" height="300"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('statusChart').getContext('2d');
+        const statusChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: @Html.Raw(Json.Serialize(statusLabels)),
+                datasets: [{
+                    label: 'Rezervasyon Sayısı',
+                    data: @Html.Raw(Json.Serialize(statusCounts)),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+}

@@ -1,0 +1,50 @@
+﻿@model List<TourManagementApi.Models.ReportModels.MonthlyRevenueReportDto>
+@{
+    ViewData["Title"] = "Aylık Rezervasyon Geliri";
+    var labels = Model.Select(x => x.Month).ToList();
+    var values = Model.Select(x => x.TotalAmount).ToList();
+}
+
+<h2>Aylık Rezervasyon Geliri</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Ay</th>
+            <th>Toplam Tutar</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Month</td>
+                <td>@item.TotalAmount.ToString("C2")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<canvas id="monthlyChart" height="200"></canvas>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Chart(document.getElementById('monthlyChart'), {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(labels)),
+                datasets: [{
+                    label: 'Toplam Tutar',
+                    data: @Html.Raw(Json.Serialize(values)),
+                    fill: false,
+                    borderColor: 'blue',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+    </script>
+}

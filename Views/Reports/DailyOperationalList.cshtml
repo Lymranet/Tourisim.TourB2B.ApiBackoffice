@@ -1,0 +1,36 @@
+﻿@model List<TourManagementApi.Models.ReportModels.DailyOperationalItemDto>
+
+@{
+    ViewData["Title"] = "Günlük Operasyonel Liste";
+}
+
+<h2>Bugünün Turları</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Tur</th>
+            <th>Seçenek</th>
+            <th>Tarih</th>
+            <th>Kişi Sayısı</th>
+            <th>Misafirler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.TourTitle</td>
+                <td>@item.OptionName</td>
+                <td>@item.ScheduledDate.ToString("dd.MM.yyyy")</td>
+                <td>@item.GuestCount</td>
+                <td>
+                    @foreach (var guest in item.GuestNames)
+                    {
+                        <div>@guest</div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
