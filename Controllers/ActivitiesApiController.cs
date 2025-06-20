@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers
 {
     [ApiExplorerSettings(GroupName = "v1")]
     [Route("api/[controller]")]
-    [ApiController]
     public class ActivitiesApiController : ControllerBase
     {
         public IActionResult Index()
@@ -14,32 +14,42 @@ namespace TourManagementApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ActivityExportDto>>> GetActivities()
+        public async Task<IActionResult> GetActivities(string partnerSupplierId, [FromQuery] string[] id, [FromQuery] int offset = 0)
         {
-            var activities = await _context.Activities
-                .Include(a => a.Location)
-                .Include(a => a.TimeSlots)
+            // Sadece belirli ID'lerle filtrelenmiş tur listesi
+            var query = _context.Activities
                 .Include(a => a.Options)
                 .Include(a => a.MeetingPoints)
-                .Select(a => new ActivityExportDto
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    Description = a.Description,
-                    Category = a.Category,
-                    Duration = a.Duration,
-                    CountryCode = a.CountryCode,
-                    DestinationCode = a.DestinationCode,
-                    DestinationName = a.DestinationName,
-                    CoverImage = a.CoverImage,
-                    TimeSlots = a.TimeSlots,
-                    Price = a.Pricing?.AdultPrice ?? 0,
-                    Currency = a.Pricing?.Currency
-                })
+                .Include(a => a.RoutePoints)
+                .Include(a => a.GuestFields)
+                .Include(a => a.Pricing)
+                .Include(a => a.SeasonalAvailability)
+                .Where(a => a.PartnerSupplierId == partnerSupplierId);
+
+            if (id?.Any() == true)
+            {
+                query = query.Where(a => id.Contains(a.Id.ToString()));
+            }
+
+            const int pageSize = 50;
+            var total = await query.CountAsync();
+            var activities = await query
+                .Skip(offset)
+                .Take(pageSize)
                 .ToListAsync();
 
-            return Ok(activities);
-        }
+            var result = new
+            {
+                links = new
+                {
+                    next = offset + pageSize < total
+                        ? $"https://your-api.com/supplier/{partnerSupplierId}/activities?offset={offset + pageSize}"
+                        : null
+                },
+                data = activities.Select(MapToExperienceBankDto)
+            };
 
+            return Ok(result);
+        }
     }
 }
