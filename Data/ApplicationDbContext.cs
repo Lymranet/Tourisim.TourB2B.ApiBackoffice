@@ -20,6 +20,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<TicketCategory> TicketCategories { get; set; } = null!;
     public DbSet<Reservation> Reservations { get; set; }
     public DbSet<ReservationGuest> ReservationGuests { get; set; }
+    public DbSet<ActivityLanguage> ActivityLanguages { get; set; }
+    public DbSet<Translation> Translations { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -199,6 +201,17 @@ public class ApplicationDbContext : DbContext
             .WithMany(r => r.Guests)
             .HasForeignKey(g => g.ReservationId)
             .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Reservation>()
+      .HasIndex(r => r.ExperienceBankBookingId)
+      .IsUnique();
+
+        modelBuilder.Entity<ReservationGuest>()
+            .Property(g => g.AdditionalFieldsJson)
+            .HasColumnType("nvarchar(max)");
+
+        modelBuilder.Entity<ReservationGuest>()
+            .Property(g => g.AddonsJson)
+            .HasColumnType("nvarchar(max)");
     }
 }
 

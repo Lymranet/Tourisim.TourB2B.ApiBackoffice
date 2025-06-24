@@ -63,6 +63,7 @@ namespace TourManagementApi.Controllers
                     ActivityId = model.ActivityId,
                     Name = model.Name,
                     StartTime = model.StartTime,
+                    EndTime=model.EndTime,
                     FromDate = model.FromDate,
                     UntilDate = model.UntilDate,
                     CutOff = model.CutOff,
@@ -129,6 +130,7 @@ namespace TourManagementApi.Controllers
                 ActivityId = option.ActivityId,
                 Name = option.Name,
                 StartTime = option.StartTime,
+                EndTime = option.EndTime,
                 FromDate = option.FromDate,
                 UntilDate = option.UntilDate,
                 CutOff = option.CutOff,
@@ -183,6 +185,7 @@ namespace TourManagementApi.Controllers
 
                     option.Name = model.Name;
                     option.StartTime = model.StartTime;
+                    option.EndTime = model.EndTime;
                     option.FromDate = model.FromDate;
                     option.UntilDate = model.UntilDate;
                     option.CutOff = model.CutOff;

@@ -25,6 +25,11 @@
                     <input asp-for="StartTime" class="form-control" type="time" />
                     <span asp-validation-for="StartTime" class="text-danger"></span>
                 </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="EndTime" class="control-label">Bitiş Saati</label>
+                    <input asp-for="EndTime" class="form-control" type="time" />
+                    <span asp-validation-for="EndTime" class="text-danger"></span>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -129,6 +134,7 @@
                 @if (Model.TicketCategories != null && Model.TicketCategories.Any())
                 {
                     for (var i = 0; i < Model.TicketCategories.Count; i++)
+
                     {
                         <div class="ticket-category-row card mb-3">
                             <div class="card-body">
@@ -177,6 +183,18 @@
                                         <label>Fiyat</label>
                                         <input type="number" name="TicketCategories[@i].Amount" value="@Model.TicketCategories[i].Amount" class="form-control" placeholder="0.00" step="0.01" min="0" />
                                     </div>
+                                    <div class="col-md-4">
+                                        <label>Fiyat Tipi</label>
+                                        <select name="TicketCategories[@i].PriceType" class="form-control">
+                                            <option value="">Fiyat tipi seçin</option>
+                                            <option value="Sabit" selected="@(Model.TicketCategories[i].PriceType == "Sabit")">Sabit</option>
+                                            <option value="KisiBasi" selected="@(Model.TicketCategories[i].PriceType == "KisiBasi")">Kişi Başı</option>
+                                            <option value="Grup" selected="@(Model.TicketCategories[i].PriceType == "Grup")">Grup</option>
+                                        </select>
+                                    </div>
+
+
+
                                     <div class="col-md-8 d-flex align-items-end">
                                         <button type="button" class="btn btn-danger btn-sm remove-ticket-category w-100">Kategoriyi Kaldır</button>
                                     </div>
@@ -234,6 +252,15 @@
                                     <label>Fiyat</label>
                                     <input type="number" name="TicketCategories[0].Amount" class="form-control" placeholder="0.00" step="0.01" min="0" />
                                 </div>
+                                <div class="col-md-4">
+                                    <label>Fiyat Tipi</label>
+                                    <select name="TicketCategories[0].PriceType" class="form-control">
+                                        <option value="">Fiyat tipi seçin</option>
+                                        <option value="Sabit">Sabit</option>
+                                        <option value="KisiBasi">Kişi Başı</option>
+                                        <option value="Grup">Grup</option>
+                                    </select>
+                                </div>
                                 <div class="col-md-8 d-flex align-items-end">
                                     <button type="button" class="btn btn-danger btn-sm remove-ticket-category w-100">Kategoriyi Kaldır</button>
                                 </div>
@@ -250,7 +277,7 @@
 
     <div class="d-flex gap-2">
         <button type="submit" class="btn btn-primary">Güncelle</button>
-        <a asp-action="Details" asp-controller="Activities" asp-route-id="@Model.ActivityId" class="btn btn-secondary">İptal</a>
+        <a asp-action="Index" asp-controller="Options" asp-route-activityId="@Model.ActivityId" class="btn btn-secondary">İptal</a>
     </div>
 </form>
 

@@ -11,7 +11,6 @@
         new { Value = "Wellness", Text = "Wellness", Subcategories = new[] { "Spa", "Yoga", "Retreat" } }
     };
     var roles = new[] { "Guide", "Tour Operator", "Manager", "Tour Coordinator", "Tour Assistant" };
-    var languages = new[] { "tr", "en", "de", "fr", "es", "it", "ru", "ar" };
     var cities = new[] {
         new { Code = "TR-01", Name = "Adana" },
         new { Code = "TR-06", Name = "Ankara" },
@@ -22,16 +21,62 @@
         new { Code = "TR-34", Name = "İstanbul" },
         new { Code = "TR-35", Name = "İzmir" },
         new { Code = "TR-48", Name = "Muğla" },
-        new { Code = "TR-07", Name = "Nevşehir" }
+        new { Code = "TR-50", Name = "Nevşehir" }
     };
 }
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    .gallery-thumb {
+        transition: transform 0.3s ease-in-out;
+        cursor: pointer;
+    }
+
+        .gallery-thumb:hover {
+            transform: scale(1.3);
+            z-index: 10;
+        }
+
+    .gallery-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .gallery-item {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        overflow: hidden;
+    }
+
+        .gallery-item:hover {
+            z-index: 999;
+        }
+
+        .gallery-item .btn {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.75rem;
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 20;
+        }
+</style>
+
 
 <h2>@ViewData["Title"]</h2>
 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
 <form asp-action="CreateBasic" method="post" enctype="multipart/form-data" autocomplete="off">
-    @if (Model.ActivityId.HasValue) { <input type="hidden" name="ActivityId" value="@Model.ActivityId" /> }
-    
+    @if (Model.ActivityId.HasValue)
+    {
+        <input type="hidden" name="ActivityId" id="ActivityId" value="@Model.ActivityId" />
+    }
+
     <div class="card mb-4">
         <div class="card-header">Temel Bilgiler</div>
         <div class="card-body">
@@ -46,7 +91,8 @@
                     <label asp-for="Category" class="form-label">Kategori</label>
                     <select asp-for="Category" class="form-control" id="categorySelect" onchange="updateSubcategories(this.value)">
                         <option value="">Kategori seçin</option>
-                        @foreach (var cat in categories) {
+                        @foreach (var cat in categories)
+                        {
                             <option value="@cat.Value">@cat.Text</option>
                         }
                     </select>
@@ -67,7 +113,7 @@
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
+            @*      <div class="mb-3">
                 <label asp-for="Languages" class="form-label">Diller</label>
                 <div class="row">
                     @foreach (var lang in languages) {
@@ -81,7 +127,7 @@
                     }
                 </div>
                 <span asp-validation-for="Languages" class="text-danger"></span>
-            </div>
+            </div> *@
         </div>
     </div>
 
@@ -100,64 +146,117 @@
             </div>
 
             <div class="row mb-4">
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label class="form-label">Kapak Fotoğrafı</label>
                     @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
                     {
-                        <div class="mb-2">
-                            <img src="/uploads/@Model.CoverImageUrl" alt="Kapak" class="img-thumbnail" style="max-height: 150px;" />
+                        <div class="mb-2 position-relative">
+                            <img src="@Model.CoverImageUrl" alt="Kapak" class="img-thumbnail" style="max-height: 150px;" />
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 delete-cover-or-preview" data-type="cover">
+                                <i class="fa-solid fa-xmark">X</i>
+                            </button>
                         </div>
                     }
                     <input asp-for="CoverImage" type="file" accept="image/*" class="form-control" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <label class="form-label">Önizleme Fotoğrafı</label>
                     @if (!string.IsNullOrEmpty(Model.PreviewImageUrl))
                     {
-                        <div class="mb-2">
-                            <img src="/uploads/@Model.PreviewImageUrl" alt="Önizleme" class="img-thumbnail" style="max-height: 150px;" />
+                        <div class="mb-2 position-relative">
+                            <img src="@Model.PreviewImageUrl" alt="Önizleme" class="img-thumbnail" style="max-height: 150px;" />
+                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 delete-cover-or-preview" data-type="preview">
+                                <i class="fa-solid fa-xmark">X</i>
+                            </button>
                         </div>
                     }
                     <input asp-for="PreviewImage" type="file" accept="image/*" class="form-control" />
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label">Galeri Fotoğrafları (En fazla 10 adet)</label>
-                    @if (Model.GalleryImageUrls != null && Model.GalleryImageUrls.Any())
+
+                @foreach (var img in Model.ExistingGalleryImages)
+                {
+                    <input type="hidden" name="ExistingGalleryImages" value="@img" />
+                }
+
+                <div class="col-md-8">
+
+                    @if (Model.ExistingGalleryImages != null && Model.ExistingGalleryImages.Any())
                     {
-                        <div class="mb-2 d-flex flex-wrap gap-2">
-                            @foreach (var url in Model.GalleryImageUrls)
+                        <div class="gallery-container">
+                            @foreach (var imgPath in Model.ExistingGalleryImages)
                             {
-                                <img src="/uploads/@url" alt="Galeri" class="img-thumbnail" style="height: 80px; width: 80px; object-fit: cover;" />
+                                var fileName = System.IO.Path.GetFileName(imgPath);
+                                <div class="gallery-item" data-image="@imgPath">
+                                    <img src="/uploads/gallery/@fileName"
+                                         class="img-thumbnail gallery-thumb"
+                                         data-bs-toggle="modal"
+                                         data-bs-target="#imagePreviewModal"
+                                         data-img="/uploads/gallery/@fileName"
+                                         style="width: 100%; height: 100%; object-fit: cover; cursor: zoom-in;" />
+                                    <button type="button" class="btn btn-sm btn-danger delete-gallery-image" data-image="@imgPath">✕</button>
+                                </div>
                             }
                         </div>
                     }
+                    <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-xl">
+                            <div class="modal-content">
+                                <div class="modal-body p-0">
+                                    <img id="previewModalImage" src="" alt="Preview" class="img-fluid w-100" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                   @*  @if (Model.ExistingGalleryImages != null && Model.ExistingGalleryImages.Any())
+                    {
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach (var imgPath in Model.ExistingGalleryImages)
+                            {
+                                var fileName = System.IO.Path.GetFileName(imgPath);
+                                <div class="position-relative" data-image="@imgPath" style="width: 170px; height: 170px;">
+                                    <img src="/uploads/gallery/@fileName"
+                                         class="img-thumbnail"
+                                         style="width: 100%; height: 100%; object-fit: cover;" />
+                                    <button type="button"
+                                            class="btn btn-sm btn-danger position-absolute top-0 end-0 delete-gallery-image"
+                                            data-image="@imgPath"
+                                            style="padding: 0.2rem 0.4rem; font-size: 0.75rem;">
+                                        ✕
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    } *@
+
                     <input asp-for="GalleryImages" type="file" accept="image/*" class="form-control" multiple />
                 </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Video URL'leri (En fazla 3 adet)</label>
-                <div id="videoUrlsContainer">
-                    @if (Model.VideoUrls != null && Model.VideoUrls.Any())
-                    {
-                        @foreach (var url in Model.VideoUrls)
-                        {
-                            <div class="input-group mb-2">
-                                <input type="url" name="VideoUrls" class="form-control" value="@url" placeholder="https://..." />
-                                <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
-                            </div>
-                        }
-                    }
-                    else
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Video URL'leri (En fazla 3 adet)</label>
+            <div id="videoUrlsContainer">
+                @if (Model.VideoUrls != null && Model.VideoUrls.Any())
+                {
+                    @foreach (var url in Model.VideoUrls)
                     {
                         <div class="input-group mb-2">
-                            <input type="url" name="VideoUrls" class="form-control" placeholder="https://..." />
+                            <input type="url" name="VideoUrls" class="form-control" value="@url" placeholder="https://..." />
                             <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
                         </div>
                     }
-                </div>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="addVideoUrl()">Video URL Ekle</button>
+                }
+                else
+                {
+                    <div class="input-group mb-2">
+                        <input type="url" name="VideoUrls" class="form-control" placeholder="https://..." />
+                        <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
+                    </div>
+                }
             </div>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="addVideoUrl()">Video URL Ekle</button>
         </div>
     </div>
 
@@ -267,7 +366,7 @@
                         <option value="">Şehir seçin</option>
                         @foreach (var city in cities)
                         {
-                            <option value="@city.Code" 
+                            <option value="@city.Code"
                                     data-name="@city.Name"
                                     selected="@(city.Code == Model.DestinationCode)">
                                 @city.Name
@@ -295,7 +394,8 @@
                     <label asp-for="ContactInfo.Role" class="form-label">Görevi</label>
                     <select asp-for="ContactInfo.Role" class="form-control">
                         <option value="">Görev seçin</option>
-                        @foreach (var role in roles) {
+                        @foreach (var role in roles)
+                        {
                             <option value="@role">@role</option>
                         }
                     </select>
@@ -324,122 +424,195 @@
 </form>
 
 @section Scripts {
-<script>
-    // Alt kategori güncelleme
-    function updateSubcategories(category) {
-        const subcats = @Html.Raw(Json.Serialize(categories.ToDictionary(c => c.Value, c => c.Subcategories)));
-        const select = document.getElementById('subcategorySelect');
-        select.innerHTML = '<option value="">Alt kategori seçin</option>';
-        
-        if (category && subcats[category]) {
-            subcats[category].forEach(sub => {
-                const option = document.createElement('option');
-                option.value = sub;
-                option.textContent = sub;
-                select.appendChild(option);
-            });
-        }
-    }
+    <script>
+        // Alt kategori güncelleme
+               function updateSubcategories(category, selectedSubcategory = null) {
+                const subcats = @Html.Raw(Json.Serialize(categories.ToDictionary(c => c.Value, c => c.Subcategories)));
+                const select = document.getElementById('subcategorySelect');
+                select.innerHTML = '<option value="">Alt kategori seçin</option>';
 
-    // Şehir seçimi güncelleme
-    function updateCities(countryCode) {
-        const citySelect = document.getElementById('citySelect');
-        citySelect.disabled = !countryCode;
-        if (countryCode) {
-            updateDestination(citySelect);
-        } else {
-            document.getElementById('countryCode').value = '';
-            document.getElementById('destinationCode').value = '';
-            document.getElementById('destinationName').value = '';
-        }
-    }
+                if (category && subcats[category]) {
+                    subcats[category].forEach(sub => {
+                        const option = document.createElement('option');
+                        option.value = sub;
+                        option.textContent = sub;
+                        if (sub === selectedSubcategory) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                }
+            }
+                   const modal = document.getElementById('imagePreviewModal');
+        modal.addEventListener('show.bs.modal', function (event) {
+            const triggerImage = event.relatedTarget;
+            const imgSrc = triggerImage.getAttribute('data-img');
+            const modalImage = document.getElementById('previewModalImage');
+            modalImage.src = imgSrc;
+        });
+           document.addEventListener('click', async function (e) {
+                    if (e.target.classList.contains('delete-cover-or-preview') || e.target.closest('.delete-cover-or-preview')) {
+                        const button = e.target.closest('.delete-cover-or-preview');
+                        const imageType = button.getAttribute('data-type');
 
-    // Destinasyon güncelleme
-    function updateDestination(select) {
-        const option = select.options[select.selectedIndex];
-        if (option && option.value) {
-            document.getElementById('countryCode').value = document.getElementById('countrySelect').value;
-            document.getElementById('destinationCode').value = option.value;
-            document.getElementById('destinationName').value = option.dataset.name;
-        }
-    }
+                        if (!confirm("Bu görseli silmek istediğinize emin misiniz?")) return;
 
-    // Video URL ekleme/kaldırma
-    function addVideoUrl() {
-        const container = document.getElementById('videoUrlsContainer');
-        if (container.children.length < 3) {
+                        try {
+                            const activityId = document.getElementById("ActivityId").value;
+                            const response = await fetch('/ActivitiesWizard/DeleteCoverOrPreviewImage', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                },
+                                body: JSON.stringify({ imageType: imageType, activityId: parseInt(activityId) })
+                            });
+
+                            const result = await response.json();
+                            if (result.success) {
+                                button.parentElement.remove(); // img ve button kapsayıcısını kaldır
+                            } else {
+                                alert("Silme işlemi başarısız: " + result.message);
+                            }
+                        } catch (error) {
+                            alert("Hata oluştu: " + error.message);
+                        }
+                    }
+                });
+
+         document.addEventListener('click', async function (e) {
+            if (e.target.classList.contains('delete-gallery-image') || e.target.closest('.delete-gallery-image')) {
+                const button = e.target.closest('.delete-gallery-image');
+                const imagePath = button.getAttribute('data-image');
+
+                if (!confirm("Bu görseli silmek istediğinize emin misiniz?")) return;
+
+                try {
+                    const activityId = document.getElementById("ActivityId").value;
+                    const response = await fetch('/ActivitiesWizard/DeleteGalleryImage', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify({ imagePath: imagePath, activityId: parseInt(activityId) })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const item = document.querySelector(`[data-image="${imagePath}"]`);
+                        if (item) item.remove();
+                    } else {
+                        alert("Silme işlemi başarısız: " + result.message);
+                    }
+                } catch (error) {
+                    alert("Hata oluştu: " + error.message);
+                }
+            }
+        });
+
+        // Şehir seçimi güncelleme
+        function updateCities(countryCode) {
+            const citySelect = document.getElementById('citySelect');
+            citySelect.disabled = !countryCode;
+            if (countryCode) {
+                updateDestination(citySelect);
+            } else {
+                document.getElementById('countryCode').value = '';
+                document.getElementById('destinationCode').value = '';
+                document.getElementById('destinationName').value = '';
+            }
+        }
+
+        // Destinasyon güncelleme
+        function updateDestination(select) {
+            const option = select.options[select.selectedIndex];
+            if (option && option.value) {
+                document.getElementById('countryCode').value = document.getElementById('countrySelect').value;
+                document.getElementById('destinationCode').value = option.value;
+                document.getElementById('destinationName').value = option.dataset.name;
+            }
+        }
+
+        // Video URL ekleme/kaldırma
+        function addVideoUrl() {
+            const container = document.getElementById('videoUrlsContainer');
+            if (container.children.length < 3) {
+                const div = document.createElement('div');
+                div.className = 'input-group mb-2';
+                div.innerHTML = `
+                    <input type="url" name="VideoUrls" class="form-control" placeholder="https://..." />
+                    <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function removeVideoUrl(button) {
+            button.closest('.input-group').remove();
+        }
+
+        // Dahil olan ekleme
+        function addInclusion() {
+            const container = document.querySelector('.inclusion-container');
             const div = document.createElement('div');
             div.className = 'input-group mb-2';
             div.innerHTML = `
-                <input type="url" name="VideoUrls" class="form-control" placeholder="https://..." />
-                <button type="button" class="btn btn-danger" onclick="removeVideoUrl(this)">Kaldır</button>
+                <input type="text" name="Inclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
+                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
             `;
             container.appendChild(div);
         }
-    }
 
-    function removeVideoUrl(button) {
-        button.closest('.input-group').remove();
-    }
-
-    // Dahil olan ekleme
-    function addInclusion() {
-        const container = document.querySelector('.inclusion-container');
-        const div = document.createElement('div');
-        div.className = 'input-group mb-2';
-        div.innerHTML = `
-            <input type="text" name="Inclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
-            <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
-        `;
-        container.appendChild(div);
-    }
-
-    // Dahil olmayan ekleme
-    function addExclusion() {
-        const container = document.querySelector('.exclusion-container');
-        const div = document.createElement('div');
-        div.className = 'input-group mb-2';
-        div.innerHTML = `
-            <input type="text" name="Exclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
-            <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
-        `;
-        container.appendChild(div);
-    }
-
-    // Önemli bilgi ekleme
-    function addImportantInfo() {
-        const container = document.querySelector('.important-info-container');
-        const div = document.createElement('div');
-        div.className = 'input-group mb-2';
-        div.innerHTML = `
-            <input type="text" name="ImportantInfo" class="form-control" placeholder="Örn: 18 yaşından küçüklere alkol servisi yapılmamaktadır" />
-            <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
-        `;
-        container.appendChild(div);
-    }
-
-    // Genel öğe kaldırma
-    function removeItem(button) {
-        button.closest('.input-group').remove();
-    }
-
-    // Sayfa yüklendiğinde
-    document.addEventListener('DOMContentLoaded', function() {
-        // Mevcut kategori varsa alt kategorileri yükle
-        const category = document.getElementById('categorySelect').value;
-        if (category) {
-            updateSubcategories(category);
+        // Dahil olmayan ekleme
+        function addExclusion() {
+            const container = document.querySelector('.exclusion-container');
+            const div = document.createElement('div');
+            div.className = 'input-group mb-2';
+            div.innerHTML = `
+                <input type="text" name="Exclusions" class="form-control" placeholder="Örn: Öğle yemeği" />
+                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+            `;
+            container.appendChild(div);
         }
 
-        // Mevcut ülke ve şehir varsa bilgileri güncelle
-        const countrySelect = document.getElementById('countrySelect');
-        const citySelect = document.getElementById('citySelect');
-        if (countrySelect.value) {
-            updateCities(countrySelect.value);
-            if (citySelect.value) {
-                updateDestination(citySelect);
-            }
+        // Önemli bilgi ekleme
+        function addImportantInfo() {
+            const container = document.querySelector('.important-info-container');
+            const div = document.createElement('div');
+            div.className = 'input-group mb-2';
+            div.innerHTML = `
+                <input type="text" name="ImportantInfo" class="form-control" placeholder="Örn: 18 yaşından küçüklere alkol servisi yapılmamaktadır" />
+                <button type="button" class="btn btn-danger" onclick="removeItem(this)">Kaldır</button>
+            `;
+            container.appendChild(div);
         }
-    });
-</script>
-} 
+
+        // Genel öğe kaldırma
+        function removeItem(button) {
+            button.closest('.input-group').remove();
+        }
+
+        // Sayfa yüklendiğinde
+                document.addEventListener('DOMContentLoaded', function () {
+                const category = document.getElementById('categorySelect').value;
+                const selectedSubcategory = '@Model.Subcategory';
+
+                if (category) {
+                    updateSubcategories(category, selectedSubcategory);
+                }
+
+                // ülke ve şehir seçimi için var olan kodun kalmasına izin veriyoruz
+                const countrySelect = document.getElementById('countrySelect');
+                const citySelect = document.getElementById('citySelect');
+                if (countrySelect.value) {
+                    updateCities(countrySelect.value);
+                    if (citySelect.value) {
+                        updateDestination(citySelect);
+                    }
+                }
+            });
+
+    </script>
+}

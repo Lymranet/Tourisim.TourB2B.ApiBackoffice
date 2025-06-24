@@ -208,15 +208,19 @@ public class Activity
     // Medya alanları
     public string? CoverImage { get; set; }
     public string? PreviewImage { get; set; }
-    
-    private string _galleryImagesJson = "[]";
-    [NotMapped]
-    public List<string> GalleryImages
+
+    [Column("GalleryImages")]
+    public string? GalleryImagesJson
     {
-        get => JsonSerializer.Deserialize<List<string>>(_galleryImagesJson) ?? new List<string>();
-        set => _galleryImagesJson = JsonSerializer.Serialize(value ?? new List<string>());
+        get => JsonSerializer.Serialize(GalleryImages ?? []);
+        set => GalleryImages = JsonSerializer.Deserialize<List<string>>(value ?? "[]") ?? [];
     }
-    
+
+
+
+    [NotMapped]
+    public List<string> GalleryImages { get; set; } = new();
+
     private string _videoUrlsJson = "[]";
     [NotMapped]
     public List<string> VideoUrls
@@ -224,6 +228,10 @@ public class Activity
         get => JsonSerializer.Deserialize<List<string>>(_videoUrlsJson) ?? new List<string>();
         set => _videoUrlsJson = JsonSerializer.Serialize(value ?? new List<string>());
     }
+    public string PartnerSupplierId { get; internal set; }
+    public string DetailsUrl { get; internal set; }
+    public ICollection<ActivityLanguage> ActivityLanguages { get; set; } = new List<ActivityLanguage>();
+
 }
 
 [Owned]
@@ -352,15 +360,3 @@ public class RefundCondition
     public int RefundPercentage { get; set; }
 }
 
-[Owned]
-public class Translation
-{
-    public int Id { get; set; }
-    public string Language { get; set; }
-    public string Title { get; set; }
-    public string Description { get; set; }
-    public string Label { get; set; }
-    public List<string> Inclusions { get; set; }
-    public List<string> Exclusions { get; set; }
-    public List<string> ImportantInfo { get; set; }
-} 

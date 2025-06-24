@@ -27,8 +27,9 @@
                     <span asp-validation-for="StartTime" class="text-danger small"></span>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Bitiş Saati</label>
-                    <input class="form-control" type="time" id="endTime" name="EndTime" />
+                    <label asp-for="EndTime" class="form-label">Bitiş Saati</label>
+                    <input asp-for="EndTime" class="form-control" type="time" id="endTime" />
+                    <span asp-validation-for="EndTime" class="text-danger small"></span>
                 </div>
             </div>
             <div class="row g-4 mt-1">
@@ -300,6 +301,7 @@ $(document).ready(function () {
 
     document.getElementById('startTime').addEventListener('change', calculateDuration);
     document.getElementById('endTime').addEventListener('change', calculateDuration);
+
     function calculateDuration() {
         var start = document.getElementById('startTime').value;
         var end = document.getElementById('endTime').value;

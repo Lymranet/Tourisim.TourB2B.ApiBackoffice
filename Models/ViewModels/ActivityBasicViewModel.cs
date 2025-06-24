@@ -5,7 +5,7 @@ namespace TourManagementApi.Models.ViewModels
 {
     public class ActivityBasicViewModel
     {
-        public int? ActivityId { get; set; } // Ana Activity kaydına referans
+        public int? ActivityId { get; set; }
 
         [Required(ErrorMessage = "Başlık zorunludur.")]
         [MaxLength(200)]
@@ -22,36 +22,33 @@ namespace TourManagementApi.Models.ViewModels
         [Required(ErrorMessage = "Açıklama zorunludur.")]
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "En az bir dil seçilmelidir.")]
-        public List<string>? Languages { get; set; }
-
-        // İletişim bilgileri
-        [Required]
+        // İletişim bilgileri - zorunluluk kaldırıldı
         public ContactInfoViewModel ContactInfo { get; set; } = new();
 
         // Medya
         public IFormFile? CoverImage { get; set; }
         public IFormFile? PreviewImage { get; set; }
         public List<IFormFile>? GalleryImages { get; set; }
+        public List<string> ExistingGalleryImages { get; set; } = new();
         public List<string>? VideoUrls { get; set; }
 
-        // Mevcut görsellerin yolları (readonly, edit için)
         public string? CoverImageUrl { get; set; }
         public string? PreviewImageUrl { get; set; }
         public List<string>? GalleryImageUrls { get; set; }
 
-        // Trekksoft uyumlu yeni alanlar
+        // Temel Bilgiler - zorunluluklar kaldırıldı
         public string? Highlights { get; set; }
         public List<string>? Inclusions { get; set; }
         public List<string>? Exclusions { get; set; }
         public List<string>? ImportantInfo { get; set; }
         public string? Itinerary { get; set; }
 
-        // Destination bilgileri
+        // Lokasyon
         public string? CountryCode { get; set; }
         public string? DestinationCode { get; set; }
         public string? DestinationName { get; set; }
     }
+
 
     public class ContactInfoViewModel
     {
@@ -69,4 +66,20 @@ namespace TourManagementApi.Models.ViewModels
         [MinLength(10, ErrorMessage = "Telefon en az 10 karakter olmalıdır.")]
         public string? Phone { get; set; }
     }
-} 
+    public class DeleteGalleryImageRequest
+    {
+        public string ImagePath { get; set; }
+        public int ActivityId { get; set; }
+    }
+
+    public class DeleteImageRequest
+    {
+        public int ActivityId { get; set; }
+        public string ImageType { get; set; } // "cover" veya "preview"
+    }
+    public class StatusUpdateDto
+    {
+        public string Status { get; set; }
+    }
+
+}

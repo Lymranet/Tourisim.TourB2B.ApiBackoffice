@@ -1,17 +1,21 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TourManagementApi.Data;
-using TourManagementApi.Models;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using TourManagementApi.Models.ViewModels;
-using System.Linq;
+using Microsoft.Extensions.Logging;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using System;
-using TourManagementApi.Models.Common;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
+using System.Linq;
+using System.Threading.Tasks;
+using TourManagementApi.Data;
+using TourManagementApi.Helper;
+using TourManagementApi.Models;
+using TourManagementApi.Models.Common;
+using TourManagementApi.Models.ViewModels;
 
 namespace TourManagementApi.Controllers
 {
@@ -22,7 +26,7 @@ namespace TourManagementApi.Controllers
         private readonly ILogger<ActivitiesWizardController> _logger;
 
         public ActivitiesWizardController(
-            ApplicationDbContext context, 
+            ApplicationDbContext context,
             IWebHostEnvironment environment,
             ILogger<ActivitiesWizardController> logger)
         {
@@ -30,6 +34,7 @@ namespace TourManagementApi.Controllers
             _environment = environment;
             _logger = logger;
         }
+       
 
         public IActionResult Index()
         {
@@ -62,53 +67,79 @@ namespace TourManagementApi.Controllers
             }
         }
 
+        [HttpPatch]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] StatusUpdateDto dto)
+        {
+            var activity = await _context.Activities.FindAsync(id);
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            activity.Status = dto.Status;
+            _context.Update(activity);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+
         // 1. Adım: Temel Bilgiler (Basic Information)
         [HttpGet]
         [IgnoreAntiforgeryToken]
 
         public async Task<IActionResult> CreateBasic(int? id)
         {
-            if (id.HasValue)
+            try
             {
-                var activity = await _context.Activities.FindAsync(id.Value);
-                if (activity == null) return NotFound();
-                
-                var vm = new ActivityBasicViewModel
+                if (id.HasValue)
                 {
-                    ActivityId = activity.Id,
-                    Title = activity.Title,
-                    Category = activity.Category,
-                    Subcategory = activity.Subcategory,
-                    Description = activity.Description,
-                    Languages = activity.Languages,
-                    ContactInfo = activity.ContactInfo != null ? new ContactInfoViewModel
+                    var activity = await _context.Activities.FindAsync(id.Value);
+                    if (activity == null) return NotFound();
+
+                    var vm = new ActivityBasicViewModel
                     {
-                        Name = activity.ContactInfo.Name,
-                        Role = activity.ContactInfo.Role,
-                        Email = activity.ContactInfo.Email,
-                        Phone = activity.ContactInfo.Phone
-                    } : new ContactInfoViewModel(),
-                    CoverImageUrl = activity.CoverImage,
-                    PreviewImageUrl = activity.PreviewImage,
-                    GalleryImageUrls = activity.GalleryImages,
-                    VideoUrls = activity.VideoUrls,
-                    Highlights = activity.Highlights,
-                    Inclusions = activity.Inclusions,
-                    Exclusions = activity.Exclusions,
-                    ImportantInfo = activity.ImportantInfo,
-                    Itinerary = activity.Itinerary,
-                    CountryCode = activity.CountryCode,
-                    DestinationCode = activity.DestinationCode,
-                    DestinationName = activity.DestinationName
-                };
-                return View(vm);
+                        ActivityId = activity.Id,
+                        Title = activity.Title,
+                        Category = activity.Category,
+                        Subcategory = activity.Subcategory,
+                        Description = activity.Description,
+                        ContactInfo = activity.ContactInfo != null ? new ContactInfoViewModel
+                        {
+                            Name = activity.ContactInfo.Name,
+                            Role = activity.ContactInfo.Role,
+                            Email = activity.ContactInfo.Email,
+                            Phone = activity.ContactInfo.Phone
+                        } : new ContactInfoViewModel(),
+                        CoverImageUrl = activity.CoverImage,
+                        PreviewImageUrl = activity.PreviewImage,
+                        GalleryImageUrls = activity.GalleryImages,
+                        ExistingGalleryImages = activity.GalleryImages ?? new List<string>(),
+                        VideoUrls = activity.VideoUrls,
+                        Highlights = activity.Highlights,
+                        Inclusions = activity.Inclusions,
+                        Exclusions = activity.Exclusions,
+                        ImportantInfo = activity.ImportantInfo,
+                        Itinerary = activity.Itinerary,
+                        CountryCode = activity.CountryCode,
+                        DestinationCode = activity.DestinationCode,
+                        DestinationName = activity.DestinationName
+                    };
+                    return View(vm);
+                }
             }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+            
             return View(new ActivityBasicViewModel());
         }
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> CreateBasic(ActivityBasicViewModel model, string VideoUrls)
+        public async Task<IActionResult> CreateBasic(ActivityBasicViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
@@ -121,34 +152,40 @@ namespace TourManagementApi.Controllers
 
                 if (activity == null)
                     return NotFound();
-
+                var finalGalleryList = new List<string>();
+                if (model.ExistingGalleryImages != null)
+                {
+                    finalGalleryList.AddRange(model.ExistingGalleryImages);
+                }
                 activity.Title = model.Title ?? string.Empty;
                 activity.Category = model.Category ?? string.Empty;
                 activity.Subcategory = model.Subcategory ?? string.Empty;
                 activity.Description = model.Description ?? string.Empty;
-                activity.Languages = model.Languages ?? new List<string>();
-
+                activity.DetailsUrl = "";
+                activity.PartnerSupplierId = "";
                 if (model.CoverImage != null)
                 {
-                    activity.CoverImage = await SaveImage(model.CoverImage, "cover");
+                    activity.CoverImage = await FileHelper.SaveImage(model.CoverImage, "cover", _environment,_logger);
                 }
 
                 if (model.PreviewImage != null)
                 {
-                    activity.PreviewImage = await SaveImage(model.PreviewImage, "preview");
+                    activity.PreviewImage = await FileHelper.SaveImage(model.PreviewImage, "preview",_environment, _logger);
                 }
 
                 if (model.GalleryImages != null && model.GalleryImages.Any())
                 {
-                    activity.GalleryImages = new List<string>();
                     foreach (var image in model.GalleryImages.Take(10))
                     {
-                        var imagePath = await SaveImage(image, "gallery");
+
+                        //var imageUrl = await SaveResizedImageAsync(file, Path.Combine(_environment.WebRootPath, "uploads", "gallery"));
+                        var imagePath = await FileHelper.SaveImage(image, "gallery",_environment, _logger);
                         if (!string.IsNullOrEmpty(imagePath))
                         {
-                            activity.GalleryImages.Add(imagePath);
+                            finalGalleryList.Add(imagePath);
                         }
                     }
+                    activity.GalleryImages = finalGalleryList; 
                 }
 
                 activity.VideoUrls = model.VideoUrls?.Where(url => !string.IsNullOrEmpty(url)).ToList() ?? new List<string>();
@@ -161,7 +198,7 @@ namespace TourManagementApi.Controllers
                     Phone = model.ContactInfo.Phone ?? string.Empty
                 };
 
-                activity.Highlights = model.Highlights;
+                activity.Highlights = model.Highlights ?? string.Empty;
                 activity.Inclusions = model.Inclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
                 activity.Exclusions = model.Exclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
                 activity.ImportantInfo = model.ImportantInfo?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
@@ -184,6 +221,64 @@ namespace TourManagementApi.Controllers
                 ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
                 return View(model);
             }
+        }
+        [HttpPost]
+        public async Task<IActionResult> DeleteGalleryImage([FromBody] DeleteGalleryImageRequest request)
+        {
+            var activity = await _context.Activities.FindAsync(request.ActivityId);
+            if (activity == null || activity.GalleryImages == null)
+                return Json(new { success = false, message = "Aktivite bulunamadı." });
+
+            var filename = Path.GetFileName(request.ImagePath);
+            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "gallery", filename);
+
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+
+            activity.GalleryImages.RemoveAll(img => img.EndsWith(filename));
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+        [HttpPost]
+        public async Task<IActionResult> DeleteCoverOrPreviewImage([FromBody] DeleteImageRequest request)
+        {
+            var activity = await _context.Activities.FindAsync(request.ActivityId);
+            if (activity == null)
+                return Json(new { success = false, message = "Aktivite bulunamadı." });
+
+            string? imagePath = null;
+            string? folder = null;
+
+            if (request.ImageType == "cover" && !string.IsNullOrEmpty(activity.CoverImage))
+            {
+                imagePath = activity.CoverImage;
+                folder = "cover";
+                activity.CoverImage = null;
+            }
+            else if (request.ImageType == "preview" && !string.IsNullOrEmpty(activity.PreviewImage))
+            {
+                imagePath = activity.PreviewImage;
+                folder = "preview";
+                activity.PreviewImage = null;
+            }
+
+            if (imagePath != null)
+            {
+                var filename = Path.GetFileName(imagePath);
+                var fullPath = Path.Combine(_environment.WebRootPath, "uploads", folder, filename);
+                if (System.IO.File.Exists(fullPath))
+                {
+                    System.IO.File.Delete(fullPath);
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+
+            return Json(new { success = false, message = "Silinecek görsel bulunamadı." });
         }
 
         // 2. Adım: Lokasyon
@@ -400,40 +495,191 @@ namespace TourManagementApi.Controllers
             }
         }
 
-        private async Task<string> SaveImage(IFormFile file, string folder)
+        
+
+
+        #region Language Alanı
+        // GET: Çeviri yönetimi sayfası
+        [HttpGet]
+        public async Task<IActionResult> ManageLanguages(int id)
         {
-            if (file == null || file.Length == 0)
-                return null;
+            var activity = await _context.Activities
+                .Include(a => a.ActivityLanguages)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
-            try
+            if (activity == null)
+                return NotFound();
+
+            var existingLangs = await _context.ActivityLanguages
+                .Where(x => x.ActivityId == id)
+                .Select(x => x.LanguageCode)
+                .ToListAsync();
+
+            var model = new TourTranslationViewModel
             {
-                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (extension != ".jpg" && extension != ".jpeg" && extension != ".png" && extension != ".gif")
-                {
-                    throw new Exception("Geçersiz dosya formatı. Sadece JPG, JPEG, PNG ve GIF dosyaları yüklenebilir.");
-                }
+                ActivityId = id,
+                Title = activity.Title,
+                ExistingLanguages = existingLangs
+            };
 
-                var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", folder);
-                if (!Directory.Exists(uploadsFolder))
-                {
-                    Directory.CreateDirectory(uploadsFolder);
-                }
-
-                var uniqueFileName = $"{Guid.NewGuid()}{extension}";
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                return $"/uploads/{folder}/{uniqueFileName}";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Dosya yüklenirken hata oluştu");
-                throw new Exception("Dosya yüklenirken bir hata oluştu: " + ex.Message);
-            }
+            return View(model);
         }
+
+        // GET: Yeni dil ekleme formu
+        [HttpGet]
+        public async Task<IActionResult> AddLanguage(int activityId, string? languageCode = null)
+        {
+            var activity = await _context.Activities.FindAsync(activityId);
+            if (activity == null) return NotFound();
+
+            var existingLanguages = await _context.ActivityLanguages
+                .Where(x => x.ActivityId == activityId)
+                .Select(x => x.LanguageCode)
+                .ToListAsync();
+
+            var allLanguages = new Dictionary<string, string>
+    {
+        { "en", "İngilizce" },
+        { "de", "Almanca" },
+        { "fr", "Fransızca" },
+        { "es", "İspanyolca" },
+        { "it", "İtalyanca" },
+        { "ru", "Rusça" },
+        { "ar", "Arapça" },
+        { "zh", "Çince" }
+    };
+
+            // Eğer düzenleme için geldiyse dil zaten eklenmiştir
+            Dictionary<string, string> languageOptions = (languageCode != null)
+                ? new Dictionary<string, string> { { languageCode, allLanguages[languageCode] } }
+                : allLanguages
+                    .Where(x => !existingLanguages.Contains(x.Key))
+                    .ToDictionary(x => x.Key, x => x.Value);
+
+            ViewBag.LanguageOptions = languageOptions;
+
+            var translation = await _context.Translations
+                .FirstOrDefaultAsync(t => t.ActivityId == activityId && t.Language == languageCode);
+
+            var model = new AddLanguageViewModel
+            {
+                ActivityId = activityId,
+                LanguageCode = languageCode ?? string.Empty,
+                Original = new ActivityTranslationDTO
+                {
+                    Title = activity.Title,
+                    Description = activity.Description,
+                    Highlights = activity.Highlights,
+                    Itinerary = activity.Itinerary,
+                    Inclusions = activity.Inclusions,
+                    Exclusions = activity.Exclusions,
+                    ImportantInfo = activity.ImportantInfo
+                },
+                Translated = translation != null
+                    ? new ActivityTranslationDTO
+                    {
+                        Title = translation.Title,
+                        Description = translation.Description,
+                        Highlights = translation.Highlights,
+                        Itinerary = translation.Itinerary,
+                        Inclusions = translation.Inclusions,
+                        Exclusions = translation.Exclusions,
+                        ImportantInfo = translation.ImportantInfo
+                    }
+                    : new ActivityTranslationDTO()
+            };
+
+            return View(model);
+        }
+
+
+
+        // POST: Yeni dil ve çeviri kaydetme
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> AddLanguage(AddLanguageViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var translation = await _context.Translations
+                .FirstOrDefaultAsync(t => t.ActivityId == model.ActivityId && t.Language == model.LanguageCode);
+
+            if (translation == null)
+            {
+                // Yeni çeviri
+                _context.Translations.Add(new Translation
+                {
+                    ActivityId = model.ActivityId,
+                    Language = model.LanguageCode,
+                    Title = model.Translated.Title,
+                    Description = model.Translated.Description,
+                    Highlights = model.Translated.Highlights,
+                    Itinerary = model.Translated.Itinerary,
+                    Inclusions = model.Translated.Inclusions,
+                    Exclusions = model.Translated.Exclusions,
+                    ImportantInfo = model.Translated.ImportantInfo
+                });
+
+                // ActivityLanguage varsa ekleme
+                var exists = await _context.ActivityLanguages
+                    .AnyAsync(x => x.ActivityId == model.ActivityId && x.LanguageCode == model.LanguageCode);
+
+                if (!exists)
+                {
+                    _context.ActivityLanguages.Add(new ActivityLanguage
+                    {
+                        ActivityId = model.ActivityId,
+                        LanguageCode = model.LanguageCode
+                    });
+                }
+            }
+            else
+            {
+                // Var olan çeviriyi güncelle
+                translation.Title = model.Translated.Title;
+                translation.Description = model.Translated.Description;
+                translation.Highlights = model.Translated.Highlights;
+                translation.Itinerary = model.Translated.Itinerary;
+                translation.Inclusions = model.Translated.Inclusions;
+                translation.Exclusions = model.Translated.Exclusions;
+                translation.ImportantInfo = model.Translated.ImportantInfo;
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("ManageLanguages", new { id = model.ActivityId });
+        }
+
+
+        // POST: Dil silme
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> DeleteLanguage(int activityId, string languageCode)
+        {
+            var langEntry = await _context.ActivityLanguages
+                .FirstOrDefaultAsync(x => x.ActivityId == activityId && x.LanguageCode == languageCode);
+
+            if (langEntry != null)
+            {
+                _context.ActivityLanguages.Remove(langEntry);
+
+                // İlgili Translation kaydını da sil
+                var translation = await _context.Translations
+                    .FirstOrDefaultAsync(t => t.Language == languageCode);
+
+                if (translation != null)
+                {
+                    _context.Translations.Remove(translation);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("ManageLanguages", new { id = activityId });
+        }
+
+
+
+        #endregion
     }
-} 
+}

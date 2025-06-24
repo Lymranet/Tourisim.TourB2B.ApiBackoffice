@@ -1,0 +1,42 @@
+@using TourManagementApi.Models.ViewModels
+@model TourTranslationViewModel
+@{
+    ViewData["Title"] = "Çeviri Yönetimi";
+}
+
+<h2>@Model.Title - Çeviri Dilleri</h2>
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-secondary">← Turlara Dön</a>
+    <a asp-action="AddLanguage" asp-route-activityId="@Model.ActivityId" class="btn btn-primary">+ Yeni Dil Ekle</a>
+</div>
+
+@if (Model.ExistingLanguages.Any())
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Dil Kodu</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var lang in Model.ExistingLanguages)
+            {
+                <tr>
+                    <td>@lang.ToUpper()</td>
+                    <td>
+                        <a asp-action="AddLanguage" asp-route-activityId="@Model.ActivityId" asp-route-languageCode="@lang" class="btn btn-sm btn-warning">Düzenle</a>
+                        <form asp-action="DeleteLanguage" method="post" asp-route-activityId="@Model.ActivityId" asp-route-languageCode="@lang" style="display:inline-block" onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
+                            <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-info">Bu tur için henüz çeviri eklenmemiş.</div>
+}

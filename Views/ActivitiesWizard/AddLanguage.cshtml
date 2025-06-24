@@ -1,0 +1,255 @@
+﻿@using TourManagementApi.Models.ViewModels
+@model AddLanguageViewModel
+
+@{
+    ViewData["Title"] = Model.IsEditMode ? "Çeviri Düzenle" : "Yeni Dil Ekle";
+
+    var isEditMode = Model.IsEditMode;
+    var languageOptions = ViewBag.LanguageOptions as Dictionary<string, string> ?? new();
+}
+<style>
+    #translationLoader {
+        font-size: 1rem;
+        color: #555;
+    }
+</style>
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="AddLanguage" method="post">
+    <input type="hidden" name="ActivityId" value="@Model.ActivityId" />
+    <input type="hidden" name="IsEditMode" value="@Model.IsEditMode.ToString().ToLower()" />
+
+    @if (!isEditMode)
+    {
+        <div class="mb-3">
+            <label class="form-label">Hedef Dil</label>
+            <select id="languageSelect" name="LanguageCode" class="form-select" required>
+                <option value="">Dil seçiniz</option>
+                @foreach (var lang in languageOptions)
+                {
+                    string selectedAttr = lang.Key == Model.LanguageCode ? " selected" : "";
+                    @Html.Raw($"<option value=\"{lang.Key}\"{selectedAttr}>{lang.Value}</option>")
+                }
+            </select>
+        </div>
+    }
+    else
+    {
+        <input type="hidden" name="LanguageCode" value="@Model.LanguageCode" />
+        <p><strong>Dil:</strong> @Model.LanguageCode.ToUpper()</p>
+    }
+
+    <h4>Orijinal İçerik</h4>
+    <div class="mb-3">
+        <label class="form-label">Başlık</label>
+        <input class="form-control" id="originalTitle" value="@Model.Original.Title" readonly />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Açıklama</label>
+        <textarea class="form-control" id="originalDescription" rows="4" readonly>@Model.Original.Description</textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Öne Çıkanlar</label>
+        <textarea class="form-control" id="originalHighlights" rows="3" readonly>@Model.Original.Highlights</textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Program Akışı</label>
+        <textarea class="form-control" id="originalItinerary" rows="4" readonly>@Model.Original.Itinerary</textarea>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Dahil Olanlar</label>
+            <ul class="list-group" id="originalInclusions">
+                @foreach (var item in Model.Original.Inclusions)
+                {
+                    <li class="list-group-item">@item</li>
+                }
+            </ul>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Dahil Olmayanlar</label>
+            <ul class="list-group" id="originalExclusions">
+                @foreach (var item in Model.Original.Exclusions)
+                {
+                    <li class="list-group-item">@item</li>
+                }
+            </ul>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Önemli Bilgiler</label>
+            <ul class="list-group" id="originalImportantInfo">
+                @foreach (var item in Model.Original.ImportantInfo)
+                {
+                    <li class="list-group-item">@item</li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <hr />
+
+    <h4>Çeviri</h4>
+    @if (!isEditMode)
+    {
+        <button type="button" class="btn btn-warning mb-3" onclick="autoTranslate()">Otomatik Çevir</button>
+        <div id="translationLoader" class="text-center my-3" style="display:none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+            <div>Çeviri yapılıyor, lütfen bekleyiniz...</div>
+        </div>
+    }
+
+    <div class="mb-3">
+        <label class="form-label">Başlık</label>
+        <input name="Translated.Title" id="translatedTitle" class="form-control" value="@Model.Translated.Title" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Açıklama</label>
+        <textarea name="Translated.Description" id="translatedDescription" class="form-control" rows="4">@Model.Translated.Description</textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Öne Çıkanlar</label>
+        <textarea name="Translated.Highlights" id="translatedHighlights" class="form-control" rows="3">@Model.Translated.Highlights</textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Program Akışı</label>
+        <textarea name="Translated.Itinerary" id="translatedItinerary" class="form-control" rows="4">@Model.Translated.Itinerary</textarea>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Dahil Olanlar</label>
+            <div id="inclusionsContainer">
+                @foreach (var item in Model.Translated.Inclusions ?? new List<string>())
+                {
+                    <input type="text" name="Translated.Inclusions" class="form-control mb-2" value="@item" />
+                }
+                <input type="text" name="Translated.Inclusions" class="form-control mb-2" placeholder="Örn: Öğle yemeği" />
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="addInput('inclusionsContainer', 'Translated.Inclusions')">+ Ekle</button>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Dahil Olmayanlar</label>
+            <div id="exclusionsContainer">
+                @foreach (var item in Model.Translated.Exclusions ?? new List<string>())
+                {
+                    <input type="text" name="Translated.Exclusions" class="form-control mb-2" value="@item" />
+                }
+                <input type="text" name="Translated.Exclusions" class="form-control mb-2" placeholder="Örn: Akşam yemeği" />
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="addInput('exclusionsContainer', 'Translated.Exclusions')">+ Ekle</button>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Önemli Bilgiler</label>
+            <div id="importantInfoContainer">
+                @foreach (var item in Model.Translated.ImportantInfo ?? new List<string>())
+                {
+                    <input type="text" name="Translated.ImportantInfo" class="form-control mb-2" value="@item" />
+                }
+                <input type="text" name="Translated.ImportantInfo" class="form-control mb-2" placeholder="Örn: Güneş kremi önerilir" />
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="addInput('importantInfoContainer', 'Translated.ImportantInfo')">+ Ekle</button>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-success">Kaydet</button>
+        <a asp-action="ManageLanguages" asp-route-id="@Model.ActivityId" class="btn btn-secondary">Geri</a>
+    </div>
+</form>
+<script>
+    async function lingvaTranslate(text, targetLang) {
+        if (!text || !targetLang) return "";
+
+        const sourceLang = "tr";
+        const url = `https://lingva.ml/api/v1/${sourceLang}/${targetLang}/${encodeURIComponent(text)}`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("HTTP Error");
+
+            const result = await response.json();
+            return result.translation || "";
+        } catch (err) {
+            console.error("Çeviri hatası:", err);
+            throw err;
+        }
+    }
+
+    async function autoTranslate() {
+        const targetLang = document.getElementById("languageSelect")?.value?.toLowerCase();
+        if (!targetLang) {
+            alert("Hedef dil seçilmedi.");
+            return;
+        }
+
+        document.getElementById("translationLoader").style.display = "block";
+
+        try {
+            const fieldMappings = [
+                { selector: "Translated.Title", source: document.getElementById("originalTitle")?.value },
+                { selector: "Translated.Description", source: document.getElementById("originalDescription")?.value },
+                { selector: "Translated.Highlights", source: document.getElementById("originalHighlights")?.value },
+                { selector: "Translated.Itinerary", source: document.getElementById("originalItinerary")?.value }
+            ];
+
+            for (const field of fieldMappings) {
+                if (field.source) {
+                    const translated = await lingvaTranslate(field.source, targetLang);
+                    const input = document.querySelector(`[name='${field.selector}']`);
+                    if (input) input.value = translated;
+                }
+            }
+
+            const originalLists = {
+                Inclusions: Array.from(document.querySelectorAll("#originalInclusions li")).map(li => li.textContent.trim()),
+                Exclusions: Array.from(document.querySelectorAll("#originalExclusions li")).map(li => li.textContent.trim()),
+                ImportantInfo: Array.from(document.querySelectorAll("#originalImportantInfo li")).map(li => li.textContent.trim())
+            };
+
+            const containerMap = {
+                Inclusions: "inclusionsContainer",
+                Exclusions: "exclusionsContainer",
+                ImportantInfo: "importantInfoContainer"
+            };
+
+            for (const [key, items] of Object.entries(originalLists)) {
+                const containerId = containerMap[key];
+                const container = document.getElementById(containerId);
+                if (!container) continue;
+
+                // Önceki input'ları temizle
+                container.innerHTML = "";
+
+                for (const item of items) {
+                    const translated = await lingvaTranslate(item, targetLang);
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.name = `Translated.${key}`;
+                    input.className = "form-control mb-2";
+                    input.value = translated;
+                    container.appendChild(input);
+                }
+
+                // Boş yeni giriş input'u
+                const placeholder = document.createElement("input");
+                placeholder.type = "text";
+                placeholder.name = `Translated.${key}`;
+                placeholder.className = "form-control mb-2";
+                placeholder.placeholder = "Yeni giriş";
+                container.appendChild(placeholder);
+            }
+
+        } catch (error) {
+            alert("Çeviri servisine erişilemedi. Lütfen daha sonra tekrar deneyiniz.");
+        } finally {
+            document.getElementById("translationLoader").style.display = "none";
+        }
+    }
+</script>
+

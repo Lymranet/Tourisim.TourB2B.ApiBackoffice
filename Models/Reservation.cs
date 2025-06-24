@@ -1,4 +1,6 @@
-﻿namespace TourManagementApi.Models
+﻿using System.Net.Sockets;
+
+namespace TourManagementApi.Models
 {
     public class Reservation
     {
@@ -22,11 +24,18 @@
         public string ContactEmail { get; set; }
         public string ContactPhone { get; set; }
 
-        public string Status { get; set; } // Confirmed, Cancelled vs.
+        public string Status { get; set; }
+        public DateTime CreatedAt { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        // CM entegrasyonu için
+        public string ExperienceBankBookingId { get; set; }
+        public string MarketplaceId { get; set; }
+        public string MarketplaceBookingId { get; set; }
+        public string Notes { get; set; }
 
         public ICollection<ReservationGuest> Guests { get; set; }
+        public string PartnerSupplierId { get; internal set; }
+        public string PartnerBookingId { get; internal set; }
+        public List<Ticket> Tickets { get; set; }
     }
-
 }

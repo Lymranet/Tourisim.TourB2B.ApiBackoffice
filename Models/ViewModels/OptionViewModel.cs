@@ -18,7 +18,12 @@ namespace TourManagementApi.Models.ViewModels
         [MaxLength(50)]
         [Display(Name = "Başlangıç Saati")]
         public string StartTime { get; set; } = string.Empty;
-        
+
+        [Required(ErrorMessage = "Başlangıç saati zorunludur.")]
+        [Display(Name = "Bitiş Saati")]
+        [MaxLength(50)]
+        public string? EndTime { get; set; }
+
         [Required(ErrorMessage = "Satış başlangıç tarihi zorunludur")]
         [Display(Name = "Satış Başlangıç Tarihi")]
         public DateTime FromDate { get; set; }

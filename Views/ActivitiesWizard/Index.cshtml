@@ -26,17 +26,25 @@
             <tr>
                 <td>@(item?.Title ?? "-")</td>
                 <td>@(item?.Category ?? "-")</td>
-                <td>@(item?.Status ?? "-")</td>
                 <td>
+                    <select class="form-select form-select-sm" onchange="updateStatus(@item.Id, this.value)">
+                        <option value="draft" selected="@(item.Status == "draft")">Taslak</option>
+                        <option value="inactive" selected="@(item.Status == "inactive")">Pasif</option>
+                        <option value="active" selected="@(item.Status == "active")">Aktif</option>
+                    </select>
+                </td>
+                <td class="d-flex flex-wrap gap-1">
                     <a asp-action="CreateBasic" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-info">Temel Bilgi</a>
                     <a asp-action="CreateLocation" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-secondary">Lokasyon</a>
                     <a asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.Id ?? 0)" class="btn btn-sm btn-warning">Seçenekler</a>
                     <a asp-action="CreateBasic" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-primary">Düzenle</a>
+                    <a asp-action="ManageLanguages" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-dark">Dil Yönetimi</a>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
 
 @ViewBag.Count
 
@@ -44,7 +52,24 @@
     function sendHeight() {
         parent.postMessage(document.body.scrollHeight, "*");
     }
-
+     function updateStatus(id, newStatus) {
+        fetch(`/ActivitiesWizard/UpdateStatus/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Durum güncellenemedi.');
+            }
+        })
+        .catch(error => {
+            alert('Hata: ' + error.message);
+        });
+    }
     window.addEventListener("load", sendHeight);
     window.addEventListener("resize", sendHeight); // sayfa yeniden boyutlandırılırsa
 </script>

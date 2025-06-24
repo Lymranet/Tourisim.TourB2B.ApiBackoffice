@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TourManagementApi.Data;
 
@@ -11,9 +12,11 @@ using TourManagementApi.Data;
 namespace TourManagementApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250623141228_AddActivityLanguagesTable")]
+    partial class AddActivityLanguagesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -207,7 +210,7 @@ namespace TourManagementApi.Migrations
 
                     b.HasIndex("ActivityId");
 
-                    b.ToTable("ActivityLanguages");
+                    b.ToTable("ActivityLanguage");
                 });
 
             modelBuilder.Entity("TourManagementApi.Models.OpeningHour", b =>
@@ -514,59 +517,6 @@ namespace TourManagementApi.Migrations
                     b.HasIndex("OptionId");
 
                     b.ToTable("TicketCategories");
-                });
-
-            modelBuilder.Entity("TourManagementApi.Models.Translation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ActivityId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ExclusionsJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Highlights")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ImportantInfoJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("InclusionsJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Itinerary")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityId");
-
-                    b.ToTable("Translations");
                 });
 
             modelBuilder.Entity("TourManagementApi.Models.Activity", b =>
@@ -1058,17 +1008,6 @@ namespace TourManagementApi.Migrations
                         .IsRequired();
 
                     b.Navigation("Option");
-                });
-
-            modelBuilder.Entity("TourManagementApi.Models.Translation", b =>
-                {
-                    b.HasOne("TourManagementApi.Models.Activity", "Activity")
-                        .WithMany()
-                        .HasForeignKey("ActivityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Activity");
                 });
 
             modelBuilder.Entity("TourManagementApi.Models.Activity", b =>
