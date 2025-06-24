@@ -59,7 +59,7 @@ namespace TourManagementApi.Controllers
             var data = _context.Reservations
                 .Include(r => r.Activity)
                 .Include(r => r.Option)
-                .Include(r => r.Guests)
+                .Include(r => r.ReservationGuests)
                 .Where(r => r.ScheduledDate.Date == today)
                 .Select(r => new DailyOperationalItemDto
                 {
@@ -67,7 +67,7 @@ namespace TourManagementApi.Controllers
                     OptionName = r.Option.Name,
                     ScheduledDate = r.ScheduledDate,
                     GuestCount = r.GuestCount,
-                    GuestNames = r.Guests.Select(g => g.GuestName).ToList()
+                    GuestNames = r.ReservationGuests.Select(g => g.GuestName).ToList()
                 })
                 .ToList();
 

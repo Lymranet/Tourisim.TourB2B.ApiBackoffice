@@ -40,7 +40,7 @@ namespace TourManagementApi.Controllers
             var reservation = _context.Reservations
                 .Include(r => r.Activity)
                 .Include(r => r.Option)
-                .Include(r => r.Guests)
+                .Include(r => r.ReservationGuests)
                 .FirstOrDefault(r => r.Id == id);
 
             if (reservation == null)

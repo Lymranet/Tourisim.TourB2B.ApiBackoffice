@@ -1,4 +1,4 @@
-﻿namespace TourManagementApi.Models.Api
+﻿namespace TourManagementApi.Models
 {
     public class Availability
     {
@@ -15,13 +15,14 @@
         public List<OpeningHour> OpeningHours { get; set; }
         public List<TicketCategoryCapacity> TicketCategoryCapacities { get; set; }
     }
-    public class OpeningHour
-    {
-        public string FromTime { get; set; } // "09:00:00"
-        public string ToTime { get; set; }   // "20:30:00"
-    }
+    //public partial class OpeningHour
+    //{
+    //    public string FromTime { get; set; } // "09:00:00"
+    //    public string ToTime { get; set; }   // "20:30:00"
+    //}
     public class TicketCategoryCapacity
     {
+        public int Id { get; set; }
         public string TicketCategoryId { get; set; }
         public int? Capacity { get; set; } // null ise sınırsız
     }

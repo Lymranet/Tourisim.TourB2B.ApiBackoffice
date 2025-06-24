@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TourManagementApi.Data;
+using TourManagementApi.Extensions;
+using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers.Api
 {
@@ -26,6 +29,8 @@ namespace TourManagementApi.Controllers.Api
         //    const int pageSize = 50;
 
         //    var query = _context.Availabilities
+        //        .Include(a => a.OpeningHours)
+        //        .Include(a => a.TicketCategoryCapacities)
         //        .Where(a => a.PartnerSupplierId == partnerSupplierId &&
         //                    a.Date >= dateRangeStart &&
         //                    a.Date <= dateRangeEnd);
@@ -37,44 +42,25 @@ namespace TourManagementApi.Controllers.Api
         //        query = query.Where(a => optionId.Contains(a.OptionId));
 
         //    var total = await query.CountAsync();
+
         //    var availabilities = await query
         //        .OrderBy(a => a.Date)
         //        .Skip(offset)
         //        .Take(pageSize)
         //        .ToListAsync();
 
-        //    var result = new
+        //    var result = new AvailabilityResultDto
         //    {
-        //        links = new
+        //        links = new LinksDto
         //        {
         //            next = offset + pageSize < total
-        //                ? $"https://your-api.com/supplier/{partnerSupplierId}/availabilities?offset={offset + pageSize}&dateRangeStart={dateRangeStart:yyyy-MM-dd}&dateRangeEnd={dateRangeEnd:yyyy-MM-dd}"
+        //                ? $"https://tour.hotelwidget.com/supplier/{partnerSupplierId}/availabilities?offset={offset + pageSize}&dateRangeStart={dateRangeStart:yyyy-MM-dd}&dateRangeEnd={dateRangeEnd:yyyy-MM-dd}"
         //                : null
         //        },
-        //        data = availabilities.Select(a => new
-        //        {
-        //            dateTime = a.StartTime.HasValue
-        //                ? a.StartTime.Value.ToString("yyyy-MM-ddTHH:mm:sszzz")
-        //                : a.Date.ToString("yyyy-MM-ddT00:00:00zzz"),
-        //            openingHours = a.OpeningHours?.Select(oh => new
-        //            {
-        //                fromTime = oh.FromTime,
-        //                toTime = oh.ToTime
-        //            }) ?? new List<object>(),
-        //            availableCapacity = a.AvailableCapacity,
-        //            maximumCapacity = a.MaximumCapacity,
-        //            activityId = a.ActivityId,
-        //            optionId = a.OptionId,
-        //            ticketCategories = a.TicketCategoryCapacities?.Select(tc => new
-        //            {
-        //                id = tc.TicketCategoryId,
-        //                availableCapacity = tc.Capacity
-        //            }) ?? new List<object>()
-        //        })
+        //        data = availabilities.Select(a => a.ToDto()).ToList()
         //    };
 
         //    return Ok(result);
         //}
     }
-
 }

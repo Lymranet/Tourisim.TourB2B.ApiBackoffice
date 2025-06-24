@@ -1,20 +1,17 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TourManagementApi.Models
+namespace TourManagementApi.Models;
+
+public partial class OpeningHour
 {
-    public class OpeningHour
-    {
-        public int Id { get; set; }
-        
-        [Required(ErrorMessage = "Başlangıç saati zorunludur")]
-        [Display(Name = "Başlangıç Saati")]
-        public string FromTime { get; set; } = string.Empty;
-        
-        [Required(ErrorMessage = "Bitiş saati zorunludur")]
-        [Display(Name = "Bitiş Saati")]
-        public string ToTime { get; set; } = string.Empty;
-        
-        public int OptionId { get; set; }
-        public Option Option { get; set; } = null!;
-    }
-} 
+    public int Id { get; set; }
+
+    public string FromTime { get; set; } = null!;
+
+    public string ToTime { get; set; } = null!;
+
+    public int OptionId { get; set; }
+
+    public virtual Option Option { get; set; } = null!;
+}

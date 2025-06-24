@@ -1,237 +1,252 @@
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Text.Json;
 using TourManagementApi.Models;
-using TourManagementApi.Models.Common;
 
 namespace TourManagementApi.Data;
 
-public class ApplicationDbContext : DbContext
+public partial class ApplicationDbContext : DbContext
 {
+    public ApplicationDbContext()
+    {
+    }
+
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
         : base(options)
     {
     }
 
-    public DbSet<Activity> Activities { get; set; } = null!;
-    public DbSet<Option> Options { get; set; } = null!;
-    public DbSet<OpeningHour> OpeningHours { get; set; } = null!;
-    public DbSet<TicketCategory> TicketCategories { get; set; } = null!;
-    public DbSet<Reservation> Reservations { get; set; }
-    public DbSet<ReservationGuest> ReservationGuests { get; set; }
-    public DbSet<ActivityLanguage> ActivityLanguages { get; set; }
-    public DbSet<Translation> Translations { get; set; }
+    public virtual DbSet<Activity> Activities { get; set; }
+
+    public virtual DbSet<ActivityLanguage> ActivityLanguages { get; set; }
+
+    public virtual DbSet<MeetingPoint> MeetingPoints { get; set; }
+
+    public virtual DbSet<OpeningHour> OpeningHours { get; set; }
+
+    public virtual DbSet<Option> Options { get; set; }
+
+    public virtual DbSet<PriceCategory> PriceCategories { get; set; }
+
+    public virtual DbSet<Reservation> Reservations { get; set; }
+
+    public virtual DbSet<ReservationGuest> ReservationGuests { get; set; }
+
+    public virtual DbSet<RoutePoint> RoutePoints { get; set; }
+
+    public virtual DbSet<Ticket> Tickets { get; set; }
+
+    public virtual DbSet<TicketCategory> TicketCategories { get; set; }
+
+    public virtual DbSet<TimeSlot> TimeSlots { get; set; }
+
+    public virtual DbSet<Translation> Translations { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=213.159.29.100;Database=TourManagementDb;User Id=troya_dbUser;Password=d93cHL:?bHb[.a%/4c3:yGALR{KGBAdsa;TrustServerCertificate=True;");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(modelBuilder);
-
-        var jsonOptions = new JsonSerializerOptions
-        {
-            WriteIndented = false,
-            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
-        };
-
         modelBuilder.Entity<Activity>(entity =>
         {
-            entity.HasKey(e => e.Id);
-
-            // Convert collections to JSON with value comparers
-            entity.Property(e => e.Languages)
-                .HasJsonConversion(jsonOptions)
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-
-            entity.Property(e => e.Requirements)
-                .HasJsonConversion(jsonOptions)
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-
-            entity.Property(e => e.Included)
-                .HasJsonConversion(jsonOptions)
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-
-            entity.Property(e => e.Exclusions)
-                .HasJsonConversion(jsonOptions)
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-
-            entity.Property(e => e.Categories)
-                .HasJsonConversion(jsonOptions)
-                .HasDefaultValueSql("'[]'")
-                .IsRequired()
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-
-            entity.Property(e => e.Inclusions)
-                .HasJsonConversion(jsonOptions)
-                .HasDefaultValueSql("'[]'")
-                .IsRequired()
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-
-            entity.Property(e => e.ImportantInfo)
-                .HasJsonConversion(jsonOptions)
-                .HasDefaultValueSql("'[]'")
-                .IsRequired()
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-
-            entity.Property(e => e.GuestFields)
-                .HasJsonConversion(jsonOptions)
-                .HasDefaultValueSql("'[]'")
-                .IsRequired()
-                .Metadata.SetValueComparer(new CollectionValueComparer<GuestField>());
-
-            entity.Property(e => e.AverageRating)
-                .HasPrecision(4, 2);
-
-            // Configure owned types that have collections
-            entity.OwnsMany(e => e.MeetingPoints);
-            entity.OwnsMany(e => e.RoutePoints);
-            entity.OwnsMany(e => e.TimeSlots, ts =>
-            {
-                ts.Property(t => t.DaysOfWeek)
-                    .HasJsonConversion(jsonOptions)
-                    .Metadata.SetValueComparer(new CollectionValueComparer<string>());
-            });
-
-            // Configure optional owned types
-            entity.OwnsOne(e => e.Location, l =>
-            {
-                l.Property(p => p.Address).IsRequired(false);
-                l.Property(p => p.City).IsRequired(false);
-                l.Property(p => p.Country).IsRequired(false);
-                l.Property<bool>("_isNull").HasColumnName("LocationIsNull");
-            });
-
-            entity.OwnsOne(e => e.SeasonalAvailability, s =>
-            {
-                s.Property<bool>("_isNull").HasColumnName("SeasonalAvailabilityIsNull");
-            });
-
-            entity.OwnsOne(e => e.PriceInfo, p =>
-            {
-                p.Property(pi => pi.BasePrice).HasPrecision(18, 2);
-                p.Property<bool>("_isNull").HasColumnName("PriceInfoIsNull");
-            });
-
-            entity.OwnsOne(e => e.Pricing, p =>
-            {
-                p.Property(ap => ap.DefaultCurrency).IsRequired(false);
-                p.Property(ap => ap.TaxRate).HasPrecision(18, 2);
-                p.OwnsMany(ap => ap.Categories, c =>
-                {
-                    c.Property(pc => pc.Amount).HasPrecision(18, 2);
-                    c.Property(pc => pc.DiscountValue).HasPrecision(18, 2);
-                });
-                p.Property<bool>("_isNull").HasColumnName("PricingIsNull");
-            });
-
-            entity.OwnsOne(e => e.ContactInfo, c =>
-            {
-                c.Property(p => p.Name).IsRequired(false);
-                c.Property(p => p.Email).IsRequired(false);
-                c.Property(p => p.Phone).IsRequired(false);
-                c.Property(p => p.Role).IsRequired(false);
-                c.Property<bool>("_isNull").HasColumnName("ContactInfoIsNull");
-            });
-
-            entity.OwnsOne(e => e.Media, m =>
-            {
-                m.Property(p => p.Videos).IsRequired(false);
-                m.OwnsOne(p => p.Images, i =>
-                {
-                    i.Property(p => p.Gallery).IsRequired(false);
-                    i.Property(p => p.Header).IsRequired(false);
-                    i.Property(p => p.Teaser).IsRequired(false);
-                });
-                m.Property<bool>("_isNull").HasColumnName("MediaIsNull");
-            });
-
-            entity.OwnsOne(e => e.SalesAvailability, s =>
-            {
-                s.Property<bool>("_isNull").HasColumnName("SalesAvailabilityIsNull");
-            });
+            entity.Property(e => e.AverageRating).HasColumnType("decimal(4, 2)");
+            entity.Property(e => e.Categories).HasDefaultValue("[]");
+            entity.Property(e => e.ContactInfoEmail).HasColumnName("ContactInfo_Email");
+            entity.Property(e => e.ContactInfoName).HasColumnName("ContactInfo_Name");
+            entity.Property(e => e.ContactInfoPhone).HasColumnName("ContactInfo_Phone");
+            entity.Property(e => e.ContactInfoRole).HasColumnName("ContactInfo_Role");
+            entity.Property(e => e.CountryCode).HasDefaultValue("");
+            entity.Property(e => e.DestinationCode).HasDefaultValue("");
+            entity.Property(e => e.DestinationName).HasDefaultValue("");
+            entity.Property(e => e.DetailsUrl).HasDefaultValue("");
+            entity.Property(e => e.ExclusionsJson).HasDefaultValue("");
+            entity.Property(e => e.GuestFields).HasDefaultValue("[]");
+            entity.Property(e => e.GuestFieldsJson).HasDefaultValue("");
+            entity.Property(e => e.ImportantInfo).HasDefaultValue("[]");
+            entity.Property(e => e.ImportantInfoJson).HasDefaultValue("");
+            entity.Property(e => e.Inclusions).HasDefaultValue("[]");
+            entity.Property(e => e.InclusionsJson).HasDefaultValue("");
+            entity.Property(e => e.Label).HasDefaultValue("");
+            entity.Property(e => e.Language).HasDefaultValue("");
+            entity.Property(e => e.LocationAddress).HasColumnName("Location_Address");
+            entity.Property(e => e.LocationCity).HasColumnName("Location_City");
+            entity.Property(e => e.LocationCoordinatesLatitude).HasColumnName("Location_Coordinates_Latitude");
+            entity.Property(e => e.LocationCoordinatesLongitude).HasColumnName("Location_Coordinates_Longitude");
+            entity.Property(e => e.LocationCountry).HasColumnName("Location_Country");
+            entity.Property(e => e.MediaImagesGallery).HasColumnName("Media_Images_Gallery");
+            entity.Property(e => e.MediaImagesHeader).HasColumnName("Media_Images_Header");
+            entity.Property(e => e.MediaImagesTeaser).HasColumnName("Media_Images_Teaser");
+            entity.Property(e => e.MediaVideos).HasColumnName("Media_Videos");
+            entity.Property(e => e.PartnerSupplierId).HasDefaultValue("");
+            entity.Property(e => e.PriceInfoBasePrice)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("PriceInfo_BasePrice");
+            entity.Property(e => e.PriceInfoCurrency).HasColumnName("PriceInfo_Currency");
+            entity.Property(e => e.PriceInfoMaxAge).HasColumnName("PriceInfo_MaxAge");
+            entity.Property(e => e.PriceInfoMaximumParticipants).HasColumnName("PriceInfo_MaximumParticipants");
+            entity.Property(e => e.PriceInfoMinAge).HasColumnName("PriceInfo_MinAge");
+            entity.Property(e => e.PriceInfoMinimumParticipants).HasColumnName("PriceInfo_MinimumParticipants");
+            entity.Property(e => e.PricingDefaultCurrency).HasColumnName("Pricing_DefaultCurrency");
+            entity.Property(e => e.PricingTaxIncluded).HasColumnName("Pricing_TaxIncluded");
+            entity.Property(e => e.PricingTaxRate)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("Pricing_TaxRate");
+            entity.Property(e => e.SalesAvailabilityEndDate).HasColumnName("SalesAvailability_EndDate");
+            entity.Property(e => e.SalesAvailabilityStartDate).HasColumnName("SalesAvailability_StartDate");
+            entity.Property(e => e.SeasonalAvailabilityEndDate).HasColumnName("SeasonalAvailability_EndDate");
+            entity.Property(e => e.SeasonalAvailabilityStartDate).HasColumnName("SeasonalAvailability_StartDate");
+            entity.Property(e => e.Status).HasMaxLength(50);
         });
 
-        modelBuilder.Entity<Option>(entity =>
+        modelBuilder.Entity<ActivityLanguage>(entity =>
         {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.Activity)
-                .WithMany(a => a.Options)
-                .HasForeignKey(e => e.ActivityId)
-                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasKey(e => e.Id).HasName("PK_ActivityLanguage");
 
-            entity.Property(e => e.Weekdays)
-                .HasJsonConversion(jsonOptions)
-                .Metadata.SetValueComparer(new CollectionValueComparer<string>());
+            entity.HasIndex(e => e.ActivityId, "IX_ActivityLanguage_ActivityId");
 
-            entity.HasMany(e => e.OpeningHours)
-                .WithOne(o => o.Option)
-                .HasForeignKey(o => o.OptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+            entity.Property(e => e.LanguageCode).HasMaxLength(10);
 
-            entity.HasMany(e => e.TicketCategories)
-                .WithOne(t => t.Option)
-                .HasForeignKey(t => t.OptionId)
-                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(d => d.Activity).WithMany(p => p.ActivityLanguages)
+                .HasForeignKey(d => d.ActivityId)
+                .HasConstraintName("FK_ActivityLanguage_Activities_ActivityId");
+        });
+
+        modelBuilder.Entity<MeetingPoint>(entity =>
+        {
+            entity.HasKey(e => new { e.ActivityId, e.Id });
+
+            entity.ToTable("MeetingPoint");
+
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.MeetingPoints).HasForeignKey(d => d.ActivityId);
         });
 
         modelBuilder.Entity<OpeningHour>(entity =>
         {
-            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.OptionId, "IX_OpeningHours_OptionId");
+
+            entity.HasOne(d => d.Option).WithMany(p => p.OpeningHours).HasForeignKey(d => d.OptionId);
+        });
+
+        modelBuilder.Entity<Option>(entity =>
+        {
+            entity.HasIndex(e => e.ActivityId, "IX_Options_ActivityId");
+
+            entity.Property(e => e.Duration).HasDefaultValue("");
+            entity.Property(e => e.EndTime).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.StartTime).HasMaxLength(50);
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.Options).HasForeignKey(d => d.ActivityId);
+        });
+
+        modelBuilder.Entity<PriceCategory>(entity =>
+        {
+            entity.HasKey(e => new { e.ActivityPricingActivityId, e.Id });
+
+            entity.ToTable("PriceCategory");
+
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.DiscountValue).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.ActivityPricingActivity).WithMany(p => p.PriceCategories).HasForeignKey(d => d.ActivityPricingActivityId);
+        });
+
+        modelBuilder.Entity<Reservation>(entity =>
+        {
+            entity.HasIndex(e => e.ActivityId, "IX_Reservations_ActivityId");
+
+            entity.HasIndex(e => e.ExperienceBankBookingId, "IX_Reservations_ExperienceBankBookingId").IsUnique();
+
+            entity.HasIndex(e => e.OptionId, "IX_Reservations_OptionId");
+
+            entity.Property(e => e.ExperienceBankBookingId).HasDefaultValue("");
+            entity.Property(e => e.MarketplaceBookingId).HasDefaultValue("");
+            entity.Property(e => e.MarketplaceId).HasDefaultValue("");
+            entity.Property(e => e.Notes).HasDefaultValue("");
+            entity.Property(e => e.PartnerBookingId).HasDefaultValue("");
+            entity.Property(e => e.PartnerSupplierId).HasDefaultValue("");
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.Reservations)
+                .HasForeignKey(d => d.ActivityId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.Option).WithMany(p => p.Reservations)
+                .HasForeignKey(d => d.OptionId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+        });
+
+        modelBuilder.Entity<ReservationGuest>(entity =>
+        {
+            entity.HasIndex(e => e.ReservationId, "IX_ReservationGuests_ReservationId");
+
+            entity.Property(e => e.AdditionalFieldsJson).HasDefaultValue("");
+            entity.Property(e => e.AddonsJson).HasDefaultValue("");
+            entity.Property(e => e.Email).HasDefaultValue("");
+            entity.Property(e => e.FirstName).HasDefaultValue("");
+            entity.Property(e => e.LastName).HasDefaultValue("");
+            entity.Property(e => e.PhoneNumber).HasDefaultValue("");
+            entity.Property(e => e.TicketCategory).HasDefaultValue("");
+            entity.Property(e => e.TicketId).HasDefaultValue("");
+
+            entity.HasOne(d => d.Reservation).WithMany(p => p.ReservationGuests).HasForeignKey(d => d.ReservationId);
+        });
+
+        modelBuilder.Entity<RoutePoint>(entity =>
+        {
+            entity.HasKey(e => new { e.ActivityId, e.Id });
+
+            entity.ToTable("RoutePoint");
+
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.RoutePoints).HasForeignKey(d => d.ActivityId);
+        });
+
+        modelBuilder.Entity<Ticket>(entity =>
+        {
+            entity.ToTable("Ticket");
+
+            entity.HasIndex(e => e.ReservationId, "IX_Ticket_ReservationId");
+
+            entity.HasOne(d => d.Reservation).WithMany(p => p.Tickets).HasForeignKey(d => d.ReservationId);
         });
 
         modelBuilder.Entity<TicketCategory>(entity =>
         {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Amount)
-                .HasPrecision(18, 2);
+            entity.HasIndex(e => e.OptionId, "IX_TicketCategories_OptionId");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.Option).WithMany(p => p.TicketCategories).HasForeignKey(d => d.OptionId);
         });
 
-        modelBuilder.Entity<Reservation>()
-           .HasOne(r => r.Activity)
-           .WithMany()
-           .HasForeignKey(r => r.ActivityId)
-           .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<TimeSlot>(entity =>
+        {
+            entity.HasKey(e => new { e.ActivityId, e.Id });
 
-        modelBuilder.Entity<Reservation>()
-            .HasOne(r => r.Option)
-            .WithMany()
-            .HasForeignKey(r => r.OptionId)
-            .OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable("TimeSlot");
 
-        modelBuilder.Entity<ReservationGuest>()
-            .HasOne(g => g.Reservation)
-            .WithMany(r => r.Guests)
-            .HasForeignKey(g => g.ReservationId)
-            .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<Reservation>()
-      .HasIndex(r => r.ExperienceBankBookingId)
-      .IsUnique();
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-        modelBuilder.Entity<ReservationGuest>()
-            .Property(g => g.AdditionalFieldsJson)
-            .HasColumnType("nvarchar(max)");
+            entity.HasOne(d => d.Activity).WithMany(p => p.TimeSlots).HasForeignKey(d => d.ActivityId);
+        });
 
-        modelBuilder.Entity<ReservationGuest>()
-            .Property(g => g.AddonsJson)
-            .HasColumnType("nvarchar(max)");
+        modelBuilder.Entity<Translation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Translat__3214EC07A96AFBF4");
+
+            entity.HasIndex(e => new { e.ActivityId, e.Language }, "UX_Translation_Activity_Language").IsUnique();
+
+            entity.Property(e => e.Language).HasMaxLength(10);
+        });
+
+        OnModelCreatingPartial(modelBuilder);
     }
+
+    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
-
-public static class ModelBuilderExtensions
-{
-    public static PropertyBuilder<T> HasJsonConversion<T>(this PropertyBuilder<T> propertyBuilder, JsonSerializerOptions options) where T : class
-    {
-        return propertyBuilder.HasConversion(
-            v => v == null ? "[]" : JsonSerializer.Serialize(v, options),
-            v => string.IsNullOrEmpty(v) ? null : JsonSerializer.Deserialize<T>(v, options)
-        );
-    }
-}
-
-public class CollectionValueComparer<T> : ValueComparer<List<T>>
-{
-    public CollectionValueComparer() : base(
-        (c1, c2) => (c1 == null && c2 == null) || (c1 != null && c2 != null && c1.SequenceEqual(c2)),
-        c => c != null ? c.Aggregate(0, (a, v) => HashCode.Combine(a, v != null ? v.GetHashCode() : 0)) : 0,
-        c => c != null ? new List<T>(c) : new List<T>())
-    {
-    }
-} 

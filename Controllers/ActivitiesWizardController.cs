@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TourManagementApi.Data;
 using TourManagementApi.Helper;
@@ -34,7 +35,7 @@ namespace TourManagementApi.Controllers
             _environment = environment;
             _logger = logger;
         }
-       
+
 
         public IActionResult Index()
         {
@@ -104,22 +105,22 @@ namespace TourManagementApi.Controllers
                         Category = activity.Category,
                         Subcategory = activity.Subcategory,
                         Description = activity.Description,
-                        ContactInfo = activity.ContactInfo != null ? new ContactInfoViewModel
+                        ContactInfo = activity.ContactInfoName != null ? new ContactInfoViewModel
                         {
-                            Name = activity.ContactInfo.Name,
-                            Role = activity.ContactInfo.Role,
-                            Email = activity.ContactInfo.Email,
-                            Phone = activity.ContactInfo.Phone
+                            Name = activity.ContactInfoName,
+                            Role = activity.ContactInfoName,
+                            Email = activity.ContactInfoName,
+                            Phone = activity.ContactInfoName
                         } : new ContactInfoViewModel(),
                         CoverImageUrl = activity.CoverImage,
                         PreviewImageUrl = activity.PreviewImage,
-                        GalleryImageUrls = activity.GalleryImages,
-                        ExistingGalleryImages = activity.GalleryImages ?? new List<string>(),
-                        VideoUrls = activity.VideoUrls,
+                        GalleryImageUrls = TxtJson.DeserializeList(activity.GalleryImages),
+                        ExistingGalleryImages = TxtJson.DeserializeList(activity.GalleryImages),
+                        VideoUrls = TxtJson.DeserializeList(activity.MediaVideos),
                         Highlights = activity.Highlights,
-                        Inclusions = activity.Inclusions,
-                        Exclusions = activity.Exclusions,
-                        ImportantInfo = activity.ImportantInfo,
+                        Inclusions = TxtJson.DeserializeList(activity.Inclusions),
+                        Exclusions = TxtJson.DeserializeList(activity.Exclusions),
+                        ImportantInfo = TxtJson.DeserializeList(activity.ImportantInfo),
                         Itinerary = activity.Itinerary,
                         CountryCode = activity.CountryCode,
                         DestinationCode = activity.DestinationCode,
@@ -133,7 +134,7 @@ namespace TourManagementApi.Controllers
 
                 throw;
             }
-            
+
             return View(new ActivityBasicViewModel());
         }
 
@@ -165,12 +166,12 @@ namespace TourManagementApi.Controllers
                 activity.PartnerSupplierId = "";
                 if (model.CoverImage != null)
                 {
-                    activity.CoverImage = await FileHelper.SaveImage(model.CoverImage, "cover", _environment,_logger);
+                    activity.CoverImage = await FileHelper.SaveImage(model.CoverImage, "cover", _environment, _logger);
                 }
 
                 if (model.PreviewImage != null)
                 {
-                    activity.PreviewImage = await FileHelper.SaveImage(model.PreviewImage, "preview",_environment, _logger);
+                    activity.PreviewImage = await FileHelper.SaveImage(model.PreviewImage, "preview", _environment, _logger);
                 }
 
                 if (model.GalleryImages != null && model.GalleryImages.Any())
@@ -179,29 +180,26 @@ namespace TourManagementApi.Controllers
                     {
 
                         //var imageUrl = await SaveResizedImageAsync(file, Path.Combine(_environment.WebRootPath, "uploads", "gallery"));
-                        var imagePath = await FileHelper.SaveImage(image, "gallery",_environment, _logger);
+                        var imagePath = await FileHelper.SaveImage(image, "gallery", _environment, _logger);
                         if (!string.IsNullOrEmpty(imagePath))
                         {
                             finalGalleryList.Add(imagePath);
                         }
                     }
-                    activity.GalleryImages = finalGalleryList; 
+                    activity.GalleryImages = JsonSerializer.Serialize(finalGalleryList);
                 }
+                
+                activity.MediaVideos = JsonSerializer.Serialize(model.VideoUrls?.Where(url => !string.IsNullOrWhiteSpace(url)).ToList() ?? new List<string>());
 
-                activity.VideoUrls = model.VideoUrls?.Where(url => !string.IsNullOrEmpty(url)).ToList() ?? new List<string>();
-
-                activity.ContactInfo = new ContactInfo
-                {
-                    Name = model.ContactInfo.Name ?? string.Empty,
-                    Role = model.ContactInfo.Role ?? string.Empty,
-                    Email = model.ContactInfo.Email ?? string.Empty,
-                    Phone = model.ContactInfo.Phone ?? string.Empty
-                };
+                activity.ContactInfoName = model.ContactInfo.Name ?? string.Empty;
+                activity.ContactInfoRole = model.ContactInfo.Role ?? string.Empty;
+                activity.ContactInfoEmail = model.ContactInfo.Email ?? string.Empty;
+                activity.ContactInfoPhone = model.ContactInfo.Phone ?? string.Empty;
 
                 activity.Highlights = model.Highlights ?? string.Empty;
-                activity.Inclusions = model.Inclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
-                activity.Exclusions = model.Exclusions?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
-                activity.ImportantInfo = model.ImportantInfo?.Where(x => !string.IsNullOrEmpty(x)).ToList() ?? new List<string>();
+                activity.Inclusions = JsonSerializer.Serialize(model.Inclusions?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>());
+                activity.Exclusions = JsonSerializer.Serialize(model.Exclusions?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>());
+                activity.ImportantInfo = JsonSerializer.Serialize(model.ImportantInfo?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>());
                 activity.Itinerary = model.Itinerary;
 
                 activity.CountryCode = model.CountryCode;
@@ -394,8 +392,14 @@ namespace TourManagementApi.Controllers
             var viewModel = new ActivityPricingViewModel
             {
                 ActivityId = activity.Id,
-                Pricing = activity.Pricing ?? new ActivityPricing()
+                Pricing = new ActivityPricing
+                {
+                    DefaultCurrency = activity.PricingDefaultCurrency,
+                    TaxIncluded = activity.PricingTaxIncluded ?? false,
+                    TaxRate = activity.PricingTaxRate ?? 0
+                }
             };
+
 
             return View(viewModel);
         }
@@ -417,7 +421,31 @@ namespace TourManagementApi.Controllers
                     return NotFound();
                 }
 
-                activity.Pricing = model.Pricing;
+                activity.PricingDefaultCurrency = model.Pricing.DefaultCurrency;
+                activity.PricingTaxIncluded = model.Pricing.TaxIncluded;
+                activity.PricingTaxRate = model.Pricing.TaxRate;
+
+                _context.PriceCategories.RemoveRange(activity.PriceCategories);
+
+                foreach (var category in model.Categories)
+                {
+                    activity.PriceCategories.Add(new PriceCategory
+                    {
+                        Type = category.Type,
+                        PriceType = category.PriceType,
+                        Amount = category.Amount,
+                        Currency = category.Currency,
+                        Description = category.Description,
+                        MinAge = category.MinAge,
+                        MaxAge = category.MaxAge,
+                        MinParticipants = category.MinParticipants,
+                        MaxParticipants = category.MaxParticipants,
+                        DiscountType = category.DiscountType,
+                        DiscountValue = category.DiscountValue,
+                        ActivityPricingActivityId = activity.Id
+                    });
+                }
+
                 await _context.SaveChangesAsync();
 
                 return RedirectToAction("CreateTime", new { id = activity.Id });
@@ -441,16 +469,16 @@ namespace TourManagementApi.Controllers
                 {
                     ActivityId = activity.Id,
                     Duration = activity.Duration,
-                    SeasonalAvailability = activity.SeasonalAvailability != null ? new SeasonalAvailabilityViewModel
+                    SeasonalAvailability = activity.SeasonalAvailabilityIsNull != null ? new SeasonalAvailabilityViewModel
                     {
-                        StartDate = DateTime.TryParse(activity.SeasonalAvailability.StartDate, out var sd) ? sd : (DateTime?)null,
-                        EndDate = DateTime.TryParse(activity.SeasonalAvailability.EndDate, out var ed) ? ed : (DateTime?)null
+                        StartDate = DateTime.TryParse(activity.SeasonalAvailabilityStartDate, out var sd) ? sd : (DateTime?)null,
+                        EndDate = DateTime.TryParse(activity.SeasonalAvailabilityEndDate, out var ed) ? ed : (DateTime?)null
                     } : new SeasonalAvailabilityViewModel(),
                     TimeSlots = activity.TimeSlots.Select(ts => new TimeSlotViewModel
                     {
                         StartTime = ts.StartTime,
                         EndTime = ts.EndTime,
-                        DaysOfWeek = ts.DaysOfWeek
+                        DaysOfWeek = ts.DaysOfWeek.Split(',').ToList()
                     }).ToList()
                 };
                 return View(vm);
@@ -472,13 +500,16 @@ namespace TourManagementApi.Controllers
                     return NotFound();
 
                 activity.Duration = model.Duration;
-                activity.SeasonalAvailability = new SeasonalAvailability
-                {
-                    StartDate = model.SeasonalAvailability.StartDate?.ToString("yyyy-MM-dd"),
-                    EndDate = model.SeasonalAvailability.EndDate?.ToString("yyyy-MM-dd")
-                };
+                activity.SeasonalAvailabilityStartDate = model.SeasonalAvailability.StartDate?.ToString("yyyy-MM-dd");
+                activity.SeasonalAvailabilityEndDate = model.SeasonalAvailability.EndDate?.ToString("yyyy-MM-dd");
 
-                activity.TimeSlots = model.TimeSlots.Select(ts => new TimeSlot
+                //activity.SeasonalAvailability = new SeasonalAvailability
+                //{
+                //    StartDate = model.SeasonalAvailability.StartDate?.ToString("yyyy-MM-dd"),
+                //    EndDate = model.SeasonalAvailability.EndDate?.ToString("yyyy-MM-dd")
+                //};
+
+                activity.TimeSlots = model.TimeSlots.Select(ts => new Models.TimeSlot
                 {
                     StartTime = ts.StartTime,
                     EndTime = ts.EndTime,
@@ -495,7 +526,7 @@ namespace TourManagementApi.Controllers
             }
         }
 
-        
+
 
 
         #region Language Alanı
@@ -571,9 +602,17 @@ namespace TourManagementApi.Controllers
                     Description = activity.Description,
                     Highlights = activity.Highlights,
                     Itinerary = activity.Itinerary,
-                    Inclusions = activity.Inclusions,
-                    Exclusions = activity.Exclusions,
-                    ImportantInfo = activity.ImportantInfo
+                    Inclusions = string.IsNullOrWhiteSpace(activity.Inclusions)
+        ? new List<string>()
+        : JsonSerializer.Deserialize<List<string>>(activity.Inclusions) ?? new List<string>(),
+
+                    Exclusions = string.IsNullOrWhiteSpace(activity.Exclusions)
+        ? new List<string>()
+        : JsonSerializer.Deserialize<List<string>>(activity.Exclusions) ?? new List<string>(),
+
+                    ImportantInfo = string.IsNullOrWhiteSpace(activity.ImportantInfo)
+        ? new List<string>()
+        : JsonSerializer.Deserialize<List<string>>(activity.ImportantInfo) ?? new List<string>()
                 },
                 Translated = translation != null
                     ? new ActivityTranslationDTO
@@ -582,9 +621,17 @@ namespace TourManagementApi.Controllers
                         Description = translation.Description,
                         Highlights = translation.Highlights,
                         Itinerary = translation.Itinerary,
-                        Inclusions = translation.Inclusions,
-                        Exclusions = translation.Exclusions,
-                        ImportantInfo = translation.ImportantInfo
+                        Inclusions = string.IsNullOrWhiteSpace(translation.InclusionsJson)
+                            ? new List<string>()
+                            : JsonSerializer.Deserialize<List<string>>(translation.InclusionsJson) ?? new List<string>(),
+
+                        Exclusions = string.IsNullOrWhiteSpace(translation.ExclusionsJson)
+                            ? new List<string>()
+                            : JsonSerializer.Deserialize<List<string>>(translation.ExclusionsJson) ?? new List<string>(),
+
+                        ImportantInfo = string.IsNullOrWhiteSpace(translation.ImportantInfoJson)
+                            ? new List<string>()
+                            : JsonSerializer.Deserialize<List<string>>(translation.ImportantInfoJson) ?? new List<string>()
                     }
                     : new ActivityTranslationDTO()
             };
@@ -616,9 +663,9 @@ namespace TourManagementApi.Controllers
                     Description = model.Translated.Description,
                     Highlights = model.Translated.Highlights,
                     Itinerary = model.Translated.Itinerary,
-                    Inclusions = model.Translated.Inclusions,
-                    Exclusions = model.Translated.Exclusions,
-                    ImportantInfo = model.Translated.ImportantInfo
+                    InclusionsJson = JsonSerializer.Serialize(model.Translated.Inclusions.Where(x => !string.IsNullOrWhiteSpace(x))),
+                    ExclusionsJson = JsonSerializer.Serialize(model.Translated.Exclusions.Where(x => !string.IsNullOrWhiteSpace(x))),
+                    ImportantInfoJson = JsonSerializer.Serialize(model.Translated.ImportantInfo.Where(x => !string.IsNullOrWhiteSpace(x)))
                 });
 
                 // ActivityLanguage varsa ekleme
@@ -641,9 +688,9 @@ namespace TourManagementApi.Controllers
                 translation.Description = model.Translated.Description;
                 translation.Highlights = model.Translated.Highlights;
                 translation.Itinerary = model.Translated.Itinerary;
-                translation.Inclusions = model.Translated.Inclusions;
-                translation.Exclusions = model.Translated.Exclusions;
-                translation.ImportantInfo = model.Translated.ImportantInfo;
+                translation.InclusionsJson = JsonSerializer.Serialize(model.Translated.Inclusions.Where(x => !string.IsNullOrWhiteSpace(x)));
+                translation.ExclusionsJson = JsonSerializer.Serialize(model.Translated.Exclusions.Where(x => !string.IsNullOrWhiteSpace(x)));
+                translation.ImportantInfoJson = JsonSerializer.Serialize(model.Translated.ImportantInfo.Where(x => !string.IsNullOrWhiteSpace(x)));
             }
 
             await _context.SaveChangesAsync();

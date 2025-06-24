@@ -1,22 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace TourManagementApi.Models
+namespace TourManagementApi.Models;
+
+public partial class ActivityLanguage
 {
-    public class ActivityLanguage
-    {
-        [Key]
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [Required]
-        public int ActivityId { get; set; }
+    public int ActivityId { get; set; }
 
-        [ForeignKey(nameof(ActivityId))]
-        public Activity Activity { get; set; } = null!;
+    public string LanguageCode { get; set; } = null!;
 
-        [Required]
-        [MaxLength(10)]
-        public string LanguageCode { get; set; } = string.Empty; // Örn: "tr", "en", vs.
-    }
-
+    public virtual Activity Activity { get; set; } = null!;
 }

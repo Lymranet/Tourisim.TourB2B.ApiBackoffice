@@ -23,18 +23,18 @@ public class ActivityPricing
     public decimal? TaxRate { get; set; }
 }
 
-[Owned]
-public class PriceCategory
-{
-    public string Type { get; set; } = null!;
-    public string PriceType { get; set; } = null!; // fixed or variable
-    public decimal Amount { get; set; }
-    public string Currency { get; set; } = null!;
-    public string? Description { get; set; }
-    public int? MinParticipants { get; set; }
-    public int? MaxParticipants { get; set; }
-    public string? DiscountType { get; set; } // percentage or fixed
-    public decimal? DiscountValue { get; set; }
-    public int? MinAge { get; set; }
-    public int? MaxAge { get; set; }
-} 
+//[Owned]
+//public class PriceCategory
+//{
+//    public string Type { get; set; } = null!;
+//    public string PriceType { get; set; } = null!; // fixed or variable
+//    public decimal Amount { get; set; }
+//    public string Currency { get; set; } = null!;
+//    public string? Description { get; set; }
+//    public int? MinParticipants { get; set; }
+//    public int? MaxParticipants { get; set; }
+//    public string? DiscountType { get; set; } // percentage or fixed
+//    public decimal? DiscountValue { get; set; }
+//    public int? MinAge { get; set; }
+//    public int? MaxAge { get; set; }
+//} 
