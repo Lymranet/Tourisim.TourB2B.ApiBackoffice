@@ -109,3 +109,5 @@ coverage/
 /wwwroot/uploads/cover/914b7ee5-a515-41c7-8969-dc28856b87c0.jpg
 /wwwroot/uploads/cover/958be8db-30cc-46bd-98eb-4e7af59755b4.jpg
 *.jpg
+/Logs/log-20250625.txt
+/Logs/log-20250626.txt
