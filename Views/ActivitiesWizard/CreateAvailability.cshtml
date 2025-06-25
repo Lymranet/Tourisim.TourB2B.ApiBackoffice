@@ -1,0 +1,120 @@
+﻿@model TourManagementApi.Models.ViewModels.CreateAvailabilityViewModel
+@{
+    ViewData["Title"] = "Kapasite Tanımlama";
+}
+
+<form asp-action="@(Model.Id > 0 ? "EditAvailability" : "CreateAvailability")" method="post" autocomplete="off">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ActivityId" />
+
+
+    <div class="mb-3">
+        <label class="form-label">Seçenek</label>
+        <select asp-for="OptionId" class="form-control" asp-items="Model.OptionList" id="optionSelect">
+            <option value="">Seçenek seçin</option>
+        </select>
+    </div>
+
+    <div class="row">
+        @if (Model.Id > 0)
+        {
+            <input type="hidden" asp-for="StartDate" />
+            <input type="hidden" asp-for="EndDate" />
+        }
+        else
+        {
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Başlangıç Tarihi</label>
+                    <input asp-for="StartDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Bitiş Tarihi</label>
+                    <input asp-for="EndDate" type="date" class="form-control" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                </div>
+            </div>
+        }
+
+        <div class="col-md-4">
+            <label class="form-label">Saat</label>
+            <input asp-for="StartTime" type="time" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Maksimum Kapasite</label>
+            <input asp-for="MaximumCapacity" type="number" class="form-control" />
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Mevcut Kapasite</label>
+        <input asp-for="AvailableCapacity" type="number" class="form-control" />
+    </div>
+
+    <hr />
+    <h5>Bilet Kategorileri</h5>
+    <div id="ticketCategoriesContainer">
+        <!-- AJAX ile yüklenecek -->
+    </div>
+    <div id="availabilityWarning" class="alert alert-warning d-none mt-2">
+        Bu tarih ve seçenek için kapasite daha önce tanımlanmış!
+    </div>
+    <button type="submit" class="btn btn-primary">Kaydet</button>
+    <a asp-action="Index" class="btn btn-secondary">İptal</a>
+</form>
+
+@section Scripts {
+    <script>
+        document.getElementById("optionSelect").addEventListener("change", function () {
+            const optionId = this.value;
+            const activityId = @Model.ActivityId;
+
+            if (optionId) {
+                fetch(`/ActivitiesWizard/GetTicketCategories?optionId=${optionId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const container = document.getElementById("ticketCategoriesContainer");
+                        container.innerHTML = "";
+
+                        data.forEach((item, index) => {
+                            container.innerHTML += `
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                                        <label>${item.name} (${item.id})</label>
+                                        <input type="hidden" name="TicketCategories[${index}].TicketCategoryId" value="${item.id}" />
+                                        <input type="hidden" name="TicketCategories[${index}].Name" value="${item.name}" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="number" name="TicketCategories[${index}].Capacity" class="form-control" />
+                                    </div>
+                                </div>`;
+                        });
+                    });
+            }
+        });
+    </script>
+    <script>
+        function checkAvailability() {
+            const activityId = @Model.ActivityId;
+            const optionId = document.getElementById("optionSelect").value;
+            const date = document.querySelector("input[name='Date']").value;
+
+            if (activityId && optionId && date) {
+                fetch(`/ActivitiesWizard/CheckAvailabilityExists?activityId=${activityId}&optionId=${optionId}&date=${date}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const warning = document.getElementById("availabilityWarning");
+                        if (data.exists) {
+                            warning.classList.remove("d-none");
+                        } else {
+                            warning.classList.add("d-none");
+                        }
+                    });
+            }
+        }
+
+        document.getElementById("optionSelect").addEventListener("change", checkAvailability);
+        document.querySelector("input[name='Date']").addEventListener("change", checkAvailability);
+    </script>
+}
+

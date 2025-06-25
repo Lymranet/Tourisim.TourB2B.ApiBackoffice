@@ -60,7 +60,6 @@ public partial class ApplicationDbContext : DbContext
     {
         modelBuilder.Entity<Activity>(entity =>
         {
-            entity.Property(e => e.AverageRating).HasColumnType("decimal(4, 2)");
             entity.Property(e => e.Categories).HasDefaultValue("[]");
             entity.Property(e => e.ContactInfoEmail).HasColumnName("ContactInfo_Email");
             entity.Property(e => e.ContactInfoName).HasColumnName("ContactInfo_Name");
@@ -78,34 +77,8 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.Inclusions).HasDefaultValue("[]");
             entity.Property(e => e.InclusionsJson).HasDefaultValue("");
             entity.Property(e => e.Label).HasDefaultValue("");
-            entity.Property(e => e.Language).HasDefaultValue("");
-            entity.Property(e => e.LocationAddress).HasColumnName("Location_Address");
-            entity.Property(e => e.LocationCity).HasColumnName("Location_City");
-            entity.Property(e => e.LocationCoordinatesLatitude).HasColumnName("Location_Coordinates_Latitude");
-            entity.Property(e => e.LocationCoordinatesLongitude).HasColumnName("Location_Coordinates_Longitude");
-            entity.Property(e => e.LocationCountry).HasColumnName("Location_Country");
-            entity.Property(e => e.MediaImagesGallery).HasColumnName("Media_Images_Gallery");
-            entity.Property(e => e.MediaImagesHeader).HasColumnName("Media_Images_Header");
-            entity.Property(e => e.MediaImagesTeaser).HasColumnName("Media_Images_Teaser");
             entity.Property(e => e.MediaVideos).HasColumnName("Media_Videos");
             entity.Property(e => e.PartnerSupplierId).HasDefaultValue("");
-            entity.Property(e => e.PriceInfoBasePrice)
-                .HasColumnType("decimal(18, 2)")
-                .HasColumnName("PriceInfo_BasePrice");
-            entity.Property(e => e.PriceInfoCurrency).HasColumnName("PriceInfo_Currency");
-            entity.Property(e => e.PriceInfoMaxAge).HasColumnName("PriceInfo_MaxAge");
-            entity.Property(e => e.PriceInfoMaximumParticipants).HasColumnName("PriceInfo_MaximumParticipants");
-            entity.Property(e => e.PriceInfoMinAge).HasColumnName("PriceInfo_MinAge");
-            entity.Property(e => e.PriceInfoMinimumParticipants).HasColumnName("PriceInfo_MinimumParticipants");
-            entity.Property(e => e.PricingDefaultCurrency).HasColumnName("Pricing_DefaultCurrency");
-            entity.Property(e => e.PricingTaxIncluded).HasColumnName("Pricing_TaxIncluded");
-            entity.Property(e => e.PricingTaxRate)
-                .HasColumnType("decimal(18, 2)")
-                .HasColumnName("Pricing_TaxRate");
-            entity.Property(e => e.SalesAvailabilityEndDate).HasColumnName("SalesAvailability_EndDate");
-            entity.Property(e => e.SalesAvailabilityStartDate).HasColumnName("SalesAvailability_StartDate");
-            entity.Property(e => e.SeasonalAvailabilityEndDate).HasColumnName("SeasonalAvailability_EndDate");
-            entity.Property(e => e.SeasonalAvailabilityStartDate).HasColumnName("SeasonalAvailability_StartDate");
             entity.Property(e => e.Status).HasMaxLength(50);
         });
 
@@ -154,9 +127,17 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__Availabi__3214EC0722F78A97");
 
-            entity.Property(e => e.ActivityId).HasMaxLength(100);
-            entity.Property(e => e.OptionId).HasMaxLength(100);
             entity.Property(e => e.PartnerSupplierId).HasMaxLength(100);
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.Availabilities)
+                .HasForeignKey(d => d.ActivityId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Availabilities_Availabilities");
+
+            entity.HasOne(d => d.Option).WithMany(p => p.Availabilities)
+                .HasForeignKey(d => d.OptionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Availabilities_Options");
         });
 
         modelBuilder.Entity<CancellationPolicyCondition>(entity =>
@@ -285,11 +266,14 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK__TicketCa__3214EC07C98BD1B7");
 
-            entity.Property(e => e.TicketCategoryId).HasMaxLength(100);
-
             entity.HasOne(d => d.Availability).WithMany(p => p.TicketCategoryCapacities)
                 .HasForeignKey(d => d.AvailabilityId)
                 .HasConstraintName("FK__TicketCat__Avail__69FBBC1F");
+
+            entity.HasOne(d => d.TicketCategory).WithMany(p => p.TicketCategoryCapacities)
+                .HasForeignKey(d => d.TicketCategoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TicketCategoryCapacities_TicketCategories");
         });
 
         modelBuilder.Entity<TimeSlot>(entity =>

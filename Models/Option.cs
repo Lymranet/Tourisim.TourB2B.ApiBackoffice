@@ -29,6 +29,8 @@ public partial class Option
 
     public virtual Activity Activity { get; set; } = null!;
 
+    public virtual ICollection<Availability> Availabilities { get; set; } = new List<Availability>();
+
     public virtual ICollection<OpeningHour> OpeningHours { get; set; } = new List<OpeningHour>();
 
     public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();

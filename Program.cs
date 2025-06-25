@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using TourManagementApi.Data;
 using TourManagementApi.Middleware;
 
@@ -46,6 +47,16 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Limits.MaxRequestBodySize = 1024 * 1024 * 100; // 100 MB
 });
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.File("Logs/log-.txt",
+                  rollingInterval: RollingInterval.Day,
+                  outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
+
+builder.Host.UseSerilog();
 // Add SQL Server Configuration
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
@@ -110,7 +121,7 @@ app.Use(async (context, next) =>
 
     await next();
 });
-
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseStatusCodePages("text/plain", "Status Code: {0}");
 app.UseAuthorization();
 app.UseMiddleware<RequestHeaderValidationMiddleware>();

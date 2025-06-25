@@ -9,9 +9,11 @@ public partial class TicketCategoryCapacity
 
     public int AvailabilityId { get; set; }
 
-    public string TicketCategoryId { get; set; } = null!;
+    public int TicketCategoryId { get; set; }
 
     public int? Capacity { get; set; }
 
     public virtual Availability Availability { get; set; } = null!;
+
+    public virtual TicketCategory TicketCategory { get; set; } = null!;
 }

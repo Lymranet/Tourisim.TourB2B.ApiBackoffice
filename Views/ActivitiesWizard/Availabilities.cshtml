@@ -1,0 +1,64 @@
+﻿@model TourManagementApi.Models.Activity
+
+@{
+    ViewData["Title"] = "Kapasite Tanımları";
+}
+
+<h2>@Model.Title - Kapasite Tanımları</h2>
+
+<a asp-action="CreateAvailability" asp-route-id="@Model.Id" class="btn btn-primary mb-3">Yeni Kapasite Ekle</a>
+
+<table id="availabilityTable" class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Tarih</th>
+            <th>Başlangıç Saati</th>
+            <th>Seçenek</th>
+            <th>Mevcut</th>
+            <th>Maksimum</th>
+            <th>Bilet Kategorileri</th>
+            <th>İşlemler</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var availability in Model.Availabilities.OrderByDescending(x => x.Date))
+        {
+            <tr>
+                <td>@availability.Date.ToString("yyyy-MM-dd")</td>
+                <td>@availability.StartTime?.ToLocalTime().ToString("HH:mm")</td>
+                <td>@availability.Option?.Name</td>
+                <td>@availability.AvailableCapacity</td>
+                <td>@availability.MaximumCapacity</td>
+                <td>
+                    @foreach (var tc in availability.TicketCategoryCapacities)
+                    {
+                        <div>@tc.TicketCategory?.Name: @tc.Capacity</div>
+                    }
+                </td>
+                <td>
+                    <a asp-action="EditAvailability" asp-route-id="@availability.Id" class="btn btn-sm btn-warning">Düzenle</a>
+                    <form asp-action="DeleteAvailability" asp-route-id="@availability.Id" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Silmek istediğinize emin misiniz?')">Sil</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#availabilityTable').DataTable({
+                "order": [[0, "desc"]],
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.4/i18n/tr.json"
+                }
+            });
+        });
+    </script>
+}

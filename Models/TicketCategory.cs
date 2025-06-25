@@ -28,4 +28,6 @@ public partial class TicketCategory
     public int OptionId { get; set; }
 
     public virtual Option Option { get; set; } = null!;
+
+    public virtual ICollection<TicketCategoryCapacity> TicketCategoryCapacities { get; set; } = new List<TicketCategoryCapacity>();
 }

@@ -9,9 +9,9 @@ public partial class Availability
 
     public string PartnerSupplierId { get; set; } = null!;
 
-    public string ActivityId { get; set; } = null!;
+    public int ActivityId { get; set; }
 
-    public string OptionId { get; set; } = null!;
+    public int OptionId { get; set; }
 
     public DateOnly Date { get; set; }
 
@@ -20,6 +20,10 @@ public partial class Availability
     public int AvailableCapacity { get; set; }
 
     public int MaximumCapacity { get; set; }
+
+    public virtual Activity Activity { get; set; } = null!;
+
+    public virtual Option Option { get; set; } = null!;
 
     public virtual ICollection<TicketCategoryCapacity> TicketCategoryCapacities { get; set; } = new List<TicketCategoryCapacity>();
 }

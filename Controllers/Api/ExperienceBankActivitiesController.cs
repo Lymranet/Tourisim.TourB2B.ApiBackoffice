@@ -163,7 +163,6 @@ namespace TourManagementApi.Controllers.Api
                 description = activity.Description,
                 highlights = activity.Highlights,
                 itinerary = activity.Itinerary,
-                language = activity.Language ?? "en",
                 inclusions = TxtJson.DeserializeStringList(activity.Inclusions) ?? new List<string>(),
                 exclusions = TxtJson.DeserializeStringList(activity.Exclusions) ?? new List<string>(),
                 importantInfo = TxtJson.DeserializeStringList(activity.ImportantInfo) ?? new List<string>(),

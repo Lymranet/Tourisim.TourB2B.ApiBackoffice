@@ -28,7 +28,7 @@ namespace TourManagementApi.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<ActivitiesWizardController> _logger;
 
-        
+
 
         public ActivitiesWizardController(
             ApplicationDbContext context,
@@ -54,7 +54,6 @@ namespace TourManagementApi.Controllers
                         Description = a.Description ?? string.Empty,
                         Category = a.Category ?? string.Empty,
                         Subcategory = a.Subcategory ?? string.Empty,
-                        Language = a.Language ?? string.Empty,
                         Label = a.Label ?? string.Empty,
                         Status = a.Status ?? "draft",
                         Options = a.Options ?? new List<Option>(),
@@ -211,7 +210,7 @@ namespace TourManagementApi.Controllers
                 activity.CountryCode = model.CountryCode;
                 activity.DestinationCode = model.DestinationCode;
                 activity.DestinationName = model.DestinationName;
-
+                activity.Status = "draft";
                 if (!model.ActivityId.HasValue)
                 {
                     _context.Activities.Add(activity);
@@ -394,84 +393,6 @@ namespace TourManagementApi.Controllers
             }
         }
 
-        // 3. Adım: Fiyatlandırma
-        [HttpGet]
-        public async Task<IActionResult> CreatePricing(int id)
-        {
-            var activity = await _context.Activities.FindAsync(id);
-            if (activity == null)
-            {
-                return NotFound();
-            }
-
-            var viewModel = new ActivityPricingViewModel
-            {
-                ActivityId = activity.Id,
-                Pricing = new ActivityPricing
-                {
-                    DefaultCurrency = activity.PricingDefaultCurrency,
-                    TaxIncluded = activity.PricingTaxIncluded ?? false,
-                    TaxRate = activity.PricingTaxRate ?? 0
-                }
-            };
-
-
-            return View(viewModel);
-        }
-
-        [HttpPost]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> CreatePricing(ActivityPricingViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            try
-            {
-                var activity = await _context.Activities.FindAsync(model.ActivityId);
-                if (activity == null)
-                {
-                    return NotFound();
-                }
-
-                activity.PricingDefaultCurrency = model.Pricing.DefaultCurrency;
-                activity.PricingTaxIncluded = model.Pricing.TaxIncluded;
-                activity.PricingTaxRate = model.Pricing.TaxRate;
-
-                _context.PriceCategories.RemoveRange(activity.PriceCategories);
-
-                foreach (var category in model.Categories)
-                {
-                    activity.PriceCategories.Add(new PriceCategory
-                    {
-                        Type = category.Type,
-                        PriceType = category.PriceType,
-                        Amount = category.Amount,
-                        Currency = category.Currency,
-                        Description = category.Description,
-                        MinAge = category.MinAge,
-                        MaxAge = category.MaxAge,
-                        MinParticipants = category.MinParticipants,
-                        MaxParticipants = category.MaxParticipants,
-                        DiscountType = category.DiscountType,
-                        DiscountValue = category.DiscountValue,
-                        ActivityPricingActivityId = activity.Id
-                    });
-                }
-
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction("CreateTime", new { id = activity.Id });
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
-                return View(model);
-            }
-        }
-
         public async Task<IActionResult> AddonsIndex()
         {
             var activitiesWithAddons = await _context.Activities
@@ -485,7 +406,7 @@ namespace TourManagementApi.Controllers
         [HttpGet]
         public async Task<IActionResult> CreateAddons(int id)
         {
-            var addOns = await _context.Addons.Where(a=>a.ActivityId==id).ToListAsync();
+            var addOns = await _context.Addons.Where(a => a.ActivityId == id).ToListAsync();
             if (addOns == null) return NotFound();
             var vm = new ActivityAddonsViewModel
             {
@@ -742,6 +663,255 @@ namespace TourManagementApi.Controllers
         }
 
 
+
+        #endregion
+
+        #region Availability Alanı
+
+        [HttpGet]
+        public async Task<IActionResult> CreateAvailability(int id)
+        {
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .ThenInclude(o => o.TicketCategories)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null) return NotFound();
+
+            var viewModel = new CreateAvailabilityViewModel
+            {
+                ActivityId = activity.Id,
+                OptionList = activity.Options.Select(o => new SelectListItem
+                {
+                    Value = o.Id.ToString(),
+                    Text = o.Name
+                }).ToList()
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTicketCategories(int optionId)
+        {
+            var option = await _context.Options
+                .Include(o => o.TicketCategories)
+                .FirstOrDefaultAsync(o => o.Id == optionId);
+
+            if (option == null)
+                return Json(new List<object>());
+
+            var categories = option.TicketCategories.Select(tc => new
+            {
+                id = tc.Id,
+                name = tc.Name
+            }).ToList();
+
+            return Json(categories);
+        }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> CreateAvailability(CreateAvailabilityViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var existingDates = await _context.Availabilities
+                .Where(a =>
+                    a.ActivityId == model.ActivityId &&
+                    a.OptionId == model.OptionId &&
+                    a.Date >= model.StartDate && a.Date <= model.EndDate)
+                .Select(a => a.Date)
+                .ToListAsync();
+
+            var newAvailabilities = new List<Availability>();
+
+            for (var date = model.StartDate; date <= model.EndDate; date = date.AddDays(1))
+            {
+                if (existingDates.Contains(date))
+                    continue; //  kayıt var geçççç
+
+                var availability = new Availability
+                {
+                    ActivityId = model.ActivityId,
+                    OptionId = model.OptionId,
+                    Date = date,
+                    StartTime = new DateTimeOffset(DateTime.Today.Add(model.StartTime.ToTimeSpan())),
+                    AvailableCapacity = model.AvailableCapacity,
+                    MaximumCapacity = model.MaximumCapacity,
+                    PartnerSupplierId = "xxx",
+                    TicketCategoryCapacities = model.TicketCategories
+                        .Where(tc => tc.TicketCategoryId > 0)
+                        .Select(tc => new TicketCategoryCapacity
+                        {
+                            TicketCategoryId = tc.TicketCategoryId,
+                            Capacity = tc.Capacity
+                        }).ToList()
+                };
+
+                newAvailabilities.Add(availability);
+            }
+
+            if (!newAvailabilities.Any())
+            {
+                ModelState.AddModelError("", "Tüm günler için zaten kapasite tanımlanmış.");
+                model.OptionList = await _context.Options
+                    .Where(o => o.ActivityId == model.ActivityId)
+                    .Select(o => new SelectListItem
+                    {
+                        Value = o.Id.ToString(),
+                        Text = o.Name
+                    }).ToListAsync();
+
+                model.TicketCategories = await _context.TicketCategories
+                    .Where(tc => tc.OptionId == model.OptionId)
+                    .Select(tc => new TicketCategoryInputModel
+                    {
+                        TicketCategoryId = tc.Id,
+                        Name = tc.Name
+                    }).ToListAsync();
+
+                return View(model);
+            }
+
+            _context.Availabilities.AddRange(newAvailabilities);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Index");
+        }
+
+        public async Task<IActionResult> EditAvailability(int id)
+        {
+            var availability = await _context.Availabilities
+                .Include(a => a.TicketCategoryCapacities)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (availability == null)
+                return NotFound();
+
+            var option = await _context.Options.FindAsync(availability.OptionId);
+
+            var model = new CreateAvailabilityViewModel
+            {
+                Id = availability.Id,
+                ActivityId = availability.ActivityId,
+                OptionId = availability.OptionId,
+                StartDate = availability.Date,
+                EndDate = availability.Date,
+                StartTime = TimeOnly.FromDateTime(availability.StartTime?.UtcDateTime ?? DateTime.UtcNow),
+                AvailableCapacity = availability.AvailableCapacity,
+                MaximumCapacity = availability.MaximumCapacity,
+                OptionList = await _context.Options
+                    .Where(o => o.ActivityId == availability.ActivityId)
+                    .Select(o => new SelectListItem
+                    {
+                        Value = o.Id.ToString(),
+                        Text = o.Name
+                    }).ToListAsync(),
+                TicketCategories = availability.TicketCategoryCapacities.Select(tc => new TicketCategoryInputModel
+                {
+                    TicketCategoryId = tc.TicketCategoryId,
+                    Capacity = tc.Capacity,
+                    Name = "" // dilersen isme göre DB'den çekebilirsin
+                }).ToList()
+            };
+
+            return View("CreateAvailability", model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAvailability(CreateAvailabilityViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                model.OptionList = await _context.Options
+                    .Where(o => o.ActivityId == model.ActivityId)
+                    .Select(o => new SelectListItem
+                    {
+                        Value = o.Id.ToString(),
+                        Text = o.Name
+                    }).ToListAsync();
+
+                return View("CreateAvailability", model);
+            }
+
+            var availability = await _context.Availabilities
+                .Include(a => a.TicketCategoryCapacities)
+                .FirstOrDefaultAsync(a => a.Id == model.Id);
+
+            if (availability == null)
+                return NotFound();
+
+            availability.OptionId = model.OptionId;
+            availability.Date = model.StartDate;
+            availability.StartTime = new DateTimeOffset(DateTime.Today.Add(model.StartTime.ToTimeSpan()));
+            availability.AvailableCapacity = model.AvailableCapacity;
+            availability.MaximumCapacity = model.MaximumCapacity;
+
+            // Kategori kapasite güncelle
+            _context.TicketCategoryCapacities.RemoveRange(availability.TicketCategoryCapacities);
+
+            availability.TicketCategoryCapacities = model.TicketCategories
+                .Where(tc => tc.TicketCategoryId > 0)
+                .Select(tc => new TicketCategoryCapacity
+                {
+                    TicketCategoryId = tc.TicketCategoryId,
+                    Capacity = tc.Capacity
+                }).ToList();
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction("Availabilities", new { activityId = model.ActivityId });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAvailability(int id)
+        {
+            var availability = await _context.Availabilities
+                .Include(a => a.TicketCategoryCapacities)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (availability == null)
+                return NotFound();
+
+            _context.TicketCategoryCapacities.RemoveRange(availability.TicketCategoryCapacities);
+            _context.Availabilities.Remove(availability);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Availabilities", new { activityId = availability.ActivityId });
+        }
+
+        public async Task<IActionResult> Availabilities(int activityId)
+        {
+            var activity = await _context.Activities
+        .Include(a => a.Availabilities)
+            .ThenInclude(av => av.Option)
+        .Include(a => a.Availabilities)
+            .ThenInclude(av => av.TicketCategoryCapacities)
+                .ThenInclude(tcc => tcc.TicketCategory)
+        .FirstOrDefaultAsync(a => a.Id == activityId);
+
+            if (activity == null) return NotFound();
+
+            return View(activity);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> CheckAvailabilityExists(int activityId, int optionId, string date)
+        {
+            if (!DateOnly.TryParse(date, out var parsedDate))
+                return Json(new { exists = false });
+
+            var exists = await _context.Availabilities
+                .AnyAsync(a =>
+                    a.ActivityId == activityId &&
+                    a.OptionId == optionId &&
+                    a.Date == parsedDate);
+
+            return Json(new { exists });
+        }
 
         #endregion
     }

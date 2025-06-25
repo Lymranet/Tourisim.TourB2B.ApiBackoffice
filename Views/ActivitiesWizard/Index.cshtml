@@ -40,6 +40,7 @@
                     <a asp-action="CreateLocation" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-secondary">Lokasyon</a>
                     <a asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.Id ?? 0)" class="btn btn-sm btn-warning">Seçenekler</a>
                     <a asp-action="CreateAddons" asp-route-id="@item.Id" class="btn btn-sm btn-success">Ek Ürünler</a>
+                    <a asp-controller="ActivitiesWizard" asp-action="Availabilities" asp-route-activityId="@item.Id" class="btn btn-sm btn-outline-primary">  Kapasite Tanımları</a>
                     <a asp-action="ManageLanguages" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-dark">Dil Yönetimi</a>
                 </td>
             </tr>

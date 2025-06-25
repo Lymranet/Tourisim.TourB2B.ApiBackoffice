@@ -15,41 +15,7 @@ public partial class Activity
 
     public string Subcategory { get; set; } = null!;
 
-    public string Languages { get; set; } = null!;
-
-    public string? LocationAddress { get; set; }
-
-    public string? LocationCity { get; set; }
-
-    public string? LocationCountry { get; set; }
-
-    public double? LocationCoordinatesLatitude { get; set; }
-
-    public double? LocationCoordinatesLongitude { get; set; }
-
     public int Duration { get; set; }
-
-    public string? SeasonalAvailabilityStartDate { get; set; }
-
-    public string? SeasonalAvailabilityEndDate { get; set; }
-
-    public string? PriceInfoCurrency { get; set; }
-
-    public decimal? PriceInfoBasePrice { get; set; }
-
-    public int? PriceInfoMinimumParticipants { get; set; }
-
-    public int? PriceInfoMaximumParticipants { get; set; }
-
-    public string? PricingDefaultCurrency { get; set; }
-
-    public bool? PricingTaxIncluded { get; set; }
-
-    public decimal? PricingTaxRate { get; set; }
-
-    public string Requirements { get; set; } = null!;
-
-    public string Included { get; set; } = null!;
 
     public string? ContactInfoName { get; set; }
 
@@ -59,47 +25,17 @@ public partial class Activity
 
     public string? ContactInfoRole { get; set; }
 
-    public string? AdditionalNotes { get; set; }
-
     public string Status { get; set; } = null!;
 
     public double Rating { get; set; }
 
-    public string? MediaImagesHeader { get; set; }
-
-    public string? MediaImagesTeaser { get; set; }
-
-    public string? MediaImagesGallery { get; set; }
-
     public string? MediaVideos { get; set; }
-
-    public DateTime? SalesAvailabilityStartDate { get; set; }
-
-    public DateTime? SalesAvailabilityEndDate { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }
 
     public bool? ContactInfoIsNull { get; set; }
-
-    public bool? LocationIsNull { get; set; }
-
-    public bool? MediaIsNull { get; set; }
-
-    public bool? PriceInfoIsNull { get; set; }
-
-    public bool? PricingIsNull { get; set; }
-
-    public bool? SalesAvailabilityIsNull { get; set; }
-
-    public bool? SeasonalAvailabilityIsNull { get; set; }
-
-    public int? PriceInfoMaxAge { get; set; }
-
-    public int? PriceInfoMinAge { get; set; }
-
-    public decimal? AverageRating { get; set; }
 
     public string Categories { get; set; } = null!;
 
@@ -120,8 +56,6 @@ public partial class Activity
     public bool IsActive { get; set; }
 
     public string? Itinerary { get; set; }
-
-    public string Language { get; set; } = null!;
 
     public int? TotalRatingCount { get; set; }
 
@@ -152,6 +86,8 @@ public partial class Activity
     public virtual ICollection<ActivityLanguage> ActivityLanguages { get; set; } = new List<ActivityLanguage>();
 
     public virtual ICollection<Addon> Addons { get; set; } = new List<Addon>();
+
+    public virtual ICollection<Availability> Availabilities { get; set; } = new List<Availability>();
 
     public virtual ICollection<CancellationPolicyCondition> CancellationPolicyConditions { get; set; } = new List<CancellationPolicyCondition>();
 
