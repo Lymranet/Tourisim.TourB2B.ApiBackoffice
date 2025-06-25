@@ -26,4 +26,6 @@ public partial class Translation
     public string ExclusionsJson { get; set; } = null!;
 
     public string ImportantInfoJson { get; set; } = null!;
+
+    public virtual Activity Activity { get; set; } = null!;
 }

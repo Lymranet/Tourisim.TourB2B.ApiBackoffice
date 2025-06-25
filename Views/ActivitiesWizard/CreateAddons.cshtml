@@ -42,11 +42,11 @@
                     <div class="row mb-2">
                         <div class="col-md-3 mb-2">
                             <label>Fiyat</label>
-                            <input name="Addons[@i].Price.Amount" type="number" step="0.01" class="form-control" value="@Model.Addons[i].Price.Amount" />
+                            <input name="Addons[@i].PriceAmount" type="number" step="0.01" class="form-control" value="@Model.Addons[i].PriceAmount?.ToString("0.##")" />
                         </div>
                         <div class="col-md-3 mb-2">
                             <label>Para Birimi</label>
-                            <select name="Addons[@i].Price.Currency" class="form-control addon-currency-select" data-value="@Model.Addons[i].Price.Currency">
+                            <select name="Addons[@i].Currency" class="form-control addon-currency-select" data-value="@Model.Addons[i].Currency">
                                 @foreach (var c in currencyOptions)
                                 {
                                     <option value="@c">@c</option>

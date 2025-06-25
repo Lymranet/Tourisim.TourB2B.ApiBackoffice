@@ -15,8 +15,10 @@ using System.Threading.Tasks;
 using TourManagementApi.Data;
 using TourManagementApi.Helper;
 using TourManagementApi.Models;
+using TourManagementApi.Models.Api;
 using TourManagementApi.Models.Common;
 using TourManagementApi.Models.ViewModels;
+using Addon = TourManagementApi.Models.Addon;
 
 namespace TourManagementApi.Controllers
 {
@@ -25,6 +27,8 @@ namespace TourManagementApi.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<ActivitiesWizardController> _logger;
+
+        
 
         public ActivitiesWizardController(
             ApplicationDbContext context,
@@ -108,19 +112,19 @@ namespace TourManagementApi.Controllers
                         ContactInfo = activity.ContactInfoName != null ? new ContactInfoViewModel
                         {
                             Name = activity.ContactInfoName,
-                            Role = activity.ContactInfoName,
-                            Email = activity.ContactInfoName,
-                            Phone = activity.ContactInfoName
+                            Role = activity.ContactInfoRole,
+                            Email = activity.ContactInfoEmail,
+                            Phone = activity.ContactInfoPhone
                         } : new ContactInfoViewModel(),
                         CoverImageUrl = activity.CoverImage,
                         PreviewImageUrl = activity.PreviewImage,
-                        GalleryImageUrls = TxtJson.DeserializeList(activity.GalleryImages),
-                        ExistingGalleryImages = TxtJson.DeserializeList(activity.GalleryImages),
-                        VideoUrls = TxtJson.DeserializeList(activity.MediaVideos),
+                        GalleryImageUrls = TxtJson.DeserializeStringList(activity.GalleryImages),
+                        ExistingGalleryImages = TxtJson.DeserializeStringList(activity.GalleryImages),
+                        VideoUrls = TxtJson.DeserializeStringList(activity.MediaVideos),
                         Highlights = activity.Highlights,
-                        Inclusions = TxtJson.DeserializeList(activity.Inclusions),
-                        Exclusions = TxtJson.DeserializeList(activity.Exclusions),
-                        ImportantInfo = TxtJson.DeserializeList(activity.ImportantInfo),
+                        Inclusions = TxtJson.DeserializeStringList(activity.Inclusions),
+                        Exclusions = TxtJson.DeserializeStringList(activity.Exclusions),
+                        ImportantInfo = TxtJson.DeserializeStringList(activity.ImportantInfo),
                         Itinerary = activity.Itinerary,
                         CountryCode = activity.CountryCode,
                         DestinationCode = activity.DestinationCode,
@@ -140,6 +144,8 @@ namespace TourManagementApi.Controllers
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
+        [DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = 1024 * 1024 * 100)]
         public async Task<IActionResult> CreateBasic(ActivityBasicViewModel model)
         {
             if (!ModelState.IsValid)
@@ -188,7 +194,7 @@ namespace TourManagementApi.Controllers
                     }
                     activity.GalleryImages = JsonSerializer.Serialize(finalGalleryList);
                 }
-                
+
                 activity.MediaVideos = JsonSerializer.Serialize(model.VideoUrls?.Where(url => !string.IsNullOrWhiteSpace(url)).ToList() ?? new List<string>());
 
                 activity.ContactInfoName = model.ContactInfo.Name ?? string.Empty;
@@ -220,12 +226,16 @@ namespace TourManagementApi.Controllers
                 return View(model);
             }
         }
+
+        [HttpPost]
         [HttpPost]
         public async Task<IActionResult> DeleteGalleryImage([FromBody] DeleteGalleryImageRequest request)
         {
             var activity = await _context.Activities.FindAsync(request.ActivityId);
-            if (activity == null || activity.GalleryImages == null)
+            if (activity == null || string.IsNullOrWhiteSpace(activity.GalleryImages))
                 return Json(new { success = false, message = "Aktivite bulunamadı." });
+
+            var galleryList = TxtJson.DeserializeStringList(activity.GalleryImages);
 
             var filename = Path.GetFileName(request.ImagePath);
             var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "gallery", filename);
@@ -235,11 +245,16 @@ namespace TourManagementApi.Controllers
                 System.IO.File.Delete(fullPath);
             }
 
-            activity.GalleryImages.RemoveAll(img => img.EndsWith(filename));
+            galleryList.RemoveAll(img => img.EndsWith(filename));
+            activity.GalleryImages = TxtJson.SerializeStringList(galleryList);
+
             await _context.SaveChangesAsync();
 
             return Json(new { success = true });
         }
+
+
+
         [HttpPost]
         public async Task<IActionResult> DeleteCoverOrPreviewImage([FromBody] DeleteImageRequest request)
         {
@@ -457,80 +472,80 @@ namespace TourManagementApi.Controllers
             }
         }
 
-        // 4. Adım: Zaman Yönetimi
-        [HttpGet]
-        public async Task<IActionResult> CreateTime(int? id)
+        public async Task<IActionResult> AddonsIndex()
         {
-            if (id.HasValue)
+            var activitiesWithAddons = await _context.Activities
+                .Include(a => a.Addons)
+                .Where(a => a.Addons != null && a.Addons.Any())
+                .ToListAsync();
+
+            return View(activitiesWithAddons);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateAddons(int id)
+        {
+            var addOns = await _context.Addons.Where(a=>a.ActivityId==id).ToListAsync();
+            if (addOns == null) return NotFound();
+            var vm = new ActivityAddonsViewModel
             {
-                var activity = await _context.Activities.FindAsync(id.Value);
-                if (activity == null) return NotFound();
-                var vm = new ActivityTimeViewModel
+                ActivityId = id,
+                Addons = addOns?.Select(a => new AddonViewModel
                 {
-                    ActivityId = activity.Id,
-                    Duration = activity.Duration,
-                    SeasonalAvailability = activity.SeasonalAvailabilityIsNull != null ? new SeasonalAvailabilityViewModel
+                    Id = a.Id,
+                    Title = a.Title,
+                    Type = a.Type,
+                    Description = a.Description,
+                    PriceAmount = a.PriceAmount,
+                    Currency = a.Currency ?? "TRY",
+                    Translations = a.AddonTranslations?.Select(t => new AddonTranslationViewModel
                     {
-                        StartDate = DateTime.TryParse(activity.SeasonalAvailabilityStartDate, out var sd) ? sd : (DateTime?)null,
-                        EndDate = DateTime.TryParse(activity.SeasonalAvailabilityEndDate, out var ed) ? ed : (DateTime?)null
-                    } : new SeasonalAvailabilityViewModel(),
-                    TimeSlots = activity.TimeSlots.Select(ts => new TimeSlotViewModel
-                    {
-                        StartTime = ts.StartTime,
-                        EndTime = ts.EndTime,
-                        DaysOfWeek = ts.DaysOfWeek.Split(',').ToList()
-                    }).ToList()
-                };
-                return View(vm);
-            }
-            return View(new ActivityTimeViewModel());
+                        Language = t.Language,
+                        Title = t.Title,
+                        Description = t.Description
+                    }).ToList() ?? new List<AddonTranslationViewModel>()
+                }).ToList() ?? new List<AddonViewModel>()
+            };
+            return View(vm);
         }
 
         [HttpPost]
-        [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> CreateTime(ActivityTimeViewModel model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAddons(ActivityAddonsViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(model);
 
-            try
+            var activity = await _context.Activities
+                .Include(a => a.Addons)
+                .FirstOrDefaultAsync(a => a.Id == model.ActivityId);
+
+            if (activity == null) return NotFound();
+
+            activity.Addons = model.Addons?.Select(a => new Addon
             {
-                var activity = await _context.Activities.FindAsync(model.ActivityId);
-                if (activity == null)
-                    return NotFound();
-
-                activity.Duration = model.Duration;
-                activity.SeasonalAvailabilityStartDate = model.SeasonalAvailability.StartDate?.ToString("yyyy-MM-dd");
-                activity.SeasonalAvailabilityEndDate = model.SeasonalAvailability.EndDate?.ToString("yyyy-MM-dd");
-
-                //activity.SeasonalAvailability = new SeasonalAvailability
-                //{
-                //    StartDate = model.SeasonalAvailability.StartDate?.ToString("yyyy-MM-dd"),
-                //    EndDate = model.SeasonalAvailability.EndDate?.ToString("yyyy-MM-dd")
-                //};
-
-                activity.TimeSlots = model.TimeSlots.Select(ts => new Models.TimeSlot
+                Id = a.Id,
+                Title = a.Title,
+                Type = a.Type,
+                Description = a.Description,
+                PriceAmount = a.PriceAmount ?? 0, // varsayılan
+                Currency = a.Currency ?? "TRY",
+                AddonTranslations = a.Translations?.Select(t => new AddonTranslation
                 {
-                    StartTime = ts.StartTime,
-                    EndTime = ts.EndTime,
-                    DaysOfWeek = ts.DaysOfWeek
-                }).ToList();
+                    Language = t.Language,
+                    Title = t.Title,
+                    Description = t.Description
+                }).ToList() ?? new()
+            }).ToList() ?? new();
 
-                await _context.SaveChangesAsync();
-                return RedirectToAction("Index", new { id = activity.Id });
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("", "Zaman bilgileri kaydedilirken bir hata oluştu: " + ex.Message);
-                return View(model);
-            }
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("CreateLocation", new { id = model.ActivityId });
         }
 
 
-
-
-        #region Language Alanı
-        // GET: Çeviri yönetimi sayfası
+        #region Translation Alanı
+        // GET: translation yönetimi sayfası
         [HttpGet]
         public async Task<IActionResult> ManageLanguages(int id)
         {
@@ -569,16 +584,16 @@ namespace TourManagementApi.Controllers
                 .ToListAsync();
 
             var allLanguages = new Dictionary<string, string>
-    {
-        { "en", "İngilizce" },
-        { "de", "Almanca" },
-        { "fr", "Fransızca" },
-        { "es", "İspanyolca" },
-        { "it", "İtalyanca" },
-        { "ru", "Rusça" },
-        { "ar", "Arapça" },
-        { "zh", "Çince" }
-    };
+                {
+                    { "en", "İngilizce" },
+                    { "de", "Almanca" },
+                    { "fr", "Fransızca" },
+                    { "es", "İspanyolca" },
+                    { "it", "İtalyanca" },
+                    { "ru", "Rusça" },
+                    { "ar", "Arapça" },
+                    { "zh", "Çince" }
+                };
 
             // Eğer düzenleme için geldiyse dil zaten eklenmiştir
             Dictionary<string, string> languageOptions = (languageCode != null)
@@ -663,6 +678,7 @@ namespace TourManagementApi.Controllers
                     Description = model.Translated.Description,
                     Highlights = model.Translated.Highlights,
                     Itinerary = model.Translated.Itinerary,
+                    Label = "",
                     InclusionsJson = JsonSerializer.Serialize(model.Translated.Inclusions.Where(x => !string.IsNullOrWhiteSpace(x))),
                     ExclusionsJson = JsonSerializer.Serialize(model.Translated.Exclusions.Where(x => !string.IsNullOrWhiteSpace(x))),
                     ImportantInfoJson = JsonSerializer.Serialize(model.Translated.ImportantInfo.Where(x => !string.IsNullOrWhiteSpace(x)))

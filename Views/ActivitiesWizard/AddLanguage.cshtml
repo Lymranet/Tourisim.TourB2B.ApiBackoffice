@@ -163,22 +163,44 @@
     </div>
 </form>
 <script>
+
+        function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     async function lingvaTranslate(text, targetLang) {
         if (!text || !targetLang) return "";
 
         const sourceLang = "tr";
         const url = `https://lingva.ml/api/v1/${sourceLang}/${targetLang}/${encodeURIComponent(text)}`;
 
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("HTTP Error");
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Çeviri başarısız: ${response.status}`);
 
-            const result = await response.json();
-            return result.translation || "";
-        } catch (err) {
-            console.error("Çeviri hatası:", err);
-            throw err;
+        const result = await response.json();
+        return result.translation || "";
+    }
+
+     async function translateTextSafely(text, lang) {
+        if (!text) return "";
+
+        const paragraphs = text.split(/\n+/).filter(p => p.trim() !== "");
+        const translatedParagraphs = [];
+
+        for (const paragraph of paragraphs) {
+            try {
+                const translated = await lingvaTranslate(paragraph, lang);
+                translatedParagraphs.push(translated);
+            } catch (error) {
+                console.warn("Paragraf çevrilemedi, atlanıyor:", paragraph, error);
+                translatedParagraphs.push(paragraph + " ⚠️ (çevirilemedi)");
+            }
+
+            // 👉 500ms bekle, isteği yavaşlat
+            await delay(500);
         }
+
+        return translatedParagraphs.join("\n\n");
     }
 
     async function autoTranslate() {
@@ -191,6 +213,7 @@
         document.getElementById("translationLoader").style.display = "block";
 
         try {
+            // Tek metin alanları
             const fieldMappings = [
                 { selector: "Translated.Title", source: document.getElementById("originalTitle")?.value },
                 { selector: "Translated.Description", source: document.getElementById("originalDescription")?.value },
@@ -200,12 +223,13 @@
 
             for (const field of fieldMappings) {
                 if (field.source) {
-                    const translated = await lingvaTranslate(field.source, targetLang);
+                    const translated = await translateTextSafely(field.source, targetLang);
                     const input = document.querySelector(`[name='${field.selector}']`);
                     if (input) input.value = translated;
                 }
             }
 
+            // Liste alanları
             const originalLists = {
                 Inclusions: Array.from(document.querySelectorAll("#originalInclusions li")).map(li => li.textContent.trim()),
                 Exclusions: Array.from(document.querySelectorAll("#originalExclusions li")).map(li => li.textContent.trim()),
@@ -219,24 +243,29 @@
             };
 
             for (const [key, items] of Object.entries(originalLists)) {
-                const containerId = containerMap[key];
-                const container = document.getElementById(containerId);
+                const container = document.getElementById(containerMap[key]);
                 if (!container) continue;
 
-                // Önceki input'ları temizle
                 container.innerHTML = "";
 
                 for (const item of items) {
-                    const translated = await lingvaTranslate(item, targetLang);
+                    let translated;
+                    try {
+                        translated = await lingvaTranslate(item, targetLang);
+                    } catch {
+                        translated = item + " ⚠️";
+                    }
+
                     const input = document.createElement("input");
                     input.type = "text";
                     input.name = `Translated.${key}`;
                     input.className = "form-control mb-2";
                     input.value = translated;
                     container.appendChild(input);
+                    await delay(500); // ⚠️ Liste çevirilerinde de bekle
                 }
 
-                // Boş yeni giriş input'u
+                // Yeni boş satır
                 const placeholder = document.createElement("input");
                 placeholder.type = "text";
                 placeholder.name = `Translated.${key}`;
@@ -244,12 +273,167 @@
                 placeholder.placeholder = "Yeni giriş";
                 container.appendChild(placeholder);
             }
-
         } catch (error) {
-            alert("Çeviri servisine erişilemedi. Lütfen daha sonra tekrar deneyiniz.");
+            alert("Çeviri sırasında genel bir hata oluştu. Bazı alanlar çevrilmemiş olabilir.");
         } finally {
             document.getElementById("translationLoader").style.display = "none";
         }
     }
+
+
+
+    //     async function autoTranslate() {
+    //     const targetLang = document.getElementById("languageSelect")?.value?.toLowerCase();
+    //     if (!targetLang) {
+    //         alert("Hedef dil seçilmedi.");
+    //         return;
+    //     }
+
+    //     document.getElementById("translationLoader").style.display = "block";
+
+    //     try {
+    //         const translateTextSafely = async (text, lang) => {
+    //             if (!text) return "";
+    //             const paragraphs = text.split(/\n+/).filter(p => p.trim() !== "");
+    //             const translatedParagraphs = [];
+
+    //             for (const paragraph of paragraphs) {
+    //                 const translated = await lingvaTranslate(paragraph, lang);
+    //                 translatedParagraphs.push(translated);
+    //             }
+
+    //             return translatedParagraphs.join("\n\n");
+    //         };
+
+    //         const fieldMappings = [
+    //             { selector: "Translated.Title", source: document.getElementById("originalTitle")?.value },
+    //             { selector: "Translated.Description", source: document.getElementById("originalDescription")?.value },
+    //             { selector: "Translated.Highlights", source: document.getElementById("originalHighlights")?.value },
+    //             { selector: "Translated.Itinerary", source: document.getElementById("originalItinerary")?.value }
+    //         ];
+
+    //         for (const field of fieldMappings) {
+    //             if (field.source) {
+    //                 const translated = await translateTextSafely(field.source, targetLang);
+    //                 const input = document.querySelector(`[name='${field.selector}']`);
+    //                 if (input) input.value = translated;
+    //             }
+    //         }
+
+    //         const originalLists = {
+    //             Inclusions: Array.from(document.querySelectorAll("#originalInclusions li")).map(li => li.textContent.trim()),
+    //             Exclusions: Array.from(document.querySelectorAll("#originalExclusions li")).map(li => li.textContent.trim()),
+    //             ImportantInfo: Array.from(document.querySelectorAll("#originalImportantInfo li")).map(li => li.textContent.trim())
+    //         };
+
+    //         const containerMap = {
+    //             Inclusions: "inclusionsContainer",
+    //             Exclusions: "exclusionsContainer",
+    //             ImportantInfo: "importantInfoContainer"
+    //         };
+
+    //         for (const [key, items] of Object.entries(originalLists)) {
+    //             const containerId = containerMap[key];
+    //             const container = document.getElementById(containerId);
+    //             if (!container) continue;
+
+    //             container.innerHTML = "";
+
+    //             for (const item of items) {
+    //                 const translated = await lingvaTranslate(item, targetLang);
+    //                 const input = document.createElement("input");
+    //                 input.type = "text";
+    //                 input.name = `Translated.${key}`;
+    //                 input.className = "form-control mb-2";
+    //                 input.value = translated;
+    //                 container.appendChild(input);
+    //             }
+
+    //             const placeholder = document.createElement("input");
+    //             placeholder.type = "text";
+    //             placeholder.name = `Translated.${key}`;
+    //             placeholder.className = "form-control mb-2";
+    //             placeholder.placeholder = "Yeni giriş";
+    //             container.appendChild(placeholder);
+    //         }
+
+    //     } catch (error) {
+    //         alert("Çeviri servisine erişilemedi. Lütfen daha sonra tekrar deneyiniz.");
+    //     } finally {
+    //         document.getElementById("translationLoader").style.display = "none";
+    //     }
+    // }
+
+
+    // async function autoTranslate() {
+    //     const targetLang = document.getElementById("languageSelect")?.value?.toLowerCase();
+    //     if (!targetLang) {
+    //         alert("Hedef dil seçilmedi.");
+    //         return;
+    //     }
+
+    //     document.getElementById("translationLoader").style.display = "block";
+
+    //     try {
+    //         const fieldMappings = [
+    //             { selector: "Translated.Title", source: document.getElementById("originalTitle")?.value },
+    //             { selector: "Translated.Description", source: document.getElementById("originalDescription")?.value },
+    //             { selector: "Translated.Highlights", source: document.getElementById("originalHighlights")?.value },
+    //             { selector: "Translated.Itinerary", source: document.getElementById("originalItinerary")?.value }
+    //         ];
+
+    //         for (const field of fieldMappings) {
+    //             if (field.source) {
+    //                 const translated = await lingvaTranslate(field.source, targetLang);
+    //                 const input = document.querySelector(`[name='${field.selector}']`);
+    //                 if (input) input.value = translated;
+    //             }
+    //         }
+
+    //         const originalLists = {
+    //             Inclusions: Array.from(document.querySelectorAll("#originalInclusions li")).map(li => li.textContent.trim()),
+    //             Exclusions: Array.from(document.querySelectorAll("#originalExclusions li")).map(li => li.textContent.trim()),
+    //             ImportantInfo: Array.from(document.querySelectorAll("#originalImportantInfo li")).map(li => li.textContent.trim())
+    //         };
+
+    //         const containerMap = {
+    //             Inclusions: "inclusionsContainer",
+    //             Exclusions: "exclusionsContainer",
+    //             ImportantInfo: "importantInfoContainer"
+    //         };
+
+    //         for (const [key, items] of Object.entries(originalLists)) {
+    //             const containerId = containerMap[key];
+    //             const container = document.getElementById(containerId);
+    //             if (!container) continue;
+
+    //             // Önceki input'ları temizle
+    //             container.innerHTML = "";
+
+    //             for (const item of items) {
+    //                 const translated = await lingvaTranslate(item, targetLang);
+    //                 const input = document.createElement("input");
+    //                 input.type = "text";
+    //                 input.name = `Translated.${key}`;
+    //                 input.className = "form-control mb-2";
+    //                 input.value = translated;
+    //                 container.appendChild(input);
+    //             }
+
+    //             // Boş yeni giriş input'u
+    //             const placeholder = document.createElement("input");
+    //             placeholder.type = "text";
+    //             placeholder.name = `Translated.${key}`;
+    //             placeholder.className = "form-control mb-2";
+    //             placeholder.placeholder = "Yeni giriş";
+    //             container.appendChild(placeholder);
+    //         }
+
+    //     } catch (error) {
+    //         alert("Çeviri servisine erişilemedi. Lütfen daha sonra tekrar deneyiniz.");
+    //     } finally {
+    //         document.getElementById("translationLoader").style.display = "none";
+    //     }
+    // }
 </script>
 

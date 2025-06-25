@@ -39,7 +39,7 @@
                     <a asp-action="CreateBasic" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-info">Temel Bilgi</a>
                     <a asp-action="CreateLocation" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-secondary">Lokasyon</a>
                     <a asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.Id ?? 0)" class="btn btn-sm btn-warning">Seçenekler</a>
-                    <a asp-action="CreateBasic" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-primary">Düzenle</a>
+                    <a asp-action="CreateAddons" asp-route-id="@item.Id" class="btn btn-sm btn-success">Ek Ürünler</a>
                     <a asp-action="ManageLanguages" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-dark">Dil Yönetimi</a>
                 </td>
             </tr>

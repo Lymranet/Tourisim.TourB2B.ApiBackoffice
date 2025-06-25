@@ -59,8 +59,6 @@ public partial class Activity
 
     public string? ContactInfoRole { get; set; }
 
-    public string? CancellationPolicy { get; set; }
-
     public string? AdditionalNotes { get; set; }
 
     public string Status { get; set; } = null!;
@@ -121,8 +119,6 @@ public partial class Activity
 
     public bool IsActive { get; set; }
 
-    public bool IsFreeCancellation { get; set; }
-
     public string? Itinerary { get; set; }
 
     public string Language { get; set; } = null!;
@@ -151,7 +147,13 @@ public partial class Activity
 
     public string Label { get; set; } = null!;
 
+    public bool? IsFreeCancellation { get; set; }
+
     public virtual ICollection<ActivityLanguage> ActivityLanguages { get; set; } = new List<ActivityLanguage>();
+
+    public virtual ICollection<Addon> Addons { get; set; } = new List<Addon>();
+
+    public virtual ICollection<CancellationPolicyCondition> CancellationPolicyConditions { get; set; } = new List<CancellationPolicyCondition>();
 
     public virtual ICollection<MeetingPoint> MeetingPoints { get; set; } = new List<MeetingPoint>();
 
@@ -164,4 +166,6 @@ public partial class Activity
     public virtual ICollection<RoutePoint> RoutePoints { get; set; } = new List<RoutePoint>();
 
     public virtual ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
+
+    public virtual ICollection<Translation> Translations { get; set; } = new List<Translation>();
 }

@@ -1,10 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 using TourManagementApi.Data;
+using TourManagementApi.Helper;
 using TourManagementApi.Models;
 using TourManagementApi.Models.ViewModels;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace TourManagementApi.Controllers
 {
@@ -68,7 +69,7 @@ namespace TourManagementApi.Controllers
                     UntilDate = model.UntilDate,
                     CutOff = model.CutOff,
                     CanBeBookedAfterStartTime = model.CanBeBookedAfterStartTime,
-                    Weekdays = model.Weekdays ?? new List<string>(),
+                    Weekdays = TxtJson.SerializeStringList(model.Weekdays),
                     OpeningHours = model.OpeningHours?.Select(oh => new OpeningHour
                     {
                         FromTime = oh.FromTime,
@@ -135,7 +136,7 @@ namespace TourManagementApi.Controllers
                 UntilDate = option.UntilDate,
                 CutOff = option.CutOff,
                 CanBeBookedAfterStartTime = option.CanBeBookedAfterStartTime,
-                Weekdays = option.Weekdays,
+                Weekdays = TxtJson.DeserializeStringList(option.Weekdays),
                 OpeningHours = option.OpeningHours.Select(oh => new OpeningHourViewModel
                 {
                     Id = oh.Id,
@@ -190,7 +191,7 @@ namespace TourManagementApi.Controllers
                     option.UntilDate = model.UntilDate;
                     option.CutOff = model.CutOff;
                     option.CanBeBookedAfterStartTime = model.CanBeBookedAfterStartTime;
-                    option.Weekdays = model.Weekdays ?? new List<string>();
+                    option.Weekdays = TxtJson.SerializeStringList(model.Weekdays);
 
                     // OpeningHours güncelleme
                     _context.OpeningHours.RemoveRange(option.OpeningHours);

@@ -20,6 +20,14 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<ActivityLanguage> ActivityLanguages { get; set; }
 
+    public virtual DbSet<Addon> Addons { get; set; }
+
+    public virtual DbSet<AddonTranslation> AddonTranslations { get; set; }
+
+    public virtual DbSet<Availability> Availabilities { get; set; }
+
+    public virtual DbSet<CancellationPolicyCondition> CancellationPolicyConditions { get; set; }
+
     public virtual DbSet<MeetingPoint> MeetingPoints { get; set; }
 
     public virtual DbSet<OpeningHour> OpeningHours { get; set; }
@@ -38,13 +46,15 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<TicketCategory> TicketCategories { get; set; }
 
+    public virtual DbSet<TicketCategoryCapacity> TicketCategoryCapacities { get; set; }
+
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
     public virtual DbSet<Translation> Translations { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=213.159.29.100;Database=TourManagementDb;User Id=troya_dbUser;Password=d93cHL:?bHb[.a%/4c3:yGALR{KGBAdsa;TrustServerCertificate=True;");
+        => optionsBuilder.UseSqlServer("Server=213.159.29.100;Database=TourManagementDb;User Id=tourlogin;Password=d93cHL:?bHb[.a%/4c3:yGALR{KGBAdsa;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -110,6 +120,52 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.Activity).WithMany(p => p.ActivityLanguages)
                 .HasForeignKey(d => d.ActivityId)
                 .HasConstraintName("FK_ActivityLanguage_Activities_ActivityId");
+        });
+
+        modelBuilder.Entity<Addon>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Addons__3214EC07FF36CB8D");
+
+            entity.Property(e => e.Currency)
+                .HasMaxLength(10)
+                .HasDefaultValue("TRY");
+            entity.Property(e => e.PriceAmount).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.Type).HasMaxLength(50);
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.Addons)
+                .HasForeignKey(d => d.ActivityId)
+                .HasConstraintName("FK_Addons_Activities");
+        });
+
+        modelBuilder.Entity<AddonTranslation>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__AddonTra__3214EC07325ED02A");
+
+            entity.Property(e => e.Language).HasMaxLength(10);
+            entity.Property(e => e.Title).HasMaxLength(255);
+
+            entity.HasOne(d => d.Addon).WithMany(p => p.AddonTranslations)
+                .HasForeignKey(d => d.AddonId)
+                .HasConstraintName("FK_AddonTranslations_Addons");
+        });
+
+        modelBuilder.Entity<Availability>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Availabi__3214EC0722F78A97");
+
+            entity.Property(e => e.ActivityId).HasMaxLength(100);
+            entity.Property(e => e.OptionId).HasMaxLength(100);
+            entity.Property(e => e.PartnerSupplierId).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<CancellationPolicyCondition>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Cancella__3214EC070325041F");
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.CancellationPolicyConditions)
+                .HasForeignKey(d => d.ActivityId)
+                .HasConstraintName("FK_CancellationPolicyConditions_Activity");
         });
 
         modelBuilder.Entity<MeetingPoint>(entity =>
@@ -225,6 +281,17 @@ public partial class ApplicationDbContext : DbContext
             entity.HasOne(d => d.Option).WithMany(p => p.TicketCategories).HasForeignKey(d => d.OptionId);
         });
 
+        modelBuilder.Entity<TicketCategoryCapacity>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TicketCa__3214EC07C98BD1B7");
+
+            entity.Property(e => e.TicketCategoryId).HasMaxLength(100);
+
+            entity.HasOne(d => d.Availability).WithMany(p => p.TicketCategoryCapacities)
+                .HasForeignKey(d => d.AvailabilityId)
+                .HasConstraintName("FK__TicketCat__Avail__69FBBC1F");
+        });
+
         modelBuilder.Entity<TimeSlot>(entity =>
         {
             entity.HasKey(e => new { e.ActivityId, e.Id });
@@ -243,6 +310,11 @@ public partial class ApplicationDbContext : DbContext
             entity.HasIndex(e => new { e.ActivityId, e.Language }, "UX_Translation_Activity_Language").IsUnique();
 
             entity.Property(e => e.Language).HasMaxLength(10);
+
+            entity.HasOne(d => d.Activity).WithMany(p => p.Translations)
+                .HasForeignKey(d => d.ActivityId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Translations_Activities");
         });
 
         OnModelCreatingPartial(modelBuilder);

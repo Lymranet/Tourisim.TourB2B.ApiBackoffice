@@ -1,0 +1,311 @@
+{
+  "links": {
+    "next": "https://example.com/supplier/1234/activities?offset=50"
+  },
+  "data": [
+    {
+      "id": "48016",
+      "title": "The Best of Zürich City Tour",
+      "description": "Discover this unique city, several times winner of the award &quot;City with the world&#39;s best quality of life&quot; and see its different faces. During the journey you will pass by the &quot;Must see&quot; of the beautiful town.\r\n\r\nDeparture point:&nbsp;\r\nSihlquai Coach Parking -&nbsp;Bus parking near Main Station.\r\nwww.switzerland-tours.ch/travelinfos\r\n\r\nCheck-In:&nbsp;\r\nPlease check-in at our ticket office marked with &quot;Best of Switzerland Tours&quot; at the latest 15 minutes prior to departure.",
+      "highlights": "",
+      "itinerary": "<p>Pass by the castle-like National Museum, the well-known&nbsp;shopping avenue Bahnhofstrasse&nbsp;and Z&uuml;rich&#39;s famous&nbsp;financial district. Picture stop at the port of &quot;Enge&quot; where you enjoy beautiful vistas of the crystal-clear&nbsp;Lake Z&uuml;rich. Continue along the lake, passing by the renowned Opera House to the &quot;Z&uuml;richberg&quot; district with many superb mansions of glorious past times. A great experience is the ride uphill by&nbsp;cogwheel train&nbsp;(Dolderbahn) to a&nbsp;viewpoint&nbsp;where the noble five-star Grand Hotel Dolder is located. Enjoy breath-taking views of the city, the lake and the snow-covered Alps. Cruising the&nbsp;university quarter, you see the Swiss Federal Institute of Technology (ETH), the University of Z&uuml;rich and Z&uuml;rich&#39;s art museum before reaching the&nbsp;charming Old Town. The last picture stop of this versatile excursion offers views of the patriarchal guild houses, the St. Peter church with Europe&#39;s largest clock-face, the Grossm&uuml;nster church and the Fraum&uuml;nster church with the famous stained glass windows by Marc Chagall. After a short walk through the Old Town, the tour ends here or with a scenic drive back on&nbsp;Limmatquai&nbsp;at Sihlquai bus parking.</p>\r\n\r\n<p>&nbsp;</p>",
+      "detailsPageUrl": "https://awesome.com/cool-activity-url",
+      "language": "en",
+      "inclusions": [ "Drinks" ],
+      "exclusions": [ "Lunch" ],
+      "importantInfo": [ "Alcoholic beverages are only for guests aged 18 or older. Photo ID is required for all passengers consuming alcoholic beverages." ],
+      "destination": {
+        "countryCode": "CH",
+        "code": "ZRH",
+        "name": "Zürich"
+      },
+      "media": {
+        "images": {
+          "header": "https://cdn.something.com/234o9234/12342009.png",
+          "teaser": "https://cdn.something.com/234o9234/12342002.png",
+          "gallery": [
+            "https://cdn.something.com/234o9234/12342003.png",
+            "https://cdn.something.com/234o9234/12342004.png",
+            "https://cdn.something.com/234o9234/12342005.png"
+          ]
+        },
+        "videos": [
+          "//youtu.be/CIrttJhJCqM",
+          "//youtu.be/CIrttJhJCq1"
+        ]
+      },
+      "rating": {
+        "averageValue": 4.8,
+        "totalCount": 1067
+      },
+      "meetingPoints": [
+        {
+          "name": "Zürich",
+          "latitude": "47.376887",
+          "longitude": "8.541694",
+          "address": "100/F, International Commerce Centre"
+        }
+      ],
+      "route": [
+        {
+          "name": "Zürich",
+          "latitude": "47.376887",
+          "longitude": "8.541694"
+        }
+      ],
+      "categories": [ "1", "5", "10" ],
+      "guestFields": [
+        {
+          "code": "gender",
+          "label": "Gender",
+          "type": "radio",
+          "required": false,
+          "options": [
+            {
+              "key": "m",
+              "value": "Male",
+              "translations": [
+                {
+                  "language": "be",
+                  "value": "Мужчына"
+                }
+              ]
+            },
+            {
+              "key": "f",
+              "value": "Female",
+              "translations": [
+                {
+                  "language": "be",
+                  "value": "Жанчына"
+                }
+              ]
+            }
+          ],
+          "translations": [
+            {
+              "language": "be",
+              "label": "Пол"
+            }
+          ]
+        },
+        {
+          "code": "email",
+          "label": "Email",
+          "type": "text",
+          "required": true,
+          "options": null,
+          "translations": [
+            {
+              "language": "be",
+              "label": "Емэйл"
+            }
+          ]
+        }
+      ],
+      "addons": [
+        {
+          "id": "3457",
+          "title": "T-shirt",
+          "type": "guest",
+          "description": "T-shirt with funny picture on it",
+          "price": {
+            "amount": "10.00",
+            "currency": "USD"
+          },
+          "translations": [
+            {
+              "language": "be",
+              "title": "Цiшотка",
+              "description": "Цiшотка з малюнкам"
+            }
+          ]
+        }
+      ],
+      "isActive": true,
+      "cancellationPolicy": {
+        "isFreeCancellation": false,
+        "refundConditions": [
+          {
+            "minDurationBeforeStartTimeSec": 604800,
+            "refundPercentage": 50
+          },
+          {
+            "minDurationBeforeStartTimeSec": 172800,
+            "refundPercentage": 100
+          }
+        ]
+      },
+      "options": [
+        {
+          "id": "42964496428-0900",
+          "name": "The Best of Zürich City Tour B2  APR 18 - MAR 19 (English)",
+          "duration": "PT3H",
+          "startTime": "00:00:00",
+          "openingHours": [
+            {
+              "fromTime": "09:00:00",
+              "toTime": "20:30:00"
+            }
+          ],
+          "fromDate": "2018-01-15",
+          "untilDate": "2019-03-01",
+          "cutOff": 1440,
+          "weekdays": [
+            "mon",
+            "sun"
+          ],
+          "canBeBookedAfterStartTime": false,
+          "ticketCategories": [
+            {
+              "id": "12342",
+              "name": "Adult",
+              "minSeats": 1,
+              "maxSeats": 1,
+              "price": {
+                "type": "fixed",
+                "amount": "49.00",
+                "currency": "EUR"
+              },
+              "type": "Adult",
+              "ageLimit": {
+                "minAge": 18,
+                "maxAge": 65
+              },
+              "translations": [
+                {
+                  "language": "be",
+                  "name": "Дарослы"
+                }
+              ]
+            },
+            {
+              "id": "CHILD",
+              "name": "Child",
+              "minSeats": 1,
+              "maxSeats": 1,
+              "price": {
+                "type": "fixed",
+                "amount": "20.00",
+                "currency": "EUR"
+              },
+              "type": "Child",
+              "ageLimit": {
+                "minAge": 6,
+                "maxAge": 17
+              },
+              "translations": [
+                {
+                  "language": "be",
+                  "name": "Дзiцячы"
+                }
+              ]
+            },
+            {
+              "id": "12346",
+              "name": "GROUP 2-10",
+              "minSeats": 2,
+              "maxSeats": 10,
+              "price": {
+                "type": "variable",
+                "amount": "200.00",
+                "currency": "EUR"
+              },
+              "type": "Group",
+              "ageLimit": null,
+              "translations": [
+                {
+                  "language": "be",
+                  "name": "Група (2-10)"
+                }
+              ]
+            }
+          ],
+          "translations": [
+            {
+              "language": "be",
+              "name": "Цюрых: Лепшае"
+            }
+          ]
+        },
+        {
+          "id": "42964496428-1000",
+          "name": "The Best of Zürich City Tour B2  APR 18 - MAR 19 (English)",
+          "duration": "PT3H",
+          "startTime": "10:00:00",
+          "openingHours": [],
+          "fromDate": "2018-01-15",
+          "untilDate": "2019-03-01",
+          "cutOff": 0,
+          "weekdays": [
+            "fri",
+            "sat"
+          ],
+          "canBeBookedAfterStartTime": true,
+          "ticketCategories": [
+            {
+              "id": "12342",
+              "name": "Adult",
+              "minSeats": 1,
+              "maxSeats": 1,
+              "price": {
+                "type": "fixed",
+                "amount": "49.00",
+                "currency": "EUR"
+              },
+              "type": "Adult",
+              "ageLimit": {
+                "minAge": 18,
+                "maxAge": 65
+              },
+              "translations": [
+                {
+                  "language": "be",
+                  "name": "Дарослы"
+                }
+              ]
+            },
+            {
+              "id": "123461",
+              "name": "GROUP 1-5",
+              "minSeats": 1,
+              "maxSeats": 5,
+              "price": {
+                "type": "fixed",
+                "amount": "150.00",
+                "currency": "EUR"
+              },
+              "type": "Group",
+              "ageLimit": null,
+              "translations": [
+                {
+                  "language": "be",
+                  "name": "Група"
+                }
+              ]
+            }
+          ],
+          "translations": [
+            {
+              "language": "be",
+              "name": "Цюрых: Лепшае"
+            }
+          ]
+        }
+      ],
+      "translations": [
+        {
+          "language": "de",
+          "title": "Stadtrundfahrt: Das Beste von Zürich",
+          "description": "Beschreibung: Entdecken Sie Zürich, wichtigster wirtschaftlicher und kultureller Standort der Schweiz und mehrfach als \"Stadt mit der höchsten Lebensqualität\" ausgezeichnet, auf dieser 2-stündigen, klassischen Stadtrundfahrt. Während der Fahrt im komfortablen, klimatisierten Reisebus zeigt Ihnen Ihre versierte Reiseleitung die bedeutendsten Sehenswürdigkeiten dieser bezaubernden Stadt. Abfahrtsort: Zürich Sihlquai Carparkplatz hinter dem Zürich Hauptbahnhof (HB) Detaillierte Beschreibung: www.switzerland-tours.ch/de/reiseinformationen/abfahrtsort Check-In: Wir bitten Sie, sich spätestens 15 Minuten vor Abfahrt bei unseren Mitarbeitern am Abfahrtsort zu melden.",
+          "highlights": "",
+          "itinerary": "Geniessen Sie die Fahrt vorbei am schlossähnlichen Landesmuseum, dem Hauptbahnhof, der luxuriösen Einkaufsmeile Bahnhofstrasse und Zürichs Zentrum für Finanz und Wirtschaft. Nach einem ersten Fotostop am malerischen Zürichseefolgen Sie dem See über die Quaibrücke und vorbei am berühmten Opernhaus. Anschliessend Fahrt mit der Dolder-Zahnradbahn ins Zürichbergquartier mit seinen Villen aus vergangenen Zeiten und dem renommierten 5-Sterne Hotel The Dolder Grand. Geniessen Sie die einmalige Aussicht auf die Stadt, den See und die schneebedeckten Berge. Auf der Weiterfahrt durch das Universitätsviertel sehen Sie die Eidgenössische Technische Hochschule (ETH), die Universität sowie das Kunsthaus Zürich und erreichen dann die charmante Altstadt. Der letzte Fotostopp der abwechslungsreichen Tour bietet Aussicht auf die patriarchalen Zunfthäuser, die Kirche St. Peter mit dem grössten Kirchenzifferblatt Europas, das Grossmünster und das Fraumünster mit seinen berühmten Farbfenstern von Marc Chagall. Nach einem kurzen Altstadtbummel endet die Tour hier oder mit einer malerischen Fahrt entlang des Limmatquais am Sihlquai Busparkplatz. Inklusiv: -Geführte Tour in Deutsch und Englisch -Audioguides: Chinesisch, Japanisch, Russisch und Spanisch -Busfahrt im komfortablen Reisebus -Zahnradbahnfahrt Exklusiv: -Essen -Getränke -Persönliche Ausgaben",
+          "inclusions": [ "Getränke" ],
+          "exclusions": [ "Mittagessen" ],
+          "importantInfo": [ "Alkoholische Getränke sind nur für Gäste ab 18 Jahren. Für alle Passagiere, die alkoholische Getränke konsumieren, ist ein Lichtbildausweis erforderlich." ],
+          "detailsPageUrl": "https://awesome.com/de/cool-activity-url"
+        }
+      ]
+    }
+  ]
+}

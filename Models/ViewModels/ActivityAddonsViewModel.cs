@@ -11,23 +11,17 @@ namespace TourManagementApi.Models.ViewModels
 
     public class AddonViewModel
     {
-        public string? Id { get; set; }
+        public int Id { get; set; }
         [Required]
         public string Title { get; set; } = string.Empty;
         [Required]
         public string Type { get; set; } = string.Empty; // guest, group, vb.
         public string? Description { get; set; }
-        public AddonPriceViewModel Price { get; set; } = new();
         public List<AddonTranslationViewModel> Translations { get; set; } = new();
-    }
-
-    public class AddonPriceViewModel
-    {
-        [Required]
-        public string Amount { get; set; } = "0";
-        [Required]
+        public decimal? PriceAmount { get; set; }
         public string Currency { get; set; } = "TRY";
     }
+
 
     public class AddonTranslationViewModel
     {

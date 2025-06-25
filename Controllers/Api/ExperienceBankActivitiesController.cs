@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using TourManagementApi.Data;
+using TourManagementApi.Helper;
 using TourManagementApi.Models;
+using TourManagementApi.Models.ViewModels;
 
 namespace TourManagementApi.Controllers.Api
 {
@@ -10,210 +13,288 @@ namespace TourManagementApi.Controllers.Api
     public class ExperienceBankActivitiesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        public Dictionary<string, List<int>> categoryMapping = new Dictionary<string, List<int>>
+        {
+            { "Hiking", new List<int> { 1, 10 } },
+            { "Rock Climbing", new List<int> { 1, 5 } },
+            { "Rafting", new List<int> { 2 } },
+            { "Kayaking", new List<int> { 2 } },
+            { "Camping", new List<int> { 10 } },
+            { "Zip-lining", new List<int> { 5 } },
+            { "Paragliding", new List<int> { 5 } },
+            { "Museum", new List<int> { 4 } },
+            { "Historical Site", new List<int> { 11 } },
+            { "Art Tour", new List<int> { 4, 11 } },
+            { "Wildlife", new List<int> { 10 } },
+            { "Botanical", new List<int> { 10 } },
+            { "Eco Tour", new List<int> { 10, 11 } },
+            { "Football", new List<int> { 8 } },
+            { "Basketball", new List<int> { 8 } },
+            { "Tennis", new List<int> { 8 } },
+            { "Wine Tasting", new List<int> { 14 } },
+            { "Cooking Class", new List<int> { 14 } },
+            { "Street Food", new List<int> { 14 } },
+            { "Spa", new List<int> { 11 } },
+            { "Yoga", new List<int> { 11 } },
+            { "Retreat", new List<int> { 11 } },
+        };
 
         public ExperienceBankActivitiesController(ApplicationDbContext context)
         {
             _context = context;
         }
 
-        //[HttpGet]
-        //public async Task<IActionResult> GetActivities(string partnerSupplierId, [FromQuery] string[] id, [FromQuery] int offset = 0)
-        //{
-        //    // Sadece belirli ID'lerle filtrelenmiş tur listesi
-        //    var query = _context.Activities
-        //        .Include(a => a.Options)
-        //        .Include(a => a.MeetingPoints)
-        //        .Include(a => a.RoutePoints)
-        //        .Include(a => a.GuestFields)
-        //        .Include(a => a.Pricing)
-        //        .Include(a => a.SeasonalAvailability)
-        //        .Where(a => a.PartnerSupplierId == partnerSupplierId);
+        [HttpGet]
+        public async Task<IActionResult> GetActivities(string partnerSupplierId, [FromQuery] string[] id, [FromQuery] int offset = 0)
+        {
+            // Sadece belirli ID'lerle filtrelenmiş tur listesi
+            var query = _context.Activities
+                .Include(a => a.Options)
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.RoutePoints)
+                .Include(a => a.GuestFields)
+                .Where(a => a.PartnerSupplierId == partnerSupplierId);
 
-        //    if (id?.Any() == true)
-        //    {
-        //        query = query.Where(a => id.Contains(a.Id.ToString()));
-        //    }
+            if (id?.Any() == true)
+            {
+                query = query.Where(a => id.Contains(a.Id.ToString()));
+            }
 
-        //    const int pageSize = 50;
-        //    var total = await query.CountAsync();
-        //    var activities = await query
-        //        .Skip(offset)
-        //        .Take(pageSize)
-        //        .ToListAsync();
+            const int pageSize = 50;
+            var total = await query.CountAsync();
+            var activities = await query
+                .Skip(offset)
+                .Take(pageSize)
+                .ToListAsync();
 
-        //    var result = new
-        //    {
-        //        links = new
-        //        {
-        //            next = offset + pageSize < total
-        //                ? $"https://your-api.com/supplier/{partnerSupplierId}/activities?offset={offset + pageSize}"
-        //                : null
-        //        },
-        //        data = activities.Select(MapToExperienceBankDto)
-        //    };
+            var result = new
+            {
+                links = new
+                {
+                    next = offset + pageSize < total
+                        ? $"https://tours.hotelwidget.com/supplier/{partnerSupplierId}/activities?offset={offset + pageSize}"
+                        : null
+                },
+                data = activities.Select(MapToExperienceBankDto)
+            };
 
-        //    return Ok(result);
-        //}
+            return Ok(result);
+        }
 
-        //private object MapToExperienceBankDto(Activity activity)
-        //{
-        //    return new
-        //    {
-        //        id = activity.Id.ToString(),
-        //        title = activity.Title,
-        //        description = activity.Description,
-        //        highlights = activity.Highlights,
-        //        itinerary = activity.Itinerary,
-        //        language = activity.Language ?? "en",
-        //        inclusions = activity.Inclusions ?? new List<string>(),
-        //        exclusions = activity.Exclusions ?? new List<string>(),
-        //        importantInfo = activity.ImportantInfo ?? new List<string>(),
-        //        detailsPageUrl = activity.DetailsUrl,
-        //        destination = new
-        //        {
-        //            countryCode = activity.CountryCode,
-        //            code = activity.DestinationCode,
-        //            name = activity.DestinationName
-        //        },
-        //        media = new
-        //        {
-        //            images = new
-        //            {
-        //                header = activity.CoverImage,
-        //                teaser = activity.PreviewImage,
-        //                gallery = activity.GalleryImages ?? new List<string>()
-        //            },
-        //            videos = activity.VideoUrls ?? new List<string>()
-        //        },
-        //        rating = activity.Rating != null ? new
-        //        {
-        //            averageValue = activity.Rating.AverageValue,
-        //            totalCount = activity.Rating.TotalCount
-        //        } : null,
-        //        categories = activity.Categories ?? new List<string>(),
-        //        meetingPoints = activity.MeetingPoints?.Select(mp => new
-        //        {
-        //            name = mp.Name,
-        //            latitude = mp.Latitude,
-        //            longitude = mp.Longitude,
-        //            address = mp.Address
-        //        }) ?? new List<object>(),
-        //        route = activity.RoutePoints?.Select(rp => new
-        //        {
-        //            name = rp.Name,
-        //            latitude = rp.Latitude,
-        //            longitude = rp.Longitude
-        //        }) ?? new List<object>(),
-        //        guestFields = activity.GuestFields?.Select(gf => new
-        //        {
-        //            code = gf.Code,
-        //            label = gf.Label,
-        //            type = gf.Type,
-        //            required = gf.Required,
-        //            options = gf.Options?.Select(opt => new
-        //            {
-        //                key = opt.Key,
-        //                value = opt.Value,
-        //                translations = opt.Translations?.Select(tr => new
-        //                {
-        //                    language = tr.Language,
-        //                    value = tr.Value
-        //                }) ?? new List<object>()
-        //            }) ?? new List<object>(),
-        //            translations = gf.Translations?.Select(tr => new
-        //            {
-        //                language = tr.Language,
-        //                label = tr.Label
-        //            }) ?? new List<object>()
-        //        }) ?? new List<object>(),
-        //        addons = activity.Addons?.Select(ad => new
-        //        {
-        //            id = ad.Id,
-        //            title = ad.Title,
-        //            description = ad.Description,
-        //            type = ad.Type,
-        //            price = new
-        //            {
-        //                amount = ad.PriceAmount.ToString("0.00"),
-        //                currency = ad.Currency
-        //            },
-        //            translations = ad.Translations?.Select(tr => new
-        //            {
-        //                language = tr.Language,
-        //                title = tr.Title,
-        //                description = tr.Description
-        //            }) ?? new List<object>()
-        //        }) ?? new List<object>(),
-        //        isActive = activity.Status == "active",
-        //        cancellationPolicy = activity.CancellationPolicy != null ? new
-        //        {
-        //            isFreeCancellation = activity.CancellationPolicy.IsFreeCancellation,
-        //            refundConditions = activity.CancellationPolicy.RefundConditions.Select(rc => new
-        //            {
-        //                minDurationBeforeStartTimeSec = rc.MinSecondsBeforeStart,
-        //                refundPercentage = rc.RefundPercent
-        //            })
-        //        } : null,
-        //        options = activity.Options.Select(op => new
-        //        {
-        //            id = op.Id,
-        //            name = op.Name,
-        //            duration = op.DurationISO8601,
-        //            startTime = op.StartTime ?? "00:00:00",
-        //            openingHours = op.OpeningHours?.Select(oh => new
-        //            {
-        //                fromTime = oh.FromTime,
-        //                toTime = oh.ToTime
-        //            }) ?? new List<object>(),
-        //            fromDate = op.FromDate,
-        //            untilDate = op.UntilDate,
-        //            cutOff = op.CutOff,
-        //            weekdays = op.Weekdays,
-        //            canBeBookedAfterStartTime = op.CanBeBookedAfterStartTime,
-        //            ticketCategories = op.TicketCategories.Select(tc => new
-        //            {
-        //                id = tc.Id,
-        //                name = tc.Name,
-        //                minSeats = tc.MinSeats,
-        //                maxSeats = tc.MaxSeats,
-        //                price = new
-        //                {
-        //                    type = tc.PriceType,
-        //                    amount = tc.PriceAmount.ToString("0.00"),
-        //                    currency = tc.Currency
-        //                },
-        //                type = tc.Type,
-        //                ageLimit = tc.AgeLimit != null ? new
-        //                {
-        //                    minAge = tc.AgeLimit.MinAge,
-        //                    maxAge = tc.AgeLimit.MaxAge
-        //                } : null,
-        //                translations = tc.Translations?.Select(tr => new
-        //                {
-        //                    language = tr.Language,
-        //                    name = tr.Name
-        //                }) ?? new List<object>()
-        //            }),
-        //            translations = op.Translations?.Select(tr => new
-        //            {
-        //                language = tr.Language,
-        //                name = tr.Name
-        //            }) ?? new List<object>()
-        //        }),
-        //        translations = activity.Translations?.Select(tr => new
-        //        {
-        //            language = tr.Language,
-        //            title = tr.Title,
-        //            description = tr.Description,
-        //            highlights = tr.Highlights,
-        //            itinerary = tr.Itinerary,
-        //            inclusions = tr.Inclusions,
-        //            exclusions = tr.Exclusions,
-        //            importantInfo = tr.ImportantInfo,
-        //            detailsPageUrl = tr.DetailsPageUrl
-        //        }) ?? new List<object>()
-        //    };
-        //}
+        private object MapToExperienceBankDto(Activity activity)
+        {
+            //Kategorileri eşleştirme
+            List<int> matchedCategoryIds = new();
+            var subcategories = activity.Subcategory?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? Array.Empty<string>();
+            foreach (var subcat in subcategories)
+            {
+                if (categoryMapping.TryGetValue(subcat, out var matched))
+                {
+                    matchedCategoryIds.AddRange(matched);
+                }
+            }
+            var finalCategories = matchedCategoryIds.Distinct().Take(3).ToList();
+
+
+            // GuestFieldsJson oluşturma Bu kısım, GuestFieldsViewModel sınıfının örneğini kullanarak JSON formatında guest fields oluşturur.
+            // Bu, API'nin döndüreceği guest fields bilgisini yapılandırmak için kullanılır.
+            activity.GuestFieldsJson = JsonSerializer.Serialize(new List<GuestFieldsViewModel.GuestField>
+            {
+                new()
+                {
+                    Code = "email",
+                    Label = "E-posta",
+                    Type = "text",
+                    Required = true,
+                    Translations = new List<GuestFieldsViewModel.GuestFieldTranslation>
+                    {
+                        new() { Language = "en", Label = "Email" }
+                    }
+                },
+                new()
+                {
+                    Code = "gender",
+                    Label = "Cinsiyet",
+                    Type = "radio",
+                    Required = false,
+                    Options = new List<GuestFieldsViewModel.GuestFieldOption>
+                    {
+                        new()
+                        {
+                            Key = "m",
+                            Value = "Erkek",
+                            Translations = new List<GuestFieldsViewModel.GuestFieldOptionTranslation>
+                            {
+                                new() { Language = "en", Value = "Male" }
+                            }
+                        },
+                        new()
+                        {
+                            Key = "f",
+                            Value = "Kadın",
+                            Translations = new List<GuestFieldsViewModel.GuestFieldOptionTranslation>
+                            {
+                                new() { Language = "en", Value = "Female" }
+                            }
+                        }
+                    },
+                    Translations = new List<GuestFieldsViewModel.GuestFieldTranslation>
+                    {
+                        new() { Language = "en", Label = "Gender" }
+                    }
+                },
+                new()
+                {
+                    Code = "phone",
+                    Label = "Telefon",
+                    Type = "text",
+                    Required = true,
+                    Translations = new List<GuestFieldsViewModel.GuestFieldTranslation>
+                    {
+                        new() { Language = "en", Label = "Phone" }
+                    }
+                }
+            });
+
+            return new
+            {
+                id = activity.Id.ToString(),
+                title = activity.Title,
+                description = activity.Description,
+                highlights = activity.Highlights,
+                itinerary = activity.Itinerary,
+                language = activity.Language ?? "en",
+                inclusions = TxtJson.DeserializeStringList(activity.Inclusions) ?? new List<string>(),
+                exclusions = TxtJson.DeserializeStringList(activity.Exclusions) ?? new List<string>(),
+                importantInfo = TxtJson.DeserializeStringList(activity.ImportantInfo) ?? new List<string>(),
+                detailsPageUrl = activity.DetailsUrl,
+                destination = new
+                {
+                    countryCode = activity.CountryCode,
+                    code = activity.DestinationCode,
+                    name = activity.DestinationName
+                },
+                media = new
+                {
+                    images = new
+                    {
+                        header = activity.CoverImage,
+                        teaser = activity.PreviewImage,
+                        gallery = TxtJson.DeserializeStringList(activity.GalleryImages) ?? new List<string>()
+                    },
+                    videos = TxtJson.DeserializeStringList(activity.MediaVideos) ?? new List<string>()
+                },
+                rating = activity.Rating != null ? new
+                {
+                    averageValue = activity.Rating,
+                    totalCount = activity.TotalRatingCount
+                } : null,
+                categories = TxtJson.SerializeIntList(finalCategories),
+                meetingPoints = (activity.MeetingPoints ?? new List<MeetingPoint>())
+                    .Select(mp => new
+                    {
+                        name = mp.Name,
+                        latitude = mp.Latitude,
+                        longitude = mp.Longitude,
+                        address = mp.Address
+                    }).ToList(),
+                route = (activity.RoutePoints ?? new List<RoutePoint>())
+                    .Select(rp => new
+                    {
+                        name = rp.Name,
+                        latitude = rp.Latitude,
+                        longitude = rp.Longitude
+                    }).ToList(),
+                guestFields = activity.GuestFieldsJson,
+                addons = activity.Addons != null ? activity.Addons.Select(ad => new
+                {
+                    id = ad.Id,
+                    title = ad.Title,
+                    description = ad.Description,
+                    type = ad.Type,
+                    price = new
+                    {
+                        amount = ad.PriceAmount.ToString("0.00"),
+                        currency = ad.Currency
+                    },
+                    translations = ad.AddonTranslations != null
+                                ? ad.AddonTranslations.Select(tr => new
+                                {
+                                    language = tr.Language,
+                                    title = tr.Title,
+                                    description = tr.Description
+                                }).Cast<object>().ToList()
+                                : new List<object>()
+                }).Cast<object>().ToList()
+                        : new List<object>(),
+                isActive = activity.Status == "active",
+                cancellationPolicy = new
+                {
+                    isFreeCancellation = activity.IsFreeCancellation,
+                    refundConditions = activity.CancellationPolicyConditions != null && activity.CancellationPolicyConditions.Any()
+                ? activity.CancellationPolicyConditions.Select(rc => new
+                {
+                    minDurationBeforeStartTimeSec = rc.MinDurationBeforeStartTimeSec,
+                    refundPercentage = rc.RefundPercentage
+                }).Cast<object>().ToList()
+                : new List<object>()
+                },
+
+                options = activity.Options.Select(op => new
+                {
+                    id = op.Id,
+                    name = op.Name,
+                    duration = op.Duration,
+                    startTime = op.StartTime ?? "00:00:00",
+                    openingHours = op.OpeningHours != null ? op.OpeningHours.Select(oh => new
+                    {
+                        fromTime = oh.FromTime,
+                        toTime = oh.ToTime
+                    }).Cast<object>().ToList()
+                        : new List<object>(),
+                    fromDate = op.FromDate,
+                    untilDate = op.UntilDate,
+                    cutOff = op.CutOff,
+                    weekdays = op.Weekdays,
+                    canBeBookedAfterStartTime = op.CanBeBookedAfterStartTime,
+                    ticketCategories = op.TicketCategories.Select(tc => new
+                    {
+                        id = tc.Id,
+                        name = tc.Name,
+                        minSeats = tc.MinSeats,
+                        maxSeats = tc.MaxSeats,
+                        price = new
+                        {
+                            type = tc.PriceType,
+                            amount = tc.Amount.ToString("0.00"),
+                            currency = tc.Currency
+                        },
+                        type = tc.Type,
+                        ageLimit = tc.MinAge != null ? new
+                        {
+                            minAge = tc.MinAge,
+                            maxAge = tc.MaxAge
+                        } : null,
+                        translations = new List<object>(), // TODO: TicketCategories translateleri de yok mk Assuming translations are not provided in the original model
+                    }),
+                    translations = new List<object>(), // TODO: Optionların translateleri de yok mk Assuming translations are not provided in the original model
+                }),
+                translations = activity.Translations != null
+                        ? activity.Translations.Select(tr => new
+                        {
+                            language = tr.Language,
+                            title = tr.Title,
+                            description = tr.Description,
+                            highlights = tr.Highlights,
+                            itinerary = tr.Itinerary,
+                            inclusions = tr.InclusionsJson,
+                            exclusions = tr.ExclusionsJson,
+                            importantInfo = tr.ImportantInfoJson,
+                            detailsPageUrl = "" // Bu alan Translation modelinde yok, sabit bırakılmış
+                        }).Cast<object>().ToList()
+                        : new List<object>()
+            };
+        }
     }
 
 }

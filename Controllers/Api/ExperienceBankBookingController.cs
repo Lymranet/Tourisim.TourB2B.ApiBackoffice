@@ -27,7 +27,7 @@ namespace TourManagementApi.Controllers.Api
 
             if (bookingExists != null)
             {
-                // Booking zaten varsa: aynı yanıtı tekrar döndüriyorum
+                // Booking zaten varsa: aynı yanıtı tekrar dönder
                 return Ok(new
                 {
                     data = new
