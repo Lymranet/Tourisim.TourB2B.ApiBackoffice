@@ -18,4 +18,5 @@ public partial class Ticket
     public int? ReservationId { get; set; }
 
     public virtual Reservation? Reservation { get; set; }
+    public string Status { get; internal set; }
 }

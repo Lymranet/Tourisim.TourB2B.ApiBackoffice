@@ -1,23 +1,25 @@
-@model ErrorViewModel
+@model Exception
+
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Hata";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<h1 class="text-danger">Bir Hata Oluþtu</h1>
 
-@if (Model?.ShowRequestId ?? false)
+@if (Model != null)
 {
-    <p>
-        <strong>Request ID:</strong> <code>@Model?.RequestId</code>
-    </p>
+    <div class="alert alert-danger">
+        <strong>Hata Mesajý:</strong> @Model.Message
+    </div>
+    <details style="white-space:pre-wrap;">
+        <summary>StackTrace (detaylar)</summary>
+        @Model.StackTrace
+    </details>
 }
-
-<div class="alert alert-danger">
-    <h4>Error Details</h4>
-    <p>@Model?.ErrorMessage</p>
-</div>
-
+else
+{
+    <p>Beklenmeyen bir hata oluþtu. Lütfen daha sonra tekrar deneyiniz.</p>
+}
 <div class="mt-3">
     <a asp-controller="ActivitiesWizard" asp-action="Index" class="btn btn-primary">Return to Home</a>
 </div> 

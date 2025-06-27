@@ -3,7 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using TourManagementApi.Data;
+using TourManagementApi.Helper;
 using TourManagementApi.Middleware;
+using TourManagementApi.Models;
+using TourManagementApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +56,14 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File("Logs/log-.txt",
                   rollingInterval: RollingInterval.Day,
                   outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(le =>
+            le.Properties.ContainsKey("SourceContext") &&
+            le.Properties["SourceContext"].ToString().Contains("GlobalExceptionMiddleware"))
+        .WriteTo.File("Logs/hatalar-.log",
+                      rollingInterval: RollingInterval.Day,
+                      outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    )
     .CreateLogger();
 
 
@@ -64,6 +75,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         sqlOptions => sqlOptions.EnableRetryOnFailure())
     .EnableSensitiveDataLogging()
     .LogTo(Console.WriteLine, LogLevel.Information));
+
+builder.Services.AddScoped<ExperienceBankService>();
+builder.Services.Configure<ExperienceBankSettings>(builder.Configuration.GetSection("ExperienceBank"));
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ExperienceBankService>();
+builder.Services.AddScoped<AuthorizationHeaderHelper>();
 
 var app = builder.Build();
 
@@ -84,22 +101,41 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
+//// Configure the HTTP request pipeline.
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseDeveloperExceptionPage();
+//    app.UseSwagger();
+//    app.UseSwaggerUI(c =>
+//    {
+//        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tour Management API V1");
+//        c.RoutePrefix = "swagger";
+//    });
+//}
+//else
+//{
+//    app.UseExceptionHandler("/Home/Error");
+//    app.UseHsts();
+//}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tour Management API V1");
-        c.RoutePrefix = "swagger";
-    });
 }
 else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
+
+// SWAGGER HER ORTAMDA AKTİF
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tour Management API V1");
+    c.RoutePrefix = "swagger";
+});
+
 
 app.UseStaticFiles();
 app.UseRouting();

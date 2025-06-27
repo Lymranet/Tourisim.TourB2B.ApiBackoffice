@@ -1,0 +1,230 @@
+﻿@model TourManagementApi.Models.ViewModels.FiyatlandirmaViewModel
+<h2>@Model.ActivityTitle - Fiyatlandırma</h2>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<form id="pricingForm">
+    <div class="mb-3">
+        <label for="satisYuzde" class="form-label">Satış Fiyatı Yüzdesi</label>
+        <input type="number" style="width:150px;font-size:20px; background-color:chocolate;font-weight:bold;" id="satisYuzde" class="form-control" value="50" min="0" max="500" step="1" />
+        <button type="button" class="btn btn-primary" onclick="hesaplaTumunu()">Hesapla</button>
+    </div>
+    @foreach (var option in Model.Options)
+    {
+        <h4>@option.OptionName</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Ticket Kategorisi</th>
+                    <th>Satış Fiyatı</th>
+                    <th>Para Birimi</th>
+                    <th>Taşeron Alış</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tc in option.TicketCategories)
+                {
+                    <tr>
+                        <td>@tc.TicketCategoryName</td>
+                        <td>@tc.Amount.ToString("C")</td>
+                        <td>@tc.Currency</td>
+                        <td>@tc.SupplierCost.ToString("C")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <table class="table table-sm">
+            <tr>
+                <th>Toplam Satış</th>
+                <td>
+                    <input type="text" class="form-control" id="toplamSatis_@option.OptionId" data-currency="@option.TicketCategories.First().Currency" readonly value="@option.TicketCategories.Sum(x => x.Amount).ToString("C")" />
+                </td>
+            </tr>
+            <tr><th>Araç Maliyeti</th><td><input type="number" step="0.01" class="form-control" name="arac_@option.OptionId" value="@option.AracMaliyeti" /></td></tr>
+            <tr><th>Top/Dağ Maliyeti</th><td><input type="number" step="0.01" class="form-control" name="top_@option.OptionId" value="@option.TopMaliyeti" /></td></tr>
+            <tr><th>Rehber Bonus</th><td><input type="number" step="0.01" class="form-control" name="bonus_@option.OptionId" value="@option.RehberBonus" /></td></tr>
+            <tr><th>Gelir Vergisi</th><td><input type="number" step="0.01" class="form-control" readonly name="vergi_@option.OptionId" value="@option.GelirVergisi.ToString("N2")" /></td></tr>
+           
+            <tr>
+                <th>Taşeron Toplamı</th>
+                <td>
+                    <input type="text" class="form-control" id="tasaronToplam_@option.OptionId" readonly value="@option.TasaronMaliyeti.ToString("C")" />
+                </td>
+            </tr>
+            <tr><th>Platform Komisyon Oranı</th><td><input type="number" readonly step="0.01" class="form-control" name="orani_@option.OptionId" value="@option.PlatformKomOrani" /></td></tr>
+            <tr><th>Platform Komisyon Maliyeti</th><td><input type="number" readonly step="0.01" class="form-control" name="platkom_@option.OptionId" value="@option.PlatformKomisyonTutari.ToString("N2")" /></td></tr>
+            <tr>
+                <th>Komisyon Maliyeti</th>
+                <td>
+                    <input type="number" step="0.01" class="form-control" id="komisyon_@option.OptionId" name="komisyon_@option.OptionId" value="@option.KomisyonMaliyeti.ToString("N2")" readonly />
+                </td>
+            </tr>
+            <tr><th>PP Cost</th><td><input type="number" readonly step="0.01" class="form-control" id="ppcost_@option.OptionId" name="ppCost_@option.OptionId" value="@option.PpCost.ToString("N2")" /></td></tr>
+            <tr class="table-secondary">
+                <th>Kalan Tutar</th>
+                <td>
+                    <strong id="kalan_@option.OptionId">@((option.TicketCategories.Sum(x => x.Amount) - option.TasaronMaliyeti - option.KomisyonMaliyeti).ToString("C"))</strong>
+                </td>
+            </tr>
+            <tr class="table-secondary">
+                <th>Net Kalan</th>
+                <td>
+                    <strong id="netkalan_@option.OptionId">
+                        @((option.TicketCategories.Sum(x => x.Amount) - option.TasaronMaliyeti - option.KomisyonMaliyeti - option.GelirVergisi).ToString("C"))
+                    </strong>
+                </td>
+            </tr>
+            <tr class="table-secondary">
+                <th>Toplam Maliyet</th>
+                <td><strong id="maliyet_@option.OptionId">@option.ToplamMaliyet.ToString("C")</strong></td>
+            </tr>
+            <tr class="table-secondary">
+                <th>Hesaplanan Satış Fiyatı</th>
+                <td><strong id="satis_@option.OptionId">@option.HesaplananSatisFiyati.ToString("C")</strong></td>
+            </tr>
+            <tr class="table-secondary">
+                <th>Karlılık (%)</th>
+                <td>
+                    <input type="text" readonly class="form-control" id="karlilik_@option.OptionId" value="@((option.Karlilik * 100).ToString("N2"))" style="background-color:greenyellow;font-weight:bold;font-size:20px;" />
+                </td>
+            </tr>
+        </table>
+    }
+   
+    <div class="row mt-5">
+        <div class="col-md-6" style="height:400px">
+            <h5>Gelir Dağılımı</h5>
+            <canvas id="gelirChart"></canvas>
+        </div>
+        <div class="col-md-6" style="height:400px">
+            <h5>Maliyet Oranı</h5>
+            <canvas id="maliyetChart"></canvas>
+        </div>
+    </div>
+</form>
+
+<script>
+   let gelirChart, maliyetChart;
+   function guncelleGrafikler(optionId, labels, values, maliyetLabels, maliyetValues) {
+        // GELİR CHART (bar)
+        if (gelirChart) gelirChart.destroy();
+        gelirChart = new Chart(document.getElementById('gelirChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Gelir Dağılımı (${optionId})`,
+                    data: values,
+                    backgroundColor: ['#4CAF50', '#FFC107', '#2196F3', '#E91E63']
+                }]
+            }
+        });
+
+        // MALİYET CHART (pie)
+        if (maliyetChart) maliyetChart.destroy();
+        maliyetChart = new Chart(document.getElementById('maliyetChart'), {
+            type: 'pie',
+            data: {
+                labels: maliyetLabels,
+                datasets: [{
+                    label: 'Maliyet Dağılımı',
+                    data: maliyetValues,
+                    backgroundColor: ['#f44336', '#9c27b0', '#3f51b5', '#00bcd4', '#ff9800', '#4caf50']
+                }]
+            }
+        });
+    }
+
+    function parseCurrencyGeneral(val) {
+        if (!val) return 0;
+        const cleaned = val.replace(/[^\d.,-]/g, '');
+        if (cleaned.indexOf(',') > -1 && cleaned.indexOf('.') > -1) {
+            if (cleaned.lastIndexOf('.') < cleaned.lastIndexOf(',')) {
+                return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+            } else {
+                return parseFloat(cleaned.replace(/,/g, '')) || 0;
+            }
+        }
+        if (cleaned.indexOf(',') > -1) {
+            return parseFloat(cleaned.replace(',', '.')) || 0;
+        }
+        return parseFloat(cleaned) || 0;
+    }
+
+       function hesaplaTumunu() {
+        const satisYuzdeInput = document.getElementById('satisYuzde');
+        const satisYuzde = parseFloat(satisYuzdeInput?.value) || 50;
+
+        document.querySelectorAll('[id^="maliyet_"]').forEach((span) => {
+            const id = span.id.split('_')[1];
+            
+
+            const currencyCode = document.querySelector(`#toplamSatis_${id}`)?.getAttribute("data-currency") || "USD";
+            const arac = parseFloat(document.querySelector(`[name='arac_${id}']`)?.value) || 0;
+            const top = parseFloat(document.querySelector(`[name='top_${id}']`)?.value) || 0;
+            const bonus = parseFloat(document.querySelector(`[name='bonus_${id}']`)?.value) || 0;
+            const orani = parseFloat(document.querySelector(`[name='orani_${id}']`)?.value) || 0.3;
+
+            
+
+            const ticketRows = span.closest('table').previousElementSibling.querySelectorAll('tbody tr');
+            let toplamSatisValue = 0;
+            let tasaronToplam = 0;
+
+            ticketRows.forEach(row => {
+                const supplierText = row.children[3]?.textContent || "0";
+                const supplierCost = parseCurrencyGeneral(supplierText);
+                const satisFiyati = supplierCost * (1 + satisYuzde / 100);
+
+                toplamSatisValue += satisFiyati;
+                tasaronToplam += supplierCost;
+            });
+
+            // Toplam Satış inputunu güncelle
+            const toplamSatisInput = document.querySelector(`#toplamSatis_${id}`);
+            if (toplamSatisInput) {
+                toplamSatisInput.value = toplamSatisValue.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+            }
+
+            // Taşeron Toplam inputunu güncelle
+            const tasaronInput = document.querySelector(`#tasaronToplam_${id}`);
+            if (tasaronInput) {
+                tasaronInput.value = tasaronToplam.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+            }
+
+            const yeniKomisyonMaliyeti = toplamSatisValue * orani;
+            document.querySelector(`#komisyon_${id}`).value = yeniKomisyonMaliyeti.toFixed(2);
+            document.querySelector(`[name='platkom_${id}']`).value = yeniKomisyonMaliyeti.toFixed(2);
+
+            const kalanTutar = toplamSatisValue - yeniKomisyonMaliyeti - tasaronToplam;
+            const vergi = kalanTutar * 0.20;
+            document.querySelector(`[name='vergi_${id}']`).value = vergi.toFixed(2);
+
+            const toplamMaliyet = arac + top + yeniKomisyonMaliyeti + vergi + tasaronToplam;
+            const satis = (toplamMaliyet + yeniKomisyonMaliyeti + bonus) / (1 - orani);
+            const netKalan = kalanTutar - vergi;
+            const ppCost = toplamMaliyet / (ticketRows.length || 1);
+
+           const karlilik = toplamSatisValue > 0 ? ((toplamSatisValue - toplamMaliyet) / toplamSatisValue) * 100: 0;
+
+            document.querySelector(`#karlilik_${id}`).value = karlilik.toFixed(2) + ' %';
+
+            document.querySelector(`#maliyet_${id}`).innerText = toplamMaliyet.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#satis_${id}`).innerText = satis.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#kalan_${id}`).innerText = kalanTutar.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#netkalan_${id}`).innerText = netKalan.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#ppcost_${id}`).value = ppCost.toFixed(2);
+             if (!window.grafikCizildi) {
+                   guncelleGrafikler(
+                       id,
+                       ['Toplam Satış', 'Toplam Maliyet', 'Kalan Tutar', 'Net Kalan'],
+                       [toplamSatisValue, toplamMaliyet, kalanTutar, netKalan],
+                       ['Araç', 'Top', 'Bonus', 'Komisyon', 'Vergi', 'Taşeron'],
+                       [arac, top, bonus, yeniKomisyonMaliyeti, vergi, tasaronToplam]
+                   );
+                   window.grafikCizildi = true;
+             }
+        });
+    }
+
+</script>
+
+

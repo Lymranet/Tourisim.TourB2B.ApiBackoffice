@@ -18,6 +18,7 @@ using TourManagementApi.Models;
 using TourManagementApi.Models.Api;
 using TourManagementApi.Models.Common;
 using TourManagementApi.Models.ViewModels;
+using TourManagementApi.Services;
 using Addon = TourManagementApi.Models.Addon;
 
 namespace TourManagementApi.Controllers
@@ -27,20 +28,80 @@ namespace TourManagementApi.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<ActivitiesWizardController> _logger;
-
-
+        private readonly ExperienceBankService _experienceBankService;
 
         public ActivitiesWizardController(
             ApplicationDbContext context,
             IWebHostEnvironment environment,
-            ILogger<ActivitiesWizardController> logger)
+            ILogger<ActivitiesWizardController> logger, ExperienceBankService experienceBankService)
         {
             _context = context;
             _environment = environment;
             _logger = logger;
+            _experienceBankService = experienceBankService;
+
         }
 
+        #region Activies
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteActivity(int id)
+        {
 
+           
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .Include(a => a.Addons)
+                .Include(a => a.Availabilities)
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.RoutePoints)
+                .Include(a => a.TimeSlots)
+                .Include(a => a.Translations)
+                .Include(a => a.PriceCategories)
+                .Include(a => a.CancellationPolicyConditions)
+                .Include(a => a.ActivityLanguages)
+                .Include(a => a.Reservations)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null)
+                return NotFound();
+
+            if (activity.Status == "active")
+                return BadRequest("Aktif turlar silinemez.");
+            // Alt ilişkili veriler siliniyor
+            _context.Options.RemoveRange(activity.Options);
+            _context.Addons.RemoveRange(activity.Addons);
+            _context.Availabilities.RemoveRange(activity.Availabilities);
+            _context.MeetingPoints.RemoveRange(activity.MeetingPoints);
+            _context.RoutePoints.RemoveRange(activity.RoutePoints);
+            _context.TimeSlots.RemoveRange(activity.TimeSlots);
+            _context.Translations.RemoveRange(activity.Translations);
+            _context.PriceCategories.RemoveRange(activity.PriceCategories);
+            _context.CancellationPolicyConditions.RemoveRange(activity.CancellationPolicyConditions);
+            _context.ActivityLanguages.RemoveRange(activity.ActivityLanguages);
+            _context.Reservations.RemoveRange(activity.Reservations);
+
+            // Ana activity silipduru
+            _context.Activities.Remove(activity);
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                // ExperienceBank notification
+                await _experienceBankService.NotifyActivityUpdatedAsync(
+                    activityId: activity.Id.ToString(),
+                    partnerSupplierId: activity.PartnerSupplierId
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ExperienceBank notify failed after DeleteActivity");
+            }
+
+            return RedirectToAction("Index");
+        }
+
+       
         public IActionResult Index()
         {
             try
@@ -86,7 +147,6 @@ namespace TourManagementApi.Controllers
             await _context.SaveChangesAsync();
             return Ok();
         }
-
 
         // 1. Adım: Temel Bilgiler (Basic Information)
         [HttpGet]
@@ -217,6 +277,23 @@ namespace TourManagementApi.Controllers
                 }
 
                 await _context.SaveChangesAsync();
+
+
+                try
+                {
+                    await _experienceBankService.NotifyActivityUpdatedAsync(
+                        activityId: activity.Id.ToString(),
+                        partnerSupplierId: activity.PartnerSupplierId
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "ExperienceBank notify failed after CreateBasic");
+                }
+
+
+
+
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -251,8 +328,6 @@ namespace TourManagementApi.Controllers
 
             return Json(new { success = true });
         }
-
-
 
         [HttpPost]
         public async Task<IActionResult> DeleteCoverOrPreviewImage([FromBody] DeleteImageRequest request)
@@ -292,8 +367,65 @@ namespace TourManagementApi.Controllers
 
             return Json(new { success = false, message = "Silinecek görsel bulunamadı." });
         }
+        #endregion
 
-        // 2. Adım: Lokasyon
+
+        // Controller aksiyonu
+        public async Task<IActionResult> PricingYield(int id)
+        {
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .ThenInclude(o => o.TicketCategories)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null) return NotFound();
+
+            var vm = new FiyatlandirmaViewModel
+            {
+                ActivityId = activity.Id,
+                ActivityTitle = activity.Title,
+                Options = activity.Options.Select(o =>
+                {
+                    var platformKomOrani = 0.3m;
+
+                    var ticketCategories = o.TicketCategories.Select(tc => new TicketCategoryPricingViewModel
+                    {
+                        TicketCategoryId = tc.Id,
+                        TicketCategoryName = tc.Name,
+                        Amount = (tc.Amount * 150 / 100), // Satış fiyatı örneği
+                        Currency = tc.Currency,
+                        SupplierCost = tc.Amount
+                    }).ToList();
+
+                    var toplamSatis = ticketCategories.Sum(tc => tc.Amount);
+                    var toplamTaseronMaliyeti = ticketCategories.Sum(tc => tc.SupplierCost);
+                    var komisyonMaliyeti = toplamSatis * platformKomOrani;
+                    var kalanTutar= toplamSatis - komisyonMaliyeti - toplamTaseronMaliyeti;
+                    var toplamMaliyet = ticketCategories.Sum(tc => tc.SupplierCost) + komisyonMaliyeti;
+                    return new OptionPricingViewModel
+                    {
+                        OptionId = o.Id,
+                        OptionName = o.Name,
+                        TicketCategories = ticketCategories,
+                        AracMaliyeti = 0,
+                        TopMaliyeti = 0,
+                        GelirVergisi = (kalanTutar * 20/100),
+                        RehberBonus = 0,
+                        PlatformKomisyonTutari = komisyonMaliyeti + 0,
+                        KomisyonMaliyeti = komisyonMaliyeti,
+                        PlatformKomOrani = platformKomOrani,
+                        Karlilik= (toplamSatis- toplamMaliyet) / toplamSatis
+                    };
+                }).ToList()
+            };
+
+            return View(vm);
+        }
+
+
+
+        #region Location
+
         [HttpGet]
         public async Task<IActionResult> CreateLocation(int? id)
         {
@@ -393,6 +525,10 @@ namespace TourManagementApi.Controllers
             }
         }
 
+        #endregion
+
+        #region Addon 
+
         public async Task<IActionResult> AddonsIndex()
         {
             var activitiesWithAddons = await _context.Activities
@@ -464,6 +600,7 @@ namespace TourManagementApi.Controllers
             return RedirectToAction("CreateLocation", new { id = model.ActivityId });
         }
 
+        #endregion
 
         #region Translation Alanı
         // GET: translation yönetimi sayfası
@@ -778,6 +915,31 @@ namespace TourManagementApi.Controllers
             _context.Availabilities.AddRange(newAvailabilities);
             await _context.SaveChangesAsync();
 
+            // ExperienceBank notification
+            try
+            {
+                foreach (var availability in newAvailabilities)
+                {
+                    // Örneğin availability availableCapacity < 30 ise veya oldCapacity = 0 -> current > 0 ise trigger et
+                    if (availability.AvailableCapacity < 30 || availability.AvailableCapacity > 0)
+                    {
+                        await _experienceBankService.NotifyAvailabilityUpdatedAsync(
+                            supplierId: availability.PartnerSupplierId,
+                            activityId: availability.ActivityId.ToString(),
+                            optionId: availability.OptionId.ToString(),
+                            localDateTime: availability.Date.ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                            availableCapacity: availability.AvailableCapacity,
+                            oldCapacity: 0 // ilk create olduğunda eski kapasite yok
+                        );
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ExperienceBank availability notify failed (CreateAvailability)");
+            }
+
+
             return RedirectToAction("Index");
         }
 
@@ -862,6 +1024,28 @@ namespace TourManagementApi.Controllers
                 }).ToList();
 
             await _context.SaveChangesAsync();
+
+            try
+            {
+                if (availability.AvailableCapacity < 30 || availability.AvailableCapacity > 0)
+                {
+                    await _experienceBankService.NotifyAvailabilityUpdatedAsync(
+                        supplierId: availability.PartnerSupplierId,
+                        activityId: availability.ActivityId.ToString(),
+                        optionId: availability.OptionId.ToString(),
+                        localDateTime: availability.Date.ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                        availableCapacity: availability.AvailableCapacity,
+                        oldCapacity: availability.MaximumCapacity // örnek olarak eski kapasiteyi gönder
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ExperienceBank availability notify failed (EditAvailability)");
+            }
+
+
+
             return RedirectToAction("Availabilities", new { activityId = model.ActivityId });
         }
 
@@ -878,6 +1062,23 @@ namespace TourManagementApi.Controllers
             _context.TicketCategoryCapacities.RemoveRange(availability.TicketCategoryCapacities);
             _context.Availabilities.Remove(availability);
             await _context.SaveChangesAsync();
+
+            try
+            {
+                await _experienceBankService.NotifyAvailabilityUpdatedAsync(
+                    supplierId: availability.PartnerSupplierId,
+                    activityId: availability.ActivityId.ToString(),
+                    optionId: availability.OptionId.ToString(),
+                    localDateTime: availability.Date.ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                    availableCapacity: 0,
+                    oldCapacity: availability.AvailableCapacity
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ExperienceBank availability notify failed (DeleteAvailability)");
+            }
+
 
             return RedirectToAction("Availabilities", new { activityId = availability.ActivityId });
         }
