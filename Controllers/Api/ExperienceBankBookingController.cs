@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Sockets;
 using TourManagementApi.Data;
 using TourManagementApi.Models;
 using TourManagementApi.Models.Api;
@@ -12,22 +11,27 @@ namespace TourManagementApi.Controllers.Api
     public class ExperienceBankBookingController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ExperienceBankBookingController> _logger;
 
-        public ExperienceBankBookingController(ApplicationDbContext context)
+        public ExperienceBankBookingController(ApplicationDbContext context, ILogger<ExperienceBankBookingController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpPost]
         public async Task<IActionResult> CreateBooking(string partnerSupplierId, [FromBody] ExperienceBankBookingRequest request)
         {
+            _logger.LogInformation("CreateBooking called for PartnerSupplierId: {PartnerSupplierId}, BookingId: {BookingId}", partnerSupplierId, request.Data.BookingId);
+
             var bookingExists = await _context.Reservations
                 .Include(b => b.Tickets)
                 .FirstOrDefaultAsync(b => b.ExperienceBankBookingId == request.Data.BookingId);
 
             if (bookingExists != null)
             {
-                // Booking zaten varsa: aynı yanıtı tekrar dönder
+                _logger.LogWarning("Booking already exists for BookingId: {BookingId}", request.Data.BookingId);
+
                 return Ok(new
                 {
                     data = new
@@ -52,7 +56,7 @@ namespace TourManagementApi.Controllers.Api
                 ContactName = request.Data.Contact.FullName,
                 ContactEmail = request.Data.Contact.Email,
                 ContactPhone = request.Data.Contact.PhoneNumber,
-                PartnerBookingId = Guid.NewGuid().ToString(), // Örnek ID
+                PartnerBookingId = Guid.NewGuid().ToString(),
                 Tickets = new List<Ticket>()
             };
 
@@ -64,7 +68,7 @@ namespace TourManagementApi.Controllers.Api
                     {
                         ExperienceBankTicketId = guest.TicketId,
                         InternalTicketId = $"GUE-{Guid.NewGuid():N}".ToUpper().Substring(0, 24),
-                        TicketCode = GenerateRandomCode(), // QR code ekleme Todo: buna bakcaz gibi
+                        TicketCode = GenerateRandomCode(),
                         TicketCodeType = "QR_CODE"
                     });
                 }
@@ -72,6 +76,8 @@ namespace TourManagementApi.Controllers.Api
 
             _context.Reservations.Add(newBooking);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("New booking created successfully with PartnerBookingId: {PartnerBookingId}", newBooking.PartnerBookingId);
 
             return Ok(new
             {
@@ -94,5 +100,4 @@ namespace TourManagementApi.Controllers.Api
             return Guid.NewGuid().ToString("N").Substring(0, 10).ToUpper();
         }
     }
-
 }

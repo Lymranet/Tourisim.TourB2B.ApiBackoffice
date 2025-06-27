@@ -125,3 +125,211 @@ System.InvalidOperationException: An error was generated for warning 'Microsoft.
 [2025-06-27 16:49:30 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 3.1715ms
 [2025-06-27 16:49:30 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
 [2025-06-27 16:49:30 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 3.4161ms
+[2025-06-27 18:20:30 WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+[2025-06-27 18:20:30 ERR] Veritabanı güncellenirken bir hata oluştu.
+System.InvalidOperationException: An error was generated for warning 'Microsoft.EntityFrameworkCore.Migrations.PendingModelChangesWarning': The model for context 'ApplicationDbContext' has pending changes. Add a new migration before updating the database. See https://aka.ms/efcore-docs-pending-changes. This exception can be suppressed or logged by passing event ID 'RelationalEventId.PendingModelChangesWarning' to the 'ConfigureWarnings' method in 'DbContext.OnConfiguring' or 'AddDbContext'.
+   at Microsoft.EntityFrameworkCore.Diagnostics.EventDefinition`1.Log[TLoggerCategory](IDiagnosticsLogger`1 logger, TParam arg)
+   at Microsoft.EntityFrameworkCore.Diagnostics.RelationalLoggerExtensions.PendingModelChangesWarning(IDiagnosticsLogger`1 diagnostics, Type contextType)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.ValidateMigrations(Boolean useTransaction, String targetMigration)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.Migrate(String targetMigration)
+   at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.Migrate(DatabaseFacade databaseFacade)
+   at Program.<Main>$(String[] args) in D:\TFS\Lymranet\Tourism\B2B\HotelWidget\TourManagement\Program.cs:line 95
+[2025-06-27 18:20:31 INF] User profile is available. Using 'C:\Users\OZKAN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+[2025-06-27 18:20:31 INF] Now listening on: http://localhost:5050
+[2025-06-27 18:20:31 INF] Application started. Press Ctrl+C to shut down.
+[2025-06-27 18:20:31 INF] Hosting environment: Development
+[2025-06-27 18:20:31 INF] Content root path: D:\TFS\Lymranet\Tourism\B2B\HotelWidget\TourManagement
+[2025-06-27 18:20:49 INF] Request starting HTTP/1.1 GET http://localhost:5050/ - null null
+[2025-06-27 18:20:49 INF] Executing endpoint 'TourManagementApi.Controllers.ActivitiesWizardController.Index (TourManagementApi)'
+[2025-06-27 18:20:49 INF] Route matched with {action = "Index", controller = "ActivitiesWizard"}. Executing controller action with signature Microsoft.AspNetCore.Mvc.IActionResult Index() on controller TourManagementApi.Controllers.ActivitiesWizardController (TourManagementApi).
+[2025-06-27 18:20:49 INF] Executing action method TourManagementApi.Controllers.ActivitiesWizardController.Index (TourManagementApi) - Validation state: "Valid"
+[2025-06-27 18:20:50 INF] Executed DbCommand (63ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+SELECT [a].[Id], [a].[Title], [a].[Description], [a].[Category], [a].[Subcategory], [a].[Label], [a].[Status], [o].[Id], [o].[ActivityId], [o].[CanBeBookedAfterStartTime], [o].[CutOff], [o].[Duration], [o].[EndTime], [o].[FromDate], [o].[Name], [o].[StartTime], [o].[UntilDate], [o].[Weekdays], [a].[CountryCode], [a].[DestinationCode], [a].[DestinationName]
+FROM [Activities] AS [a]
+LEFT JOIN [Options] AS [o] ON [a].[Id] = [o].[ActivityId]
+ORDER BY [a].[Id]
+[2025-06-27 18:20:50 INF] Executed action method TourManagementApi.Controllers.ActivitiesWizardController.Index (TourManagementApi), returned result Microsoft.AspNetCore.Mvc.ViewResult in 614.0211ms.
+[2025-06-27 18:20:53 INF] Executing ViewResult, running view Index.
+[2025-06-27 18:20:53 INF] Executed ViewResult - view Index executed in 2932.291ms.
+[2025-06-27 18:20:53 INF] Executed action TourManagementApi.Controllers.ActivitiesWizardController.Index (TourManagementApi) in 3597.4984ms
+[2025-06-27 18:20:53 INF] Executed endpoint 'TourManagementApi.Controllers.ActivitiesWizardController.Index (TourManagementApi)'
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/ - 200 null text/html; charset=utf-8 3764.6096ms
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/css/site.css?v=SdYn8dEg3FtG-NKLajhreC6d5tFLAHhsSFTabA04Z-Q - null null
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/lib/jquery/dist/jquery.min.js - null null
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/lib/bootstrap/dist/css/bootstrap.min.css - null null
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/lib/bootstrap/dist/js/bootstrap.bundle.min.js - null null
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/js/site.js?v=qZeAq26xp7dsarNSRZDWTUJes-9D14egUbPPcChdFj4 - null null
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 8.2607ms
+[2025-06-27 18:20:53 INF] The file /lib/bootstrap/dist/css/bootstrap.min.css was not modified
+[2025-06-27 18:20:53 INF] The file /lib/bootstrap/dist/js/bootstrap.bundle.min.js was not modified
+[2025-06-27 18:20:53 INF] The file /css/site.css was not modified
+[2025-06-27 18:20:53 INF] The file /lib/jquery/dist/jquery.min.js was not modified
+[2025-06-27 18:20:53 INF] The file /js/site.js was not modified
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/css/site.css?v=SdYn8dEg3FtG-NKLajhreC6d5tFLAHhsSFTabA04Z-Q - 304 null text/css 11.1546ms
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/js/site.js?v=qZeAq26xp7dsarNSRZDWTUJes-9D14egUbPPcChdFj4 - 304 null text/javascript 4.8035ms
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/lib/jquery/dist/jquery.min.js - 304 null text/javascript 11.1554ms
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/lib/bootstrap/dist/js/bootstrap.bundle.min.js - 304 null text/javascript 10.1478ms
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/lib/bootstrap/dist/css/bootstrap.min.css - 304 null text/css 11.1554ms
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 22.4798ms
+[2025-06-27 18:20:53 INF] Request starting HTTP/1.1 GET http://localhost:5050/favicon.ico - null null
+[2025-06-27 18:20:53 INF] The file /favicon.ico was not modified
+[2025-06-27 18:20:53 INF] Request finished HTTP/1.1 GET http://localhost:5050/favicon.ico - 304 null image/x-icon 1.1686ms
+[2025-06-27 18:21:04 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger - null null
+[2025-06-27 18:21:04 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger - 301 0 null 34.1987ms
+[2025-06-27 18:21:04 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:21:04 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 36.9925ms
+[2025-06-27 18:21:04 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:21:04 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.4472ms
+[2025-06-27 18:21:04 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:21:04 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 13.304ms
+[2025-06-27 18:21:04 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:21:04 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 4.96ms
+[2025-06-27 18:21:45 INF] Request starting HTTP/1.1 GET http://localhost:5050/supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/activities?partnerSupplierId=par_8376ce5d-bc21-4243-907b-d7dc41168756&id=3&offset=0 - null null
+[2025-06-27 18:21:46 INF] Executing endpoint 'TourManagementApi.Controllers.Api.ExperienceBankActivitiesController.GetActivities (TourManagementApi)'
+[2025-06-27 18:21:46 INF] Route matched with {action = "GetActivities", controller = "ExperienceBankActivities"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] GetActivities(System.String, System.String[], Int32) on controller TourManagementApi.Controllers.Api.ExperienceBankActivitiesController (TourManagementApi).
+[2025-06-27 18:21:46 INF] Executing action method TourManagementApi.Controllers.Api.ExperienceBankActivitiesController.GetActivities (TourManagementApi) - Validation state: "Valid"
+[2025-06-27 18:21:57 INF] Executed action TourManagementApi.Controllers.Api.ExperienceBankActivitiesController.GetActivities (TourManagementApi) in 11006.8052ms
+[2025-06-27 18:21:57 INF] Executed endpoint 'TourManagementApi.Controllers.Api.ExperienceBankActivitiesController.GetActivities (TourManagementApi)'
+[2025-06-27 18:21:57 ERR] Bir sistem hatası oluştu. Path: /supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/activities
+System.InvalidOperationException: The expression 'a.GuestFields' is invalid inside an 'Include' operation, since it does not represent a property access: 't => t.MyProperty'. To target navigations declared on derived types, use casting ('t => ((Derived)t).MyProperty') or the 'as' operator ('t => (t as Derived).MyProperty'). Collection navigation access can be filtered by composing Where, OrderBy(Descending), ThenBy(Descending), Skip or Take operations. For more information on including related data, see https://go.microsoft.com/fwlink/?LinkID=746393.
+   at Microsoft.EntityFrameworkCore.Query.Internal.NavigationExpandingExpressionVisitor.PopulateIncludeTree(IncludeTreeNode includeTreeNode, Expression expression, Boolean setLoaded)
+   at Microsoft.EntityFrameworkCore.Query.Internal.NavigationExpandingExpressionVisitor.ProcessInclude(NavigationExpansionExpression source, Expression expression, Boolean thenInclude, Boolean setLoaded)
+   at Microsoft.EntityFrameworkCore.Query.Internal.NavigationExpandingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.Internal.NavigationExpandingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.Internal.NavigationExpandingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.Internal.NavigationExpandingExpressionVisitor.VisitMethodCall(MethodCallExpression methodCallExpression)
+   at Microsoft.EntityFrameworkCore.Query.Internal.NavigationExpandingExpressionVisitor.Expand(Expression query)
+   at Microsoft.EntityFrameworkCore.Query.QueryTranslationPreprocessor.Process(Expression query)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutorExpression[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Query.QueryCompilationContext.CreateQueryExecutor[TResult](Expression query)
+   at Microsoft.EntityFrameworkCore.Storage.Database.CompileQuery[TResult](Expression query, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.CompileQueryCore[TResult](IDatabase database, Expression query, IModel model, Boolean async)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.<>c__DisplayClass11_0`1.<ExecuteCore>b__0()
+   at Microsoft.EntityFrameworkCore.Query.Internal.CompiledQueryCache.GetOrAddQuery[TResult](Object cacheKey, Func`1 compiler)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteCore[TResult](Expression query, Boolean async, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.QueryCompiler.ExecuteAsync[TResult](Expression query, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.Query.Internal.EntityQueryProvider.ExecuteAsync[TResult](Expression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ExecuteAsync[TSource,TResult](MethodInfo operatorMethodInfo, IQueryable`1 source, Expression expression, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ExecuteAsync[TSource,TResult](MethodInfo operatorMethodInfo, IQueryable`1 source, CancellationToken cancellationToken)
+   at Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync[TSource](IQueryable`1 source, CancellationToken cancellationToken)
+   at TourManagementApi.Controllers.Api.ExperienceBankActivitiesController.GetActivities(String partnerSupplierId, String[] id, Int32 offset) in D:\TFS\Lymranet\Tourism\B2B\HotelWidget\TourManagement\Controllers\Api\ExperienceBankActivitiesController.cs:line 64
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Logged|12_1(ControllerActionInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.InvokeInnerFilterAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeNextResourceFilter>g__Awaited|25_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Rethrow(ResourceExecutedContextSealed context)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.InvokeFilterPipelineAsync()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Logged|17_1(ResourceInvoker invoker)
+   at Microsoft.AspNetCore.Routing.EndpointMiddleware.<Invoke>g__AwaitRequestTask|7_0(Endpoint endpoint, Task requestTask, ILogger logger)
+   at TourManagementApi.Middleware.RequestHeaderValidationMiddleware.InvokeAsync(HttpContext context) in D:\TFS\Lymranet\Tourism\B2B\HotelWidget\TourManagement\Middleware\RequestHeaderValidationMiddleware.cs:line 19
+   at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Diagnostics.StatusCodePagesMiddleware.Invoke(HttpContext context)
+   at TourManagementApi.Middleware.GlobalExceptionMiddleware.Invoke(HttpContext context) in D:\TFS\Lymranet\Tourism\B2B\HotelWidget\TourManagement\Middleware\GlobalExceptionMiddleware.cs:line 26
+[2025-06-27 18:21:57 INF] Executing ViewResult, running view ~/Views/Shared/Error.cshtml.
+[2025-06-27 18:21:57 INF] Executed ViewResult - view ~/Views/Shared/Error.cshtml executed in 75.2584ms.
+[2025-06-27 18:21:57 INF] Request finished HTTP/1.1 GET http://localhost:5050/supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/activities?partnerSupplierId=par_8376ce5d-bc21-4243-907b-d7dc41168756&id=3&offset=0 - 500 null text/html 11205.0966ms
+[2025-06-27 18:23:12 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:23:12 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 25.9808ms
+[2025-06-27 18:23:12 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:23:12 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:23:12 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.3405ms
+[2025-06-27 18:23:12 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 6.6784ms
+[2025-06-27 18:23:13 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:23:13 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 6.32ms
+[2025-06-27 18:23:26 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:23:26 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 15.7455ms
+[2025-06-27 18:23:26 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:23:26 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:23:26 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.2065ms
+[2025-06-27 18:23:26 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 4.7389ms
+[2025-06-27 18:23:26 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:23:26 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 2.799ms
+[2025-06-27 18:23:35 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:23:35 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 16.9238ms
+[2025-06-27 18:23:35 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:23:35 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:23:35 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1352ms
+[2025-06-27 18:23:35 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 8.5726ms
+[2025-06-27 18:23:35 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:23:35 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 2.3933ms
+[2025-06-27 18:23:55 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:23:55 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 15.0969ms
+[2025-06-27 18:23:55 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:23:55 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:23:55 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1218ms
+[2025-06-27 18:23:55 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 3.9784ms
+[2025-06-27 18:23:55 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:23:55 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 2.3621ms
+[2025-06-27 18:24:03 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:24:03 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 15.6939ms
+[2025-06-27 18:24:03 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:24:03 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:24:03 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1775ms
+[2025-06-27 18:24:03 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 5.5756ms
+[2025-06-27 18:24:03 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:24:03 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 2.1695ms
+[2025-06-27 18:24:05 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:24:05 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 14.6621ms
+[2025-06-27 18:24:05 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:24:05 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:24:05 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1103ms
+[2025-06-27 18:24:05 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 5.244ms
+[2025-06-27 18:24:05 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:24:05 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 1.945ms
+[2025-06-27 18:24:38 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:24:38 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 18.0166ms
+[2025-06-27 18:24:38 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:24:38 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:24:38 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.4153ms
+[2025-06-27 18:24:38 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 5.7755ms
+[2025-06-27 18:24:38 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:24:38 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 2.888ms
+[2025-06-27 18:24:46 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:24:46 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 19.1678ms
+[2025-06-27 18:24:46 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:24:46 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:24:46 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1637ms
+[2025-06-27 18:24:46 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 4.9434ms
+[2025-06-27 18:24:47 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:24:47 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 4.5397ms
+[2025-06-27 18:24:48 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:24:48 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 16.3458ms
+[2025-06-27 18:24:48 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:24:48 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:24:48 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.6063ms
+[2025-06-27 18:24:48 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 9.9575ms
+[2025-06-27 18:24:48 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:24:48 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 4.0023ms
+[2025-06-27 18:26:16 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:26:16 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 20.6942ms
+[2025-06-27 18:26:16 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:26:16 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:26:16 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1116ms
+[2025-06-27 18:26:16 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 8.6238ms
+[2025-06-27 18:26:16 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:26:16 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 2.301ms
+[2025-06-27 18:27:09 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:27:09 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 20.391ms
+[2025-06-27 18:27:09 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:27:09 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:27:09 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1309ms
+[2025-06-27 18:27:09 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 5.4455ms
+[2025-06-27 18:27:09 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:27:09 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 4.8273ms
+[2025-06-27 18:28:58 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/index.html - null null
+[2025-06-27 18:28:58 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/index.html - 200 null text/html;charset=utf-8 23.3272ms
+[2025-06-27 18:28:58 INF] Request starting HTTP/1.1 GET http://localhost:5050/_vs/browserLink - null null
+[2025-06-27 18:28:58 INF] Request starting HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - null null
+[2025-06-27 18:28:58 INF] Request finished HTTP/1.1 GET http://localhost:5050/_framework/aspnetcore-browser-refresh.js - 200 13770 application/javascript; charset=utf-8 0.1463ms
+[2025-06-27 18:28:58 INF] Request finished HTTP/1.1 GET http://localhost:5050/_vs/browserLink - 200 null text/javascript; charset=UTF-8 5.4973ms
+[2025-06-27 18:28:58 INF] Request starting HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - null null
+[2025-06-27 18:28:58 INF] Request finished HTTP/1.1 GET http://localhost:5050/swagger/v1/swagger.json - 200 null application/json;charset=utf-8 4.5795ms

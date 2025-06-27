@@ -17,19 +17,24 @@ namespace TourManagementApi.Controllers.Api
     public class ExperienceBankWebhookController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        public ExperienceBankWebhookController(ApplicationDbContext context)
+        private readonly ILogger<ExperienceBankWebhookController> _logger;
+
+        public ExperienceBankWebhookController(ApplicationDbContext context, ILogger<ExperienceBankWebhookController> logger)
         {
             _context = context;
+            _logger = logger;
         }
+
         [HttpPost]
         public async Task<IActionResult> Receive([FromBody] JObject payload)
         {
-            Console.WriteLine(payload.ToString());
+            _logger.LogInformation("Webhook received: {Payload}", payload.ToString());
 
             var method = payload["method"]?.ToString();
 
             if (method == "AvailabilityUpdated")
             {
+                _logger.LogInformation("Processing AvailabilityUpdated webhook.");
                 var data = payload["params"];
                 string activityId = data["activityId"]?.ToString();
                 string optionId = data["optionId"]?.ToString();
@@ -72,6 +77,7 @@ namespace TourManagementApi.Controllers.Api
             }
             else if (method == "ActivityUpdated")
             {
+                _logger.LogInformation("Processing ActivityUpdated webhook.");
                 var data = payload["params"];
                 string activityId = data["activityId"]?.ToString();
 
@@ -85,6 +91,10 @@ namespace TourManagementApi.Controllers.Api
 
                     await _context.SaveChangesAsync();
                 }
+            }
+            else
+            {
+                _logger.LogWarning("Unhandled webhook method: {Method}", method);
             }
 
             return Ok(new

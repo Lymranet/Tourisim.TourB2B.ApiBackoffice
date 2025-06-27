@@ -10,10 +10,12 @@ namespace TourManagementApi.Controllers.Api
     public class ExperienceBankAvailabilitiesController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<ExperienceBankAvailabilitiesController> _logger;
 
-        public ExperienceBankAvailabilitiesController(ApplicationDbContext context)
+        public ExperienceBankAvailabilitiesController(ApplicationDbContext context, ILogger<ExperienceBankAvailabilitiesController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -25,8 +27,9 @@ namespace TourManagementApi.Controllers.Api
                 [FromQuery] string[] optionId,
                 [FromQuery] int offset = 0)
         {
-            const int pageSize = 50;
+            _logger.LogInformation("GetAvailabilities called for PartnerSupplierId: {PartnerSupplierId}, DateRange: {Start} - {End}, Offset: {Offset}", partnerSupplierId, dateRangeStart, dateRangeEnd, offset);
 
+            const int pageSize = 50;
             var dateOnlyRangeStart = DateOnly.FromDateTime(dateRangeStart);
             var dateOnlyRangeEnd = DateOnly.FromDateTime(dateRangeEnd);
 
@@ -45,6 +48,7 @@ namespace TourManagementApi.Controllers.Api
                 query = query.Where(a => optionId.Contains(a.OptionId.ToString()));
 
             var total = await query.CountAsync();
+            _logger.LogInformation("Found total {Total} availabilities.", total);
 
             var availabilities = await query
                 .OrderBy(a => a.Date)
@@ -80,60 +84,13 @@ namespace TourManagementApi.Controllers.Api
                     ticketCategories = a.TicketCategoryCapacities.Select(tc => new TicketCategoryDto
                     {
                         id = tc.TicketCategoryId.ToString(),
-                        availableCapacity = tc.Capacity 
+                        availableCapacity = tc.Capacity
                     }).ToList()
                 }).ToList()
             };
 
+            _logger.LogInformation("Returning {Count} availabilities in response.", availabilities.Count);
             return Ok(result);
         }
     }
 }
-
-
-
-//[HttpGet]
-//public async Task<IActionResult> GetAvailabilities(
-//    string partnerSupplierId,
-//    [FromQuery] DateTime dateRangeStart,
-//    [FromQuery] DateTime dateRangeEnd,
-//    [FromQuery] string[] activityId,
-//    [FromQuery] string[] optionId,
-//    [FromQuery] int offset = 0)
-//{
-//    const int pageSize = 50;
-
-//    var query = _context.Availabilities
-//        .Include(a => a.OpeningHours)
-//        .Include(a => a.TicketCategoryCapacities)
-//        .Where(a => a.PartnerSupplierId == partnerSupplierId &&
-//                    a.Date >= dateRangeStart &&
-//                    a.Date <= dateRangeEnd);
-
-//    if (activityId?.Any() == true)
-//        query = query.Where(a => activityId.Contains(a.ActivityId));
-
-//    if (optionId?.Any() == true)
-//        query = query.Where(a => optionId.Contains(a.OptionId));
-
-//    var total = await query.CountAsync();
-
-//    var availabilities = await query
-//        .OrderBy(a => a.Date)
-//        .Skip(offset)
-//        .Take(pageSize)
-//        .ToListAsync();
-
-//    var result = new AvailabilityResultDto
-//    {
-//        links = new LinksDto
-//        {
-//            next = offset + pageSize < total
-//                ? $"https://tour.hotelwidget.com/supplier/{partnerSupplierId}/availabilities?offset={offset + pageSize}&dateRangeStart={dateRangeStart:yyyy-MM-dd}&dateRangeEnd={dateRangeEnd:yyyy-MM-dd}"
-//                : null
-//        },
-//        data = availabilities.Select(a => a.ToDto()).ToList()
-//    };
-
-//    return Ok(result);
-//}
