@@ -5,7 +5,7 @@ using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers.Api
 {
-    [Route("supplier/{partnerSupplierId}/availabilities")]
+    [Route("supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/availabilities")]
     [ApiController]
     public class ExperienceBankAvailabilitiesController : ControllerBase
     {
@@ -57,7 +57,7 @@ namespace TourManagementApi.Controllers.Api
                 links = new LinksDto
                 {
                     next = offset + pageSize < total
-                        ? $"https://tour.hotelwidget.com/supplier/{partnerSupplierId}/availabilities?offset={offset + pageSize}&dateRangeStart={dateRangeStart:yyyy-MM-dd}&dateRangeEnd={dateRangeEnd:yyyy-MM-dd}"
+                        ? $"https://tour.hotelwidget.com/supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/availabilities?offset={offset + pageSize}&dateRangeStart={dateRangeStart:yyyy-MM-dd}&dateRangeEnd={dateRangeEnd:yyyy-MM-dd}"
                         : null
                 },
                 data = availabilities.Select(a => new AvailabilityResponseDto

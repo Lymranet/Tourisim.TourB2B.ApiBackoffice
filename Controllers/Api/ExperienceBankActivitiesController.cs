@@ -8,7 +8,7 @@ using TourManagementApi.Models.ViewModels;
 
 namespace TourManagementApi.Controllers.Api
 {
-    [Route("supplier/{partnerSupplierId}/activities")]
+    [Route("supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/activities")]
     [ApiController]
     public class ExperienceBankActivitiesController : ControllerBase
     {
@@ -72,7 +72,7 @@ namespace TourManagementApi.Controllers.Api
                 links = new
                 {
                     next = offset + pageSize < total
-                        ? $"https://tours.hotelwidget.com/supplier/{partnerSupplierId}/activities?offset={offset + pageSize}"
+                        ? $"https://tours.hotelwidget.com/supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/activities?offset={offset + pageSize}"
                         : null
                 },
                 data = activities.Select(MapToExperienceBankDto)

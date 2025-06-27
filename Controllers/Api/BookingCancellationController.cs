@@ -7,7 +7,7 @@ using TourManagementApi.Services;
 namespace TourManagementApi.Controllers.Api
 {
     [ApiController]
-    [Route("supplier/{partnerSupplierId}/booking/{bookingId}/cancellation")]
+    [Route("supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/booking/{bookingId}/cancellation")]
     public class BookingCancellationController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

@@ -7,7 +7,7 @@ using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers.Api
 {
-    [Route("supplier/{partnerSupplierId}/booking")]
+    [Route("supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/booking")]
     [ApiController]
     public class ExperienceBankBookingController : ControllerBase
     {
