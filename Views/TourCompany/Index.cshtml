@@ -4,9 +4,19 @@
 
 <p>
     <a class="btn btn-primary" asp-action="Create">Yeni Şirket Ekle</a>
-    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">Tur Listesine Dön</a>
+    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">← Turlara Dön</a>
 </p>
-<table class="table">
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<table class="datatable2">
     <thead>
         <tr>
             <th>Şirket</th>
@@ -45,7 +55,13 @@
                 </td>
                 <td>
                     <a class="btn btn-sm btn-warning" asp-action="Edit" asp-route-id="@item.Id">Düzenle</a>
+
+                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" style="display:inline;"
+                          onsubmit="return confirm('Silmek istediğinize emin misiniz?');">
+                        <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                    </form>
                 </td>
+
             </tr>
         }
     </tbody>

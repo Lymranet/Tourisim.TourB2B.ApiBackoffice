@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using System.Globalization;
 using TourManagementApi.Data;
 using TourManagementApi.Helper;
 using TourManagementApi.Middleware;
@@ -9,7 +10,9 @@ using TourManagementApi.Models;
 using TourManagementApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
+var cultureInfo = new CultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 // Add services to the container.
 builder.Services.AddControllersWithViews()
     .AddRazorRuntimeCompilation();

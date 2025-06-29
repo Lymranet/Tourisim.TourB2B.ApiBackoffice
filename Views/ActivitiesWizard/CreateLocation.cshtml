@@ -4,7 +4,10 @@
     ViewData["Title"] = "Lokasyon Ekle/Düzenle";
 }
 
-<h2>Lokasyon Ekle/Düzenle</h2>
+<p>
+    <h2>@ViewData["Title"]</h2>
+    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">← Turlara Dön</a>
+</p>
 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
 <form asp-action="CreateLocation" method="post" autocomplete="off">

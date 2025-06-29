@@ -7,9 +7,11 @@
     var languages = new[] { "tr", "en", "de", "fr", "es", "it", "ru", "ar" };
 }
 
-<h2>Ek Ürünler</h2>
+<p>
+    <h2>@ViewData["Title"]</h2>
+    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">← Turlara Dön</a>
+</p>
 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
 <form asp-action="CreateAddons" method="post" autocomplete="off">
     <input type="hidden" asp-for="ActivityId" />
     <div id="addonsList">

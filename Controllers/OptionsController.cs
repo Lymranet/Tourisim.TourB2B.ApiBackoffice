@@ -59,6 +59,8 @@ namespace TourManagementApi.Controllers
         {
             if (ModelState.IsValid)
             {
+
+
                 var option = new Option
                 {
                     ActivityId = model.ActivityId,
@@ -172,6 +174,7 @@ namespace TourManagementApi.Controllers
 
             if (ModelState.IsValid)
             {
+
                 try
                 {
                     var option = await _context.Options
@@ -193,6 +196,8 @@ namespace TourManagementApi.Controllers
                     option.CanBeBookedAfterStartTime = model.CanBeBookedAfterStartTime;
                     option.Weekdays = TxtJson.SerializeStringList(model.Weekdays);
 
+                    // TicketCategories güncelleme
+
                     // OpeningHours güncelleme
                     _context.OpeningHours.RemoveRange(option.OpeningHours);
                     option.OpeningHours = model.OpeningHours?.Select(oh => new OpeningHour
@@ -202,8 +207,17 @@ namespace TourManagementApi.Controllers
                         OptionId = option.Id
                     }).ToList() ?? new List<OpeningHour>();
 
-                    // TicketCategories güncelleme
+                    // Önce TicketCategoryCapacities silincek dayı
+                    foreach (var tc in option.TicketCategories)
+                    {
+                        var capacities = _context.TicketCategoryCapacities.Where(c => c.TicketCategoryId == tc.Id);
+                        _context.TicketCategoryCapacities.RemoveRange(capacities);
+                    }
+
+                    // Sonra TicketCategories sikilir
                     _context.TicketCategories.RemoveRange(option.TicketCategories);
+
+                    // TicketCategories güncelleme
                     option.TicketCategories = model.TicketCategories?.Select(tc => new TicketCategory
                     {
                         Name = tc.Name,

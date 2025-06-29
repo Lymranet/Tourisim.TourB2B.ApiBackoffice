@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace TourManagementApi.Models.ViewModels
 {
@@ -11,7 +12,6 @@ namespace TourManagementApi.Models.ViewModels
         [MaxLength(200)]
         public string? Title { get; set; }
 
-        // Çoklu Kategori Seçimi (en fazla 3 kategori seçilebilir)
         [Required(ErrorMessage = "En az bir kategori seçilmelidir.")]
         [MaxLength(3, ErrorMessage = "En fazla 3 kategori seçebilirsiniz.")]
         public List<string>? Categories { get; set; }
@@ -22,7 +22,6 @@ namespace TourManagementApi.Models.ViewModels
         [Required(ErrorMessage = "Açıklama zorunludur.")]
         public string? Description { get; set; }
 
-        // İletişim bilgileri - zorunluluk kaldırıldı
         public ContactInfoViewModel ContactInfo { get; set; } = new();
 
         // Medya
@@ -36,7 +35,7 @@ namespace TourManagementApi.Models.ViewModels
         public string? PreviewImageUrl { get; set; }
         public List<string>? GalleryImageUrls { get; set; }
 
-        // Temel Bilgiler - zorunluluklar kaldırıldı
+        // Temel Bilgiler
         public string? Highlights { get; set; }
         public List<string>? Inclusions { get; set; }
         public List<string>? Exclusions { get; set; }
@@ -47,15 +46,35 @@ namespace TourManagementApi.Models.ViewModels
         public string? CountryCode { get; set; }
         public string? DestinationCode { get; set; }
         public string? DestinationName { get; set; }
-        public string? Category { get;  set; }
+        public string? Category { get; set; }
 
+        public string? Status { get; set; }
+        public string? Label { get; set; }
+        public string? TourCompany { get; set; }
+        public int? TourCompanyId { get; set; }
+        public List<SelectListItem>? TourCompanies { get; set; }
 
-        public ICollection<Option>? Options { get;  set; }
-        public string? Status { get;  set; }
-        public string? Label { get;  set; }
-        public string? TourCompany { get;  set; }
+        // ✅ Yeni eklenen kolonlar (Listeleme için)
+        public int OptionCount { get; set; }
+        public int AddonCount { get; set; }
+        public int ReservationCount { get; set; }
+        public int AvailabilityCount { get; set; }
+
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
+        public double? Rating { get; set; }
+        public bool? IsFreeCancellation { get; set; }
+
+        // İlişkisel veriler (sayfalarda direkt erişim gerekiyorsa)
+        public ICollection<Option>? Options { get; set; }
+        public ICollection<Reservation>? Reservations { get; set; }
+        public ICollection<Availability>? Availabilities { get; set; }
+
+        public int ReservationsCount { get; set; }
+        public int AvailabilitiesCount { get; set; }
+
     }
-
 
     public class ContactInfoViewModel
     {
@@ -73,6 +92,7 @@ namespace TourManagementApi.Models.ViewModels
         [MinLength(10, ErrorMessage = "Telefon en az 10 karakter olmalıdır.")]
         public string? Phone { get; set; }
     }
+
     public class DeleteGalleryImageRequest
     {
         public string ImagePath { get; set; }
@@ -84,9 +104,9 @@ namespace TourManagementApi.Models.ViewModels
         public int ActivityId { get; set; }
         public string ImageType { get; set; } // "cover" veya "preview"
     }
+
     public class StatusUpdateDto
     {
         public string Status { get; set; }
     }
-
 }

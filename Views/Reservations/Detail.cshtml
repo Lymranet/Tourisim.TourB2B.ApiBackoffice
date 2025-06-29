@@ -8,7 +8,7 @@
 
 <a asp-action="Index" class="btn btn-secondary mb-3">← Listeye Dön</a>
 
-<table class="table table-bordered">
+<table class="datatable2 table-bordered">
     <tr>
         <th>Tur</th>
         <td>@Model.Activity?.Title</td>
@@ -54,7 +54,7 @@
 <h4>Misafir Listesi</h4>
 @if (Model.ReservationGuests != null && Model.ReservationGuests.Any())
 {
-    <table class="table table-sm table-striped">
+    <table class="datatable2 table-sm table-striped">
         <thead>
             <tr>
                 <th>İsim</th>

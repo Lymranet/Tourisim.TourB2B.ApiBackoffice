@@ -81,7 +81,12 @@
 </style>
 
 
-<h2>@ViewData["Title"]</h2>
+
+<p>
+    <h2>@ViewData["Title"]</h2>
+    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">← Turlara Dön</a>
+</p>
+
 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
 <form asp-action="CreateBasic" method="post" enctype="multipart/form-data" autocomplete="off">
@@ -93,12 +98,21 @@
     <div class="card mb-4">
         <div class="card-header">Temel Bilgiler</div>
         <div class="card-body">
-            <div class="mb-3">
-                <label asp-for="Title" class="form-label">Başlık</label>
-                <input asp-for="Title" class="form-control" />
-                <span asp-validation-for="Title" class="text-danger"></span>
-            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Title" class="form-label">Başlık</label>
+                    <input asp-for="Title" class="form-control" />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
 
+                <div class="col-md-6 mb-3">
+                    <label asp-for="TourCompanyId" class="form-label">Tedarikçi</label>
+                    <select asp-for="TourCompanyId" class="form-control" asp-items="Model.TourCompanies">
+                        <option value="">Tur Firması Seçiniz</option>
+                    </select>
+                    <span asp-validation-for="TourCompanyId" class="text-danger"></span>
+                </div>
+            </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label asp-for="Categories" class="form-label">Kategoriler (En fazla 3 tane seçebilirsiniz)</label>

@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Turlar";
-    // Kategori lookup (id => isim)
+
     var categoryDict = new Dictionary<string, string> {
         { "1", "Walking/Hiking Tours" },
         { "2", "Watersports/Tours" },
@@ -25,22 +25,33 @@
     };
 }
 
-
 <h2>Turlar</h2>
-<a asp-action="CreateBasic" class="btn btn-primary mb-3">Yeni Tur Ekle</a>
-<a asp-controller="Reservations" asp-action="Index" class="btn btn-primary mb-3">Rezervasyon Listesi</a>
-<a asp-controller="Reports" asp-action="Index" class="btn btn-primary mb-3">Raporlar </a>
-<a asp-controller="TourCompany" asp-action="Index" class="btn btn-primary mb-3">Tedarikçi Yönetimi </a>
 
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a asp-action="CreateBasic" class="btn btn-primary">Yeni Tur Ekle</a>
+    <a asp-controller="Reservations" asp-action="Index" class="btn btn-secondary">Rezervasyon Listesi</a>
+    <a asp-controller="Reports" asp-action="Index" class="btn btn-secondary">Raporlar</a>
+    <a asp-controller="TourCompany" asp-action="Index" class="btn btn-secondary">Tedarikçi Yönetimi</a>
+</div>
 
-
-<table class="table table-bordered">
+<table class="datatable2 table table-bordered">
     <thead>
         <tr>
+            <th><input type="checkbox" id="selectAll" /></th>
             <th>ID</th>
             <th>Tedarikçi</th>
             <th>Başlık</th>
             <th>Kategori</th>
+
+            <th>Seçenekler</th>
+            @* <th>Rezervasyon</th> *@
+         @*    <th>Kapasite</th> *@
+            <th>Oluşturulma</th>
+            <th>Güncellenme</th>
+            @* <th>Rating</th> *@
+    @*         <th>Ücretsiz İptal</th> *@
+            <th>Lokasyon</th>
+
             <th>Durum</th>
             <th>İşlemler</th>
         </tr>
@@ -48,8 +59,11 @@
     <tbody>
         @foreach (var item in Model)
         {
+            var activityId = item?.ActivityId ?? 0;
+            var optionCount = item?.Options?.Count ?? 0;
             <tr>
-                <td>@(item.ActivityId)</td>
+                <td><input type="checkbox" name="selectedActivities" value="@item.ActivityId" /></td>
+                <td>@item.ActivityId</td>
                 <td>@(item?.TourCompany ?? "-")</td>
                 <td>@(item?.Title ?? "-")</td>
                 <td>
@@ -75,56 +89,122 @@
                     }
                 </td>
                 <td>
-                    <select class="form-select form-select-sm" onchange="updateStatus(@item.ActivityId, this.value)">
-                        <option value="draft" selected="@(item.Status == "draft")">Taslak</option>
-                        <option value="inactive" selected="@(item.Status == "inactive")">Pasif</option>
-                        <option value="active" selected="@(item.Status == "active")">Aktif</option>
-                    </select>
+                    <a asp-controller="Options"
+                       asp-action="Index"
+                       asp-route-activityId="@activityId">
+                        @optionCount
+                    </a>
                 </td>
-                <td class="d-flex flex-wrap gap-1">
-                    <a asp-action="CreateBasic" asp-route-id="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-info">Temel Bilgi</a>
-                    <a asp-action="CreateLocation" asp-route-id="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-secondary">Lokasyon</a>
-                    <a asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-warning">Seçenekler</a>
-                    <a asp-action="CreateAddons" asp-route-id="@item.ActivityId" class="btn btn-sm btn-success">Ek Ürünler</a>
-                    <a asp-controller="ActivitiesWizard" asp-action="Availabilities" asp-route-activityId="@item.ActivityId" class="btn btn-sm btn-outline-primary">  Kapasite Tanımları</a>
-                    <a asp-action="ManageLanguages" asp-route-id="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-dark">Dil Yönetimi</a>
-                    <a asp-action="PricingYield" asp-route-id="@item.ActivityId" class="btn btn-sm btn-outline-success">Fiyatlandırma</a>
+                @*                 <td>@(item.Reservations?.Count ?? 0)</td>
+@*                 <td>@(item.Availabilities?.Count ?? 0)</td> *@
+                <td>@(item.CreatedAt.HasValue? item.CreatedAt.Value.ToString("yyyy-MM-dd") : "-")</td>
+                <td>@(item.UpdatedAt.HasValue? item.UpdatedAt.Value.ToString("yyyy-MM-dd") : "-")</td>
 
-                    <form asp-action="DeleteActivity" asp-controller="ActivitiesWizard" method="post" onsubmit="return confirm('Bu tur ve tüm alt verileri silinecek. Emin misiniz?');">
-                        <input type="hidden" name="id" value="@item.ActivityId" />
-                        <button type="submit" class="btn btn-sm btn-danger">Sil</button>
-                    </form>
+               @*  <td>
+                    @if (item.Rating > 0)
+                    {
+                        <span class="badge bg-success">@item.Rating.Value.ToString("0.0")</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">-</span>
+                    }
+                </td> *@
+@*                 <td>
+                    @if (item.IsFreeCancellation == true)
+                    {
+                        <span class="badge bg-success">✔</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">✖</span>
+                    }
+                </td> *@
+                <td>@item.DestinationName</td>
+
+                <td>
+                    <span class="badge @(item.Status == "active" ? "bg-success" : item.Status == "inactive" ? "bg-secondary" : "bg-warning") status-badge"
+                          data-id="@item.ActivityId"
+                          data-current="@item.Status"
+                          style="cursor:pointer;">
+                        @(item.Status == "draft" ? "Taslak" : item.Status == "inactive" ? "Pasif" : "Aktif")
+                    </span>
+                </td>
+                <td>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            İşlemler
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" asp-action="CreateBasic" asp-route-id="@(item?.ActivityId ?? 0)">Temel Bilgi</a></li>
+                            <li><a class="dropdown-item" asp-action="CreateLocation" asp-route-id="@(item?.ActivityId ?? 0)">Lokasyon</a></li>
+                            <li><a class="dropdown-item" asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.ActivityId ?? 0)">Seçenekler</a></li>
+                            <li><a class="dropdown-item" asp-action="CreateAddons" asp-route-id="@item.ActivityId">Ek Ürünler</a></li>
+                            <li><a class="dropdown-item" asp-controller="ActivitiesWizard" asp-action="Availabilities" asp-route-activityId="@item.ActivityId">Kapasite Tanımları</a></li>
+                            <li><a class="dropdown-item" asp-action="ManageLanguages" asp-route-id="@(item?.ActivityId ?? 0)">Dil Yönetimi</a></li>
+                            <li><a class="dropdown-item" asp-action="PricingYield" asp-route-id="@item.ActivityId">Fiyatlandırma</a></li>
+                            <li>
+                                <form asp-action="DeleteActivity" asp-controller="ActivitiesWizard" method="post" onsubmit="return confirm('Bu tur ve tüm alt verileri silinecek. Emin misiniz?');">
+                                    <input type="hidden" name="id" value="@item.ActivityId" />
+                                    <button type="submit" class="dropdown-item text-danger">Sil</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-
 @ViewBag.Count
 
-<script type="text/javascript">
-    function sendHeight() {
-        parent.postMessage(document.body.scrollHeight, "*");
-    }
-     function updateStatus(id, newStatus) {
-        fetch(`/ActivitiesWizard/UpdateStatus/${id}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-            },
-            body: JSON.stringify({ status: newStatus })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Durum güncellenemedi.');
-            }
-        })
-        .catch(error => {
-            alert('Hata: ' + error.message);
+@section Scripts {
+    <script type="text/javascript">
+        // Select all checkbox
+        $('#selectAll').click(function () {
+            $('input[name="selectedActivities"]').prop('checked', this.checked);
         });
-    }
-    window.addEventListener("load", sendHeight);
-    window.addEventListener("resize", sendHeight); // sayfa yeniden boyutlandırılırsa
-</script>
+
+        // Status badge inline edit
+        $(document).on('click', '.status-badge', function(){
+            const badge = $(this);
+            const currentStatus = badge.data('current');
+            const id = badge.data('id');
+
+            const select = $('<select class="form-select form-select-sm"></select>');
+            select.append(`<option value="draft" ${currentStatus == "draft" ? "selected" : ""}>Taslak</option>`);
+            select.append(`<option value="inactive" ${currentStatus == "inactive" ? "selected" : ""}>Pasif</option>`);
+            select.append(`<option value="active" ${currentStatus == "active" ? "selected" : ""}>Aktif</option>`);
+
+            badge.replaceWith(select);
+            select.focus();
+
+            select.on('change blur', function(){
+                const newStatus = select.val();
+                updateStatus(id, newStatus);
+                const newBadge = $(`<span class="badge ${newStatus == "active" ? "bg-success" : newStatus == "inactive" ? "bg-secondary" : "bg-warning"} status-badge" data-id="${id}" data-current="${newStatus}" style="cursor:pointer;">${newStatus == "draft" ? "Taslak" : newStatus == "inactive" ? "Pasif" : "Aktif"}</span>`);
+                select.replaceWith(newBadge);
+            });
+        });
+
+        function updateStatus(id, newStatus) {
+            fetch(`/ActivitiesWizard/UpdateStatus/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Durum güncellenemedi.');
+                }
+            })
+            .catch(error => {
+                alert('Hata: ' + error.message);
+            });
+        }
+    </script>
+}

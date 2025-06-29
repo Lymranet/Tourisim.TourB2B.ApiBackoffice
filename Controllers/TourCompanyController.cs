@@ -138,6 +138,50 @@ namespace TourManagementApi.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                var company = await _context.TourCompanies.FindAsync(id);
+                if (company == null)
+                    return NotFound();
+
+                // Şirkete bağlı activity var mı kontrol et
+                var relatedActivities = await _context.Activities
+                    .Where(a => a.TourCompanyId == id)
+                    .ToListAsync();
+
+                if (relatedActivities.Any())
+                {
+                    TempData["Error"] = $"Bu şirkete bağlı {relatedActivities.Count} adet tur bulunmaktadır. Önce turların şirketten kopartılması gerekmektedir.";
+                    foreach (var activity in relatedActivities)
+                    {
+                        activity.TourCompanyId = null;
+                    }
+                    await _context.SaveChangesAsync();
+
+                    //  şirketi siliyuz
+                    _context.TourCompanies.Remove(company);
+                    await _context.SaveChangesAsync();
+                    TempData["Success"] = "Şirket silindi ve bağlı aktivitelerdeki Şirket alanları boşaltıldı.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Bağlı activity yoksa direkt sil
+                _context.TourCompanies.Remove(company);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Şirket başarıyla silindi.";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            
+        }
 
         private async Task<string> SaveFile(IFormFile file, string folder)
         {

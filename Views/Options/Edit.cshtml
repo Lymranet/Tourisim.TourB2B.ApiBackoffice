@@ -5,12 +5,12 @@
 }
 
 <h2>@ViewData["Title"]</h2>
-@Html.ValidationSummary(true, "", new { @class = "text-danger" })
+@Html.ValidationSummary(false, "", new { @class = "text-danger" })
 
 <form asp-action="Edit" method="post" autocomplete="off">
     <input type="hidden" asp-for="Id" />
     <input type="hidden" asp-for="ActivityId" />
-    
+
     <div class="card mb-4">
         <div class="card-header">Temel Bilgiler</div>
         <div class="card-body">
@@ -18,41 +18,42 @@
                 <div class="col-md-6 mb-3">
                     <label asp-for="Name" class="control-label">Seçenek Adı</label>
                     <input asp-for="Name" class="form-control" placeholder="Örn: Sabah Turu" />
-                    <span asp-validation-for="Name" class="text-danger"></span>
+                    <span asp-validation-for="Name" class="text-danger"></span> <!-- ✅ Validation -->
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="StartTime" class="control-label">Başlangıç Saati</label>
                     <input asp-for="StartTime" class="form-control" type="time" />
-                    <span asp-validation-for="StartTime" class="text-danger"></span>
+                    <span asp-validation-for="StartTime" class="text-danger"></span> <!-- ✅ -->
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="EndTime" class="control-label">Bitiş Saati</label>
                     <input asp-for="EndTime" class="form-control" type="time" />
-                    <span asp-validation-for="EndTime" class="text-danger"></span>
+                    <span asp-validation-for="EndTime" class="text-danger"></span> <!-- ✅ -->
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label asp-for="FromDate" class="control-label">Başlangıç Tarihi</label>
                     <input asp-for="FromDate" class="form-control" type="date" />
-                    <span asp-validation-for="FromDate" class="text-danger"></span>
+                    <span asp-validation-for="FromDate" class="text-danger"></span> <!-- ✅ -->
                 </div>
                 <div class="col-md-6 mb-3">
                     <label asp-for="UntilDate" class="control-label">Bitiş Tarihi</label>
                     <input asp-for="UntilDate" class="form-control" type="date" />
-                    <span asp-validation-for="UntilDate" class="text-danger"></span>
+                    <span asp-validation-for="UntilDate" class="text-danger"></span> <!-- ✅ -->
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label asp-for="CutOff" class="control-label">Rezervasyon Kesim Süresi (Saat)</label>
                     <input asp-for="CutOff" class="form-control" type="number" min="0" />
-                    <span asp-validation-for="CutOff" class="text-danger"></span>
+                    <span asp-validation-for="CutOff" class="text-danger"></span> <!-- ✅ -->
                 </div>
                 <div class="col-md-6 mb-3">
                     <div class="form-check mt-4">
                         <input asp-for="CanBeBookedAfterStartTime" class="form-check-input" type="checkbox" />
                         <label asp-for="CanBeBookedAfterStartTime" class="form-check-label">Başlangıç Saatinden Sonra Rezervasyon Yapılabilir</label>
+                        <span asp-validation-for="CanBeBookedAfterStartTime" class="text-danger"></span> <!-- ✅ opsiyonel -->
                     </div>
                 </div>
             </div>
@@ -71,15 +72,17 @@
                 {
                     <div class="col-md-3 col-sm-6 mb-2">
                         <div class="form-check">
-                            <input type="checkbox" name="Weekdays" value="@days[i]" class="form-check-input" id="day_@days[i]" 
+                            <input type="checkbox" name="Weekdays" value="@days[i]" class="form-check-input" id="day_@days[i]"
                                    @(Model.Weekdays != null && Model.Weekdays.Contains(days[i]) ? "checked" : "") />
                             <label class="form-check-label" for="day_@days[i]">@dayNames[i]</label>
                         </div>
                     </div>
                 }
             </div>
+            <span asp-validation-for="Weekdays" class="text-danger"></span>
         </div>
     </div>
+
 
     <div class="card mb-4">
         <div class="card-header">Açılış Saatleri</div>
@@ -93,10 +96,12 @@
                             <div class="col-md-5">
                                 <label>Başlangıç Saati</label>
                                 <input type="time" name="OpeningHours[@i].FromTime" value="@Model.OpeningHours[i].FromTime" class="form-control" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="OpeningHours[@i].FromTime" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col-md-5">
                                 <label>Bitiş Saati</label>
                                 <input type="time" name="OpeningHours[@i].ToTime" value="@Model.OpeningHours[i].ToTime" class="form-control" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="OpeningHours[@i].ToTime" data-valmsg-replace="true"></span>
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
                                 <button type="button" class="btn btn-danger btn-sm remove-opening-hour w-100">Kaldır</button>
@@ -110,10 +115,12 @@
                         <div class="col-md-5">
                             <label>Başlangıç Saati</label>
                             <input type="time" name="OpeningHours[0].FromTime" class="form-control" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="OpeningHours[0].FromTime" data-valmsg-replace="true"></span>
                         </div>
                         <div class="col-md-5">
                             <label>Bitiş Saati</label>
                             <input type="time" name="OpeningHours[0].ToTime" class="form-control" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="OpeningHours[0].ToTime" data-valmsg-replace="true"></span>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="button" class="btn btn-danger btn-sm remove-opening-hour w-100">Kaldır</button>
@@ -127,21 +134,22 @@
         </div>
     </div>
 
+
+
     <div class="card mb-4">
         <div class="card-header">Bilet Kategorileri</div>
         <div class="card-body">
             <div id="ticketCategories">
                 @if (Model.TicketCategories != null && Model.TicketCategories.Any())
                 {
-                    for (var i = 0; i < Model.TicketCategories.Count; i++)
-
-                    {
+                    for (var i = 0; i < Model.TicketCategories.Count; i++){
                         <div class="ticket-category-row card mb-3">
                             <div class="card-body">
                                 <div class="row mb-2">
                                     <div class="col-md-4">
                                         <label>Kategori Adı</label>
                                         <input type="text" name="TicketCategories[@i].Name" value="@Model.TicketCategories[i].Name" class="form-control" placeholder="Örn: Yetişkin" />
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].Name" data-valmsg-replace="true"></span>
                                     </div>
                                     <div class="col-md-4">
                                         <label>Kategori Tipi</label>
@@ -150,6 +158,7 @@
                                             <option value="Child" selected="@(Model.TicketCategories[i].Type == "Child")">Çocuk</option>
                                             <option value="Group" selected="@(Model.TicketCategories[i].Type == "Group")">Grup</option>
                                         </select>
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].Type" data-valmsg-replace="true"></span>
                                     </div>
                                     <div class="col-md-4">
                                         <label>Para Birimi</label>
@@ -158,16 +167,20 @@
                                             <option value="USD" selected="@(Model.TicketCategories[i].Currency == "USD")">USD</option>
                                             <option value="EUR" selected="@(Model.TicketCategories[i].Currency == "EUR")">EUR</option>
                                         </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].Currency" data-valmsg-replace="true"></span>
                                     </div>
+
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-md-3">
                                         <label>Min. Koltuk</label>
                                         <input type="number" name="TicketCategories[@i].MinSeats" value="@Model.TicketCategories[i].MinSeats" class="form-control" min="0" />
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].MinSeats" data-valmsg-replace="true"></span>
                                     </div>
                                     <div class="col-md-3">
                                         <label>Maks. Koltuk</label>
                                         <input type="number" name="TicketCategories[@i].MaxSeats" value="@Model.TicketCategories[i].MaxSeats" class="form-control" min="0" />
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].MinSeats" data-valmsg-replace="true"></span>
                                     </div>
                                     <div class="col-md-3">
                                         <label>Min. Yaş</label>
@@ -182,6 +195,8 @@
                                     <div class="col-md-4">
                                         <label>Fiyat</label>
                                         <input type="number" name="TicketCategories[@i].Amount" value="@Model.TicketCategories[i].Amount" class="form-control" placeholder="0.00" step="0.01" min="0" />
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].Amount" data-valmsg-replace="true"></span>
+
                                     </div>
                                     <div class="col-md-4">
                                         <label>Fiyat Tipi</label>
@@ -191,11 +206,13 @@
                                             <option value="KisiBasi" selected="@(Model.TicketCategories[i].PriceType == "KisiBasi")">Kişi Başı</option>
                                             <option value="Grup" selected="@(Model.TicketCategories[i].PriceType == "Grup")">Grup</option>
                                         </select>
+                                        <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].PriceType" data-valmsg-replace="true"></span>
+
                                     </div>
 
 
 
-                                    <div class="col-md-8 d-flex align-items-end">
+                                    <div class="col-md-2 d-flex align-items-end">
                                         <button type="button" class="btn btn-danger btn-sm remove-ticket-category w-100">Kategoriyi Kaldır</button>
                                     </div>
                                 </div>
@@ -211,32 +228,39 @@
                                 <div class="col-md-4">
                                     <label>Kategori Adı</label>
                                     <input type="text" name="TicketCategories[0].Name" class="form-control" placeholder="Örn: Yetişkin" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].Type" data-valmsg-replace="true"></span>
+
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-2">
                                     <label>Kategori Tipi</label>
                                     <select name="TicketCategories[0].Type" class="form-control">
                                         <option value="Adult">Yetişkin</option>
                                         <option value="Child">Çocuk</option>
                                         <option value="Group">Grup</option>
                                     </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].Type" data-valmsg-replace="true"></span>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-2">
                                     <label>Para Birimi</label>
                                     <select name="TicketCategories[0].Currency" class="form-control">
                                         <option value="TRY">TRY</option>
                                         <option value="USD">USD</option>
                                         <option value="EUR">EUR</option>
                                     </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].Currency" data-valmsg-replace="true"></span>
                                 </div>
                             </div>
                             <div class="row mb-2">
                                 <div class="col-md-3">
                                     <label>Min. Koltuk</label>
                                     <input type="number" name="TicketCategories[0].MinSeats" class="form-control" min="0" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].MinSeats" data-valmsg-replace="true"></span>
                                 </div>
                                 <div class="col-md-3">
                                     <label>Maks. Koltuk</label>
                                     <input type="number" name="TicketCategories[0].MaxSeats" class="form-control" min="0" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].MinSeats" data-valmsg-replace="true"></span>
+
                                 </div>
                                 <div class="col-md-3">
                                     <label>Min. Yaş</label>
@@ -250,7 +274,9 @@
                             <div class="row">
                                 <div class="col-md-4">
                                     <label>Fiyat</label>
-                                    <input type="number" name="TicketCategories[0].Amount" class="form-control" placeholder="0.00" step="0.01" min="0" />
+                                    <input type="number" name="TicketCategories[0].Amount"  value="@Model.TicketCategories[0].Amount" class="form-control" placeholder="0.00" step="0.01" min="0" />
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].Amount" data-valmsg-replace="true"></span>
+
                                 </div>
                                 <div class="col-md-4">
                                     <label>Fiyat Tipi</label>
@@ -260,18 +286,20 @@
                                         <option value="KisiBasi">Kişi Başı</option>
                                         <option value="Grup">Grup</option>
                                     </select>
+                                    <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].PriceType" data-valmsg-replace="true"></span>
                                 </div>
-                                <div class="col-md-8 d-flex align-items-end">
+                                <div class="col-md-2 d-flex align-items-end">
                                     <button type="button" class="btn btn-danger btn-sm remove-ticket-category w-100">Kategoriyi Kaldır</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 }
+                <button type="button"  class="btn btn-secondary" id="addTicketCategory">
+                    <i class="fa fa-plus"></i> Bilet Kategorisi Ekle
+                </button>
             </div>
-            <button type="button" class="btn btn-secondary" id="addTicketCategory">
-                <i class="fa fa-plus"></i> Bilet Kategorisi Ekle
-            </button>
+           
         </div>
     </div>
 
@@ -282,6 +310,9 @@
 </form>
 
 @section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js" ></script>
+
 <script>
 $(document).ready(function () {
     let openingHourIndex = @(Model.OpeningHours?.Count ?? 1);
@@ -305,6 +336,7 @@ $(document).ready(function () {
         `;
         $("#openingHours").append(template);
         openingHourIndex++;
+         $.validator.unobtrusive.parse("#openingHours");
     });
 
     $("#addTicketCategory").click(function () {
@@ -365,6 +397,7 @@ $(document).ready(function () {
         `;
         $("#ticketCategories").append(template);
         ticketCategoryIndex++;
+                $.validator.unobtrusive.parse("#ticketCategories");
     });
 
     $(document).on("click", ".remove-opening-hour", function() {

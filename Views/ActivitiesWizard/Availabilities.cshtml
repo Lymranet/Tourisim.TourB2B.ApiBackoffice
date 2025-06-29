@@ -4,11 +4,21 @@
     ViewData["Title"] = "Kapasite Tanımları";
 }
 
-<h2>@Model.Title - Kapasite Tanımları</h2>
+<h2>@Model.Title @ViewData["Title"]</h2>
 
-<a asp-action="CreateAvailability" asp-route-id="@Model.Id" class="btn btn-primary mb-3">Yeni Kapasite Ekle</a>
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a asp-action="CreateAvailability" asp-route-id="@Model.Id" class="btn btn-primary">Yeni Kapasite Ekle</a>
 
-<table id="availabilityTable" class="table table-bordered table-striped">
+    <form asp-action="DeleteAllAvailabilities" asp-route-activityId="@Model.Id" method="post" onsubmit="return confirm('Tüm kapasite tanımlarını silmek istediğinize emin misiniz?');" class="d-inline">
+        <button type="submit" class="btn btn-danger">Tüm Kapasite Tanımlarını Temizle</button>
+    </form>
+
+    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">← Turlara Dön</a>
+</div>
+
+
+
+<table class="datatable2 table table-bordered table-striped ">
     <thead>
         <tr>
             <th>Tarih</th>
@@ -46,7 +56,7 @@
     </tbody>
 </table>
 
-@section Scripts {
+@* @section Scripts {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
@@ -61,4 +71,4 @@
             });
         });
     </script>
-}
+} *@
