@@ -50,6 +50,8 @@ public partial class ApplicationDbContext : DbContext
 
     public virtual DbSet<TimeSlot> TimeSlots { get; set; }
 
+    public virtual DbSet<TourCompany> TourCompanies { get; set; }
+
     public virtual DbSet<Translation> Translations { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -60,7 +62,6 @@ public partial class ApplicationDbContext : DbContext
     {
         modelBuilder.Entity<Activity>(entity =>
         {
-            entity.Property(e => e.Categories).HasDefaultValue("[]");
             entity.Property(e => e.ContactInfoEmail).HasColumnName("ContactInfo_Email");
             entity.Property(e => e.ContactInfoName).HasColumnName("ContactInfo_Name");
             entity.Property(e => e.ContactInfoPhone).HasColumnName("ContactInfo_Phone");
@@ -80,6 +81,10 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.MediaVideos).HasColumnName("Media_Videos");
             entity.Property(e => e.PartnerSupplierId).HasDefaultValue("");
             entity.Property(e => e.Status).HasMaxLength(50);
+
+            entity.HasOne(d => d.TourCompany).WithMany(p => p.Activities)
+                .HasForeignKey(d => d.TourCompanyId)
+                .HasConstraintName("FK_Activities_TourCompanies");
         });
 
         modelBuilder.Entity<ActivityLanguage>(entity =>
@@ -200,6 +205,7 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.OptionId, "IX_Reservations_OptionId");
 
+            entity.Property(e => e.CancelledAt).HasColumnType("datetime");
             entity.Property(e => e.ExperienceBankBookingId).HasDefaultValue("");
             entity.Property(e => e.MarketplaceBookingId).HasDefaultValue("");
             entity.Property(e => e.MarketplaceId).HasDefaultValue("");
@@ -250,6 +256,8 @@ public partial class ApplicationDbContext : DbContext
 
             entity.HasIndex(e => e.ReservationId, "IX_Ticket_ReservationId");
 
+            entity.Property(e => e.Status).HasMaxLength(50);
+
             entity.HasOne(d => d.Reservation).WithMany(p => p.Tickets).HasForeignKey(d => d.ReservationId);
         });
 
@@ -285,6 +293,28 @@ public partial class ApplicationDbContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
             entity.HasOne(d => d.Activity).WithMany(p => p.TimeSlots).HasForeignKey(d => d.ActivityId);
+        });
+
+        modelBuilder.Entity<TourCompany>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__TourComp__3214EC07A431D01F");
+
+            entity.Property(e => e.AracD2belgesiPath)
+                .HasMaxLength(500)
+                .HasColumnName("AracD2BelgesiPath");
+            entity.Property(e => e.AuthorizedPerson).HasMaxLength(255);
+            entity.Property(e => e.CompanyName).HasMaxLength(255);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.FaaliyetBelgesiPath).HasMaxLength(500);
+            entity.Property(e => e.HizmetDetayiPath).HasMaxLength(500);
+            entity.Property(e => e.ImzaDocumentPath).HasMaxLength(500);
+            entity.Property(e => e.LogoPath).HasMaxLength(500);
+            entity.Property(e => e.OdaSicilKaydiPath).HasMaxLength(500);
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.SigortaBelgesiPath).HasMaxLength(500);
+            entity.Property(e => e.SportifFaaliyetBelgesiPath).HasMaxLength(500);
+            entity.Property(e => e.TicaretSicilGazetesiPath).HasMaxLength(500);
+            entity.Property(e => e.VergiLevhasıPath).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Translation>(entity =>

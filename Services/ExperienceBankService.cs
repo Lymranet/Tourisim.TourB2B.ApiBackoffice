@@ -136,7 +136,7 @@ namespace TourManagementApi.Services
                 method = "activity.changed",
                 @params = new
                 {
-                    supplierId = "par_8376ce5d-bc21-4243-907b-d7dc41168756",
+                    supplierId = "12004",
                     activityIds = new[] { "12345" }
                 },
                 id = 1

@@ -1,7 +1,28 @@
-@model IEnumerable<TourManagementApi.Models.Activity>
+@model IEnumerable<TourManagementApi.Models.ViewModels.ActivityBasicViewModel>
 
 @{
     ViewData["Title"] = "Turlar";
+    // Kategori lookup (id => isim)
+    var categoryDict = new Dictionary<string, string> {
+        { "1", "Walking/Hiking Tours" },
+        { "2", "Watersports/Tours" },
+        { "3", "Biking Tours" },
+        { "4", "Attractions/Museums/Galleries/Aquariums" },
+        { "5", "Adrenaline Activities" },
+        { "6", "Airborne Experiences" },
+        { "7", "Vehicle Tours" },
+        { "8", "Events" },
+        { "9", "Equipment/Gear Rental" },
+        { "10", "Natural Attractions" },
+        { "11", "Special Interest" },
+        { "12", "Theme Parks" },
+        { "13", "Family Experiences" },
+        { "14", "Food/Wine Tours" },
+        { "15", "Nightlife Experiences" },
+        { "16", "Transportation" },
+        { "17", "Miscellaneous" },
+        { "18", "Sightseeing Tours" }
+    };
 }
 
 
@@ -9,12 +30,15 @@
 <a asp-action="CreateBasic" class="btn btn-primary mb-3">Yeni Tur Ekle</a>
 <a asp-controller="Reservations" asp-action="Index" class="btn btn-primary mb-3">Rezervasyon Listesi</a>
 <a asp-controller="Reports" asp-action="Index" class="btn btn-primary mb-3">Raporlar </a>
+<a asp-controller="TourCompany" asp-action="Index" class="btn btn-primary mb-3">Tedarikçi Yönetimi </a>
+
 
 
 <table class="table table-bordered">
     <thead>
         <tr>
             <th>ID</th>
+            <th>Tedarikçi</th>
             <th>Başlık</th>
             <th>Kategori</th>
             <th>Durum</th>
@@ -25,30 +49,51 @@
         @foreach (var item in Model)
         {
             <tr>
-                <td>@(item.Id)</td>
+                <td>@(item.ActivityId)</td>
+                <td>@(item?.TourCompany ?? "-")</td>
                 <td>@(item?.Title ?? "-")</td>
-                <td>@(item?.Category ?? "-")</td>
                 <td>
-                    <select class="form-select form-select-sm" onchange="updateStatus(@item.Id, this.value)">
+                    @{
+                        List<string> categoryIds = new List<string>();
+                        try
+                        {
+                            categoryIds = System.Text.Json.JsonSerializer.Deserialize<List<string>>(item?.Category ?? "[]");
+                        }
+                        catch { }
+
+                        if (categoryIds == null || !categoryIds.Any())
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                        else
+                        {
+                            foreach (var catId in categoryIds)
+                            {
+                                <div>@(categoryDict.ContainsKey(catId) ? categoryDict[catId] : catId)</div>
+                            }
+                        }
+                    }
+                </td>
+                <td>
+                    <select class="form-select form-select-sm" onchange="updateStatus(@item.ActivityId, this.value)">
                         <option value="draft" selected="@(item.Status == "draft")">Taslak</option>
                         <option value="inactive" selected="@(item.Status == "inactive")">Pasif</option>
                         <option value="active" selected="@(item.Status == "active")">Aktif</option>
                     </select>
                 </td>
                 <td class="d-flex flex-wrap gap-1">
-                    <a asp-action="CreateBasic" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-info">Temel Bilgi</a>
-                    <a asp-action="CreateLocation" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-secondary">Lokasyon</a>
-                    <a asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.Id ?? 0)" class="btn btn-sm btn-warning">Seçenekler</a>
-                    <a asp-action="CreateAddons" asp-route-id="@item.Id" class="btn btn-sm btn-success">Ek Ürünler</a>
-                    <a asp-controller="ActivitiesWizard" asp-action="Availabilities" asp-route-activityId="@item.Id" class="btn btn-sm btn-outline-primary">  Kapasite Tanımları</a>
-                    <a asp-action="ManageLanguages" asp-route-id="@(item?.Id ?? 0)" class="btn btn-sm btn-dark">Dil Yönetimi</a>
-                    <a asp-action="PricingYield" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success">Fiyatlandırma</a>
+                    <a asp-action="CreateBasic" asp-route-id="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-info">Temel Bilgi</a>
+                    <a asp-action="CreateLocation" asp-route-id="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-secondary">Lokasyon</a>
+                    <a asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-warning">Seçenekler</a>
+                    <a asp-action="CreateAddons" asp-route-id="@item.ActivityId" class="btn btn-sm btn-success">Ek Ürünler</a>
+                    <a asp-controller="ActivitiesWizard" asp-action="Availabilities" asp-route-activityId="@item.ActivityId" class="btn btn-sm btn-outline-primary">  Kapasite Tanımları</a>
+                    <a asp-action="ManageLanguages" asp-route-id="@(item?.ActivityId ?? 0)" class="btn btn-sm btn-dark">Dil Yönetimi</a>
+                    <a asp-action="PricingYield" asp-route-id="@item.ActivityId" class="btn btn-sm btn-outline-success">Fiyatlandırma</a>
 
                     <form asp-action="DeleteActivity" asp-controller="ActivitiesWizard" method="post" onsubmit="return confirm('Bu tur ve tüm alt verileri silinecek. Emin misiniz?');">
-    <input type="hidden" name="id" value="@item.Id" />
-    <button type="submit" class="btn btn-sm btn-danger">Sil</button>
-</form>
-
+                        <input type="hidden" name="id" value="@item.ActivityId" />
+                        <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                    </form>
                 </td>
             </tr>
         }

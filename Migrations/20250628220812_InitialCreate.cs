@@ -12,6 +12,32 @@ namespace TourManagementApi.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "TourCompanies",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CompanyName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    AuthorizedPerson = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Phone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    LogoPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ImzaDocumentPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    FaaliyetBelgesiPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    OdaSicilKaydiPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    TicaretSicilGazetesiPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    VergiLevhasıPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    SigortaBelgesiPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    HizmetDetayiPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    AracD2BelgesiPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    SportifFaaliyetBelgesiPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK__TourComp__3214EC07A431D01F", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Activities",
                 columns: table => new
                 {
@@ -20,7 +46,6 @@ namespace TourManagementApi.Migrations
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Subcategory = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Duration = table.Column<int>(type: "int", nullable: false),
                     ContactInfo_Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ContactInfo_Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -32,7 +57,6 @@ namespace TourManagementApi.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ContactInfoIsNull = table.Column<bool>(type: "bit", nullable: true),
-                    Categories = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "[]"),
                     CountryCode = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
                     DestinationCode = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
                     DestinationName = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
@@ -54,11 +78,17 @@ namespace TourManagementApi.Migrations
                     DetailsUrl = table.Column<string>(type: "nvarchar(max)", nullable: true, defaultValue: ""),
                     PartnerSupplierId = table.Column<string>(type: "nvarchar(max)", nullable: true, defaultValue: ""),
                     Label = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
-                    IsFreeCancellation = table.Column<bool>(type: "bit", nullable: true)
+                    IsFreeCancellation = table.Column<bool>(type: "bit", nullable: true),
+                    TourCompanyId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Activities", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Activities_TourCompanies",
+                        column: x => x.TourCompanyId,
+                        principalTable: "TourCompanies",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -374,7 +404,11 @@ namespace TourManagementApi.Migrations
                     MarketplaceId = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
                     PartnerBookingId = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
-                    PartnerSupplierId = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: "")
+                    PartnerSupplierId = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
+                    IsCancelled = table.Column<bool>(type: "bit", nullable: false),
+                    CancelledAt = table.Column<DateTime>(type: "datetime", nullable: true),
+                    CancelReason = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CancelNote = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -460,7 +494,8 @@ namespace TourManagementApi.Migrations
                     InternalTicketId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TicketCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     TicketCodeType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ReservationId = table.Column<int>(type: "int", nullable: true)
+                    ReservationId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -497,6 +532,11 @@ namespace TourManagementApi.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Activities_TourCompanyId",
+                table: "Activities",
+                column: "TourCompanyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityLanguage_ActivityId",
@@ -642,6 +682,9 @@ namespace TourManagementApi.Migrations
 
             migrationBuilder.DropTable(
                 name: "Activities");
+
+            migrationBuilder.DropTable(
+                name: "TourCompanies");
         }
     }
 }

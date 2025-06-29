@@ -108,13 +108,14 @@ namespace TourManagementApi.Controllers
             {
                 var activities = _context.Activities
                     .Include(a => a.Options)
-                    .Select(a => new Activity
+                    .Include(a => a.TourCompany)
+                    .Select(a => new ActivityBasicViewModel
                     {
-                        Id = a.Id,
+                        ActivityId = a.Id,
                         Title = a.Title ?? string.Empty,
                         Description = a.Description ?? string.Empty,
                         Category = a.Category ?? string.Empty,
-                        Subcategory = a.Subcategory ?? string.Empty,
+                        TourCompany=a.TourCompany.CompanyName,
                         Label = a.Label ?? string.Empty,
                         Status = a.Status ?? "draft",
                         Options = a.Options ?? new List<Option>(),
@@ -165,8 +166,7 @@ namespace TourManagementApi.Controllers
                     {
                         ActivityId = activity.Id,
                         Title = activity.Title,
-                        Category = activity.Category,
-                        Subcategory = activity.Subcategory,
+                        Categories = TxtJson.DeserializeStringList(activity.Category),
                         Description = activity.Description,
                         ContactInfo = activity.ContactInfoName != null ? new ContactInfoViewModel
                         {
@@ -224,8 +224,7 @@ namespace TourManagementApi.Controllers
                     finalGalleryList.AddRange(model.ExistingGalleryImages);
                 }
                 activity.Title = model.Title ?? string.Empty;
-                activity.Category = model.Category ?? string.Empty;
-                activity.Subcategory = model.Subcategory ?? string.Empty;
+                activity.Category = TxtJson.SerializeStringList(model.Categories?.Take(3).ToList() ?? new List<string>());
                 activity.Description = model.Description ?? string.Empty;
                 activity.DetailsUrl = "";
                 activity.PartnerSupplierId = "";

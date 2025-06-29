@@ -1,0 +1,52 @@
+﻿@model IEnumerable<TourCompany>
+
+<h2>Tur Şirketleri Listesi</h2>
+
+<p>
+    <a class="btn btn-primary" asp-action="Create">Yeni Şirket Ekle</a>
+    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">Tur Listesine Dön</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Şirket</th>
+            <th>Yetkili</th>
+            <th>Email</th>
+            <th>Telefon</th>
+            <th>Logo</th>
+            <th>Evraklar</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.CompanyName</td>
+                <td>@item.AuthorizedPerson</td>
+                <td>@item.Email</td>
+                <td>@item.Phone</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.LogoPath))
+                    {
+                        <img src="@item.LogoPath" width="50" />
+                    }
+                </td>
+                <td>
+                    <a href="@item.ImzaDocumentPath">İmza</a> |
+                    <a href="@item.FaaliyetBelgesiPath">Faaliyet</a> |
+                    <a href="@item.OdaSicilKaydiPath">Oda Sicil</a> |
+                    <a href="@item.TicaretSicilGazetesiPath">Ticaret Sicil</a> |
+                    <a href="@item.VergiLevhasıPath">Vergi Levhası</a> |
+                    <a href="@item.SigortaBelgesiPath">Sigorta</a> |
+                    <a href="@item.HizmetDetayiPath">Hizmet Detayı</a> |
+                    <a href="@item.AracD2belgesiPath">D2</a> |
+                    <a href="@item.SportifFaaliyetBelgesiPath">Sportif</a>
+                </td>
+                <td>
+                    <a class="btn btn-sm btn-warning" asp-action="Edit" asp-route-id="@item.Id">Düzenle</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -11,9 +11,6 @@ public partial class Reservation
 
     public int OptionId { get; set; }
 
-    public bool IsCancelled { get; set; }
-
-
     public DateTime ReservationDate { get; set; }
 
     public DateTime ScheduledDate { get; set; }
@@ -46,6 +43,14 @@ public partial class Reservation
 
     public string PartnerSupplierId { get; set; } = null!;
 
+    public bool IsCancelled { get; set; }
+
+    public DateTime? CancelledAt { get; set; }
+
+    public string? CancelReason { get; set; }
+
+    public string? CancelNote { get; set; }
+
     public virtual Activity Activity { get; set; } = null!;
 
     public virtual Option Option { get; set; } = null!;
@@ -53,7 +58,4 @@ public partial class Reservation
     public virtual ICollection<ReservationGuest> ReservationGuests { get; set; } = new List<ReservationGuest>();
 
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-    public DateTime CancelledAt { get; internal set; }
-    public string CancelReason { get; internal set; }
-    public string CancelNote { get; internal set; }
 }

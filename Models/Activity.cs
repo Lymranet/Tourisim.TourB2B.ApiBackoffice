@@ -13,8 +13,6 @@ public partial class Activity
 
     public string Category { get; set; } = null!;
 
-    public string Subcategory { get; set; } = null!;
-
     public int Duration { get; set; }
 
     public string? ContactInfoName { get; set; }
@@ -36,8 +34,6 @@ public partial class Activity
     public DateTime UpdatedAt { get; set; }
 
     public bool? ContactInfoIsNull { get; set; }
-
-    public string Categories { get; set; } = null!;
 
     public string CountryCode { get; set; } = null!;
 
@@ -83,6 +79,8 @@ public partial class Activity
 
     public bool? IsFreeCancellation { get; set; }
 
+    public int? TourCompanyId { get; set; }
+
     public virtual ICollection<ActivityLanguage> ActivityLanguages { get; set; } = new List<ActivityLanguage>();
 
     public virtual ICollection<Addon> Addons { get; set; } = new List<Addon>();
@@ -102,6 +100,8 @@ public partial class Activity
     public virtual ICollection<RoutePoint> RoutePoints { get; set; } = new List<RoutePoint>();
 
     public virtual ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
+
+    public virtual TourCompany? TourCompany { get; set; }
 
     public virtual ICollection<Translation> Translations { get; set; } = new List<Translation>();
 }

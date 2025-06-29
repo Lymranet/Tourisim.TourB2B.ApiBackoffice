@@ -11,11 +11,11 @@ namespace TourManagementApi.Models.ViewModels
         [MaxLength(200)]
         public string? Title { get; set; }
 
-        [Required(ErrorMessage = "Kategori zorunludur.")]
-        [MaxLength(100)]
-        public string? Category { get; set; }
+        // Çoklu Kategori Seçimi (en fazla 3 kategori seçilebilir)
+        [Required(ErrorMessage = "En az bir kategori seçilmelidir.")]
+        [MaxLength(3, ErrorMessage = "En fazla 3 kategori seçebilirsiniz.")]
+        public List<string>? Categories { get; set; }
 
-        [Required(ErrorMessage = "Alt kategori zorunludur.")]
         [MaxLength(100)]
         public string? Subcategory { get; set; }
 
@@ -47,6 +47,13 @@ namespace TourManagementApi.Models.ViewModels
         public string? CountryCode { get; set; }
         public string? DestinationCode { get; set; }
         public string? DestinationName { get; set; }
+        public string? Category { get;  set; }
+
+
+        public ICollection<Option>? Options { get;  set; }
+        public string? Status { get;  set; }
+        public string? Label { get;  set; }
+        public string? TourCompany { get;  set; }
     }
 
 

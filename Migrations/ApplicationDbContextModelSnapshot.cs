@@ -30,12 +30,6 @@ namespace TourManagementApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Categories")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("[]");
-
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -182,10 +176,6 @@ namespace TourManagementApi.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("Subcategory")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -193,10 +183,15 @@ namespace TourManagementApi.Migrations
                     b.Property<int?>("TotalRatingCount")
                         .HasColumnType("int");
 
+                    b.Property<int?>("TourCompanyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TourCompanyId");
 
                     b.ToTable("Activities");
                 });
@@ -543,6 +538,15 @@ namespace TourManagementApi.Migrations
                     b.Property<int>("ActivityId")
                         .HasColumnType("int");
 
+                    b.Property<string>("CancelNote")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CancelReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime");
+
                     b.Property<string>("ContactEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -570,6 +574,9 @@ namespace TourManagementApi.Migrations
 
                     b.Property<int>("GuestCount")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("bit");
 
                     b.Property<string>("MarketplaceBookingId")
                         .IsRequired()
@@ -756,6 +763,10 @@ namespace TourManagementApi.Migrations
                     b.Property<int?>("ReservationId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Status")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("TicketCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -875,6 +886,81 @@ namespace TourManagementApi.Migrations
                     b.ToTable("TimeSlot", (string)null);
                 });
 
+            modelBuilder.Entity("TourManagementApi.Models.TourCompany", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AracD2belgesiPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("AracD2BelgesiPath");
+
+                    b.Property<string>("AuthorizedPerson")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("FaaliyetBelgesiPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("HizmetDetayiPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ImzaDocumentPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("LogoPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("OdaSicilKaydiPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("SigortaBelgesiPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SportifFaaliyetBelgesiPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("TicaretSicilGazetesiPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("VergiLevhasıPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id")
+                        .HasName("PK__TourComp__3214EC07A431D01F");
+
+                    b.ToTable("TourCompanies");
+                });
+
             modelBuilder.Entity("TourManagementApi.Models.Translation", b =>
                 {
                     b.Property<int>("Id")
@@ -928,6 +1014,16 @@ namespace TourManagementApi.Migrations
                         .IsUnique();
 
                     b.ToTable("Translations");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.Activity", b =>
+                {
+                    b.HasOne("TourManagementApi.Models.TourCompany", "TourCompany")
+                        .WithMany("Activities")
+                        .HasForeignKey("TourCompanyId")
+                        .HasConstraintName("FK_Activities_TourCompanies");
+
+                    b.Navigation("TourCompany");
                 });
 
             modelBuilder.Entity("TourManagementApi.Models.ActivityLanguage", b =>
@@ -1198,6 +1294,11 @@ namespace TourManagementApi.Migrations
             modelBuilder.Entity("TourManagementApi.Models.TicketCategory", b =>
                 {
                     b.Navigation("TicketCategoryCapacities");
+                });
+
+            modelBuilder.Entity("TourManagementApi.Models.TourCompany", b =>
+                {
+                    b.Navigation("Activities");
                 });
 #pragma warning restore 612, 618
         }

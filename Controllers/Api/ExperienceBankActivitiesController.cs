@@ -8,7 +8,7 @@ using TourManagementApi.Models.ViewModels;
 
 namespace TourManagementApi.Controllers.Api
 {
-    [Route("supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/activities")]
+    [Route("supplier/12004/activities")]
     [ApiController]
     public class ExperienceBankActivitiesController : ControllerBase
     {
@@ -58,19 +58,29 @@ namespace TourManagementApi.Controllers.Api
                     .Include(a => a.Options)
                     .Include(a => a.MeetingPoints)
                     .Include(a => a.RoutePoints)
-                    .Include(a => a.GuestFields)
                     .Where(a => a.PartnerSupplierId == partnerSupplierId);
 
                 if (id?.Any() == true)
                 {
-                    query = query.Where(a => id.Contains(a.Id.ToString()));
+                    // SQL Server 2014 için OPENJSON kullanmamak adına string id'leri int'e parse etecez hata veriyo
+                    var idInts = id.Select(int.Parse).ToList();
+                    query = query.Where(a => idInts.Contains(a.Id));
                 }
 
                 const int pageSize = 50;
-                var total = await query.CountAsync();
-                var activities = await query
-                    .Skip(offset)
-                    .Take(pageSize)
+                var total = await _context.Activities.Where(a => a.PartnerSupplierId == partnerSupplierId).CountAsync();
+
+                var activityIds = await query.Where(a => a.PartnerSupplierId == partnerSupplierId)
+               .Skip(offset)
+               .Take(pageSize)
+               .Select(a => a.Id)
+               .ToListAsync();
+
+                var activities = await _context.Activities.Where(a => a.PartnerSupplierId == partnerSupplierId)
+                    .Where(a => activityIds.Contains(a.Id))
+                    .Include(a => a.Options)
+                    .Include(a => a.MeetingPoints)
+                    .Include(a => a.RoutePoints)
                     .ToListAsync();
 
                 var result = new
@@ -78,7 +88,7 @@ namespace TourManagementApi.Controllers.Api
                     links = new
                     {
                         next = offset + pageSize < total
-                            ? $"https://tours.hotelwidget.com/supplier/par_8376ce5d-bc21-4243-907b-d7dc41168756/activities?offset={offset + pageSize}"
+                            ? $"https://tours.hotelwidget.com/supplier/12004/activities?offset={offset + pageSize}"
                             : null
                     },
                     data = activities.Select(MapToExperienceBankDto)
@@ -99,14 +109,14 @@ namespace TourManagementApi.Controllers.Api
             {
                 //Kategorileri eşleştirme
                 List<int> matchedCategoryIds = new();
-                var subcategories = activity.Subcategory?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? Array.Empty<string>();
-                foreach (var subcat in subcategories)
-                {
-                    if (categoryMapping.TryGetValue(subcat, out var matched))
-                    {
-                        matchedCategoryIds.AddRange(matched);
-                    }
-                }
+                //var subcategories = activity.Subcategory?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? Array.Empty<string>();
+                //foreach (var subcat in subcategories)
+                //{
+                //    if (categoryMapping.TryGetValue(subcat, out var matched))
+                //    {
+                //        matchedCategoryIds.AddRange(matched);
+                //    }
+                //}
                 var finalCategories = matchedCategoryIds.Distinct().Take(3).ToList();
 
 

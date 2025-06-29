@@ -1,0 +1,119 @@
+﻿@using TourManagementApi.Models.ViewModels
+@model TourCompanyViewModel
+
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Tur Şirketi Ekle" : "Tur Şirketi Düzenle";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="@(Model.Id == 0 ? "Create" : "Edit")" enctype="multipart/form-data" method="post">
+    @if (Model.Id != 0)
+    {
+        <input type="hidden" asp-for="Id" />
+    }
+    <div>
+        <label>Şirket İsmi</label>
+        <input asp-for="CompanyName" class="form-control" required />
+    </div>
+    <div>
+        <label>Yetkili Ad Soyad</label>
+        <input asp-for="AuthorizedPerson" class="form-control" required />
+    </div>
+    <div>
+        <label>Email</label>
+        <input asp-for="Email" class="form-control" required type="email" />
+    </div>
+    <div>
+        <label>Telefon</label>
+        <input asp-for="Phone" class="form-control" required />
+    </div>
+    <div>
+        <label>Logo</label>
+        @if (!string.IsNullOrEmpty(Model.LogoPath))
+        {
+            <div>
+                <img src="@Model.LogoPath" width="50" />
+            </div>
+        }
+        <input asp-for="Logo" type="file" class="form-control" />
+    </div>
+    <hr />
+    <h4>Evraklar</h4>
+    <div>
+        <label>İmza Sirküleri / Beyannamesi</label>
+        @if (!string.IsNullOrEmpty(Model.ImzaDocumentPath))
+        {
+            <div><a href="@Model.ImzaDocumentPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="ImzaDocument" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Faaliyet Belgesi</label>
+        @if (!string.IsNullOrEmpty(Model.FaaliyetBelgesiPath))
+        {
+            <div><a href="@Model.FaaliyetBelgesiPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="FaaliyetBelgesi" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Oda Sicil Kaydı</label>
+        @if (!string.IsNullOrEmpty(Model.OdaSicilKaydiPath))
+        {
+            <div><a href="@Model.OdaSicilKaydiPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="OdaSicilKaydi" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Ticaret Sicil Gazetesi</label>
+        @if (!string.IsNullOrEmpty(Model.TicaretSicilGazetesiPath))
+        {
+            <div><a href="@Model.TicaretSicilGazetesiPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="TicaretSicilGazetesi" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Vergi Levhası</label>
+        @if (!string.IsNullOrEmpty(Model.VergiLevhasıPath))
+        {
+            <div><a href="@Model.VergiLevhasıPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="VergiLevhası" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Sigorta Belgesi</label>
+        @if (!string.IsNullOrEmpty(Model.SigortaBelgesiPath))
+        {
+            <div><a href="@Model.SigortaBelgesiPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="SigortaBelgesi" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Hizmet Detayı (Tur içeriği vs.)</label>
+        @if (!string.IsNullOrEmpty(Model.HizmetDetayiPath))
+        {
+            <div><a href="@Model.HizmetDetayiPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="HizmetDetayi" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Araçların D2 Belgeleri</label>
+        @if (!string.IsNullOrEmpty(Model.AracD2BelgesiPath))
+        {
+            <div><a href="@Model.AracD2BelgesiPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="AracD2Belgesi" type="file" class="form-control" />
+    </div>
+    <div>
+        <label>Turizm Amaçlı Sportif Faaliyet Belgesi</label>
+        @if (!string.IsNullOrEmpty(Model.SportifFaaliyetBelgesiPath))
+        {
+            <div><a href="@Model.SportifFaaliyetBelgesiPath" target="_blank">Mevcut Dosya</a></div>
+        }
+        <input asp-for="SportifFaaliyetBelgesi" type="file" class="form-control" />
+    </div>
+
+
+    <button type="submit" class="btn btn-primary mt-3">Kaydet</button>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Geri Dön</a>
+</form>
