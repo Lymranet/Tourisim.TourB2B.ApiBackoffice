@@ -77,7 +77,7 @@ namespace TourManagementApi.Controllers.Api
                .ToListAsync();
 
                 var activities = await _context.Activities.Where(a => a.PartnerSupplierId == partnerSupplierId)
-                    .Where(a => activityIds.Contains(a.Id))
+                    //.Where(a => activityIds.Contains(a.Id))
                     .Include(a => a.Options)
                     .Include(a => a.MeetingPoints)
                     .Include(a => a.RoutePoints)

@@ -26,7 +26,7 @@ namespace TourManagementApi.Controllers.Api
                 [FromQuery] string[] activityId,
                 [FromQuery] string[] optionId,
                 [FromQuery] int offset = 0)
-        {
+            {
             _logger.LogInformation("GetAvailabilities called for PartnerSupplierId: {PartnerSupplierId}, DateRange: {Start} - {End}, Offset: {Offset}", partnerSupplierId, dateRangeStart, dateRangeEnd, offset);
 
             const int pageSize = 50;

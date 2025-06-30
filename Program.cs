@@ -8,6 +8,7 @@ using TourManagementApi.Helper;
 using TourManagementApi.Middleware;
 using TourManagementApi.Models;
 using TourManagementApi.Services;
+using static System.Net.WebRequestMethods;
 
 var builder = WebApplication.CreateBuilder(args);
 var cultureInfo = new CultureInfo("en-US");
@@ -149,7 +150,8 @@ app.Use(async (context, next) =>
     var allowedOrigins = new[]
     {
         "https://b2b.hotelwidget.com",
-        "http://localhost:44392"
+        "http://localhost:44392",
+        "https://tour.hotelwidget.com/"
     };
 
     context.Response.Headers.Remove("X-Frame-Options");

@@ -904,7 +904,7 @@ namespace TourManagementApi.Controllers
                     StartTime = new DateTimeOffset(DateTime.Today.Add(model.StartTime.ToTimeSpan())),
                     AvailableCapacity = model.AvailableCapacity,
                     MaximumCapacity = model.MaximumCapacity,
-                    PartnerSupplierId = "xxx",
+                    PartnerSupplierId = "12004",
                     TicketCategoryCapacities = model.TicketCategories
                         .Where(tc => tc.TicketCategoryId > 0)
                         .Select(tc => new TicketCategoryCapacity
