@@ -73,6 +73,9 @@ public partial class Activity
 
     public string? DetailsUrl { get; set; }
 
+    public string? B2BAgencyId { get; set; }
+
+
     public string? PartnerSupplierId { get; set; }
 
     public string Label { get; set; } = null!;

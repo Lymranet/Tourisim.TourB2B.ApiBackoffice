@@ -47,8 +47,9 @@ namespace TourManagementApi.Models.ViewModels
         public string? DestinationCode { get; set; }
         public string? DestinationName { get; set; }
         public string? Category { get; set; }
-
         public string? Status { get; set; }
+
+        public string? B2BAgencyId { get; set; }
         public string? Label { get; set; }
         public string? TourCompany { get; set; }
         public int? TourCompanyId { get; set; }

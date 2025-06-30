@@ -102,11 +102,12 @@ namespace TourManagementApi.Controllers
         }
 
 
-        public IActionResult Index()
+        public IActionResult Index(string Id)
         {
             try
             {
-                var activities = _context.Activities
+
+                var activities = _context.Activities.Where(a=>a.B2BAgencyId==Id)
                     .Include(a => a.Options)
                     .Include(a => a.TourCompany)
                    .Select(a => new ActivityBasicViewModel
