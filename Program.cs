@@ -54,7 +54,7 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Limits.MaxRequestBodySize = 1024 * 1024 * 100; // 100 MB
 });
-
+builder.Services.AddSession();
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.File("Logs/log-.txt",
@@ -143,7 +143,7 @@ app.UseSwaggerUI(c =>
 
 app.UseStaticFiles();
 app.UseRouting();
-
+app.UseSession();
 // Frame Policy Middleware
 app.Use(async (context, next) =>
 {

@@ -106,7 +106,20 @@ namespace TourManagementApi.Controllers
         {
             try
             {
+                #if DEBUG
+                Id = "96d2940f09674b0f81d86bc821c69ff6";
+#endif
 
+                if(string.IsNullOrEmpty(Id))
+        {
+                    // Eğer Id boşsa Session'dan oku
+                    Id = HttpContext.Session.GetString("B2BAgencyId");
+                }
+        else
+                {
+                    // Eğer Id geldiyse Session'a kaydet
+                    HttpContext.Session.SetString("B2BAgencyId", Id);
+                }
                 var activities = _context.Activities.Where(a=>a.B2BAgencyId==Id)
                     .Include(a => a.Options)
                     .Include(a => a.TourCompany)
@@ -241,6 +254,12 @@ namespace TourManagementApi.Controllers
                 return View(model);
             }
 
+            var agencyId = HttpContext.Session.GetString("B2BAgencyId");
+            if (string.IsNullOrEmpty(agencyId))
+            {
+                // Eğer Id boşsa Session'dan oku
+                agencyId = "96d2940f09674b0f81d86bc821c69ff6";
+            }
             try
             {
                 var activity = model.ActivityId.HasValue
