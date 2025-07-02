@@ -44,21 +44,84 @@ namespace TourManagementApi.Controllers.Api
             _context = context;
             _logger = logger;
         }
+        //[HttpGet]
+        //public async Task<IActionResult> GetActivities([FromQuery] string[] id, [FromQuery] int offset = 0)
+        //{
+        //    try
+        //    {
+        //        _logger.LogInformation("GetActivities called with partnerSupplierId={partnerSupplierId}, ids={ids}, offset={offset}",
+        //            "12004", string.Join(",", id ?? Array.Empty<string>()), offset);
+
+        //        const int pageSize = 50;
+
+        //        // Build the base query without includes (for ID retrieval)
+        //        IQueryable<Activity> baseQuery = _context.Activities.AsQueryable();
+
+        //        // Apply ID filter if any IDs provided
+        //        if (id?.Any() == true)
+        //        {
+        //            var idInts = id.Select(int.Parse).ToList();
+        //            baseQuery = baseQuery.Where(a => idInts.Contains(a.Id));
+        //        }
+
+        //        // Get total count
+        //        var total = await baseQuery.CountAsync();
+
+        //        // SQL Server 2014 compatible paging using row_number (avoids OFFSET/FETCH)
+        //        // First get the IDs in proper order
+        //        var orderedIds = await baseQuery
+        //            .OrderBy(a => a.Id)
+        //            .Select(a => a.Id)
+        //            .ToListAsync();
+
+        //        // Then manually apply paging in memory
+        //        var pagedIds = orderedIds
+        //            .Skip(offset)
+        //            .Take(pageSize)
+        //            .ToList();
+
+        //        // Now get full details for just the paged IDs
+        //        var activities = await _context.Activities
+        //            .Where(a => pagedIds.Contains(a.Id))
+        //            .Include(a => a.Options)
+        //            .Include(a => a.MeetingPoints)
+        //            .Include(a => a.RoutePoints)
+        //            .OrderBy(a => a.Id)  // Maintain the same ordering
+        //            .ToListAsync();
+
+        //        var result = new
+        //        {
+        //            links = new
+        //            {
+        //                next = offset + pageSize < total
+        //                    ? $"https://tours.hotelwidget.com/supplier/12004/activities?offset={offset + pageSize}"
+        //                    : null
+        //            },
+        //            data = activities.Select(MapToExperienceBankDto)
+        //        };
+
+        //        _logger.LogInformation("Total activities found: {total}", total);
+        //        return Ok(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error occurred in GetActivities for partnerSupplierId={partnerSupplierId}", "12004");
+        //        return StatusCode(500, "Internal server error");
+        //    }
+        //}
 
         [HttpGet]
-        public async Task<IActionResult> GetActivities(string partnerSupplierId, [FromQuery] string[] id, [FromQuery] int offset = 0)
+        public async Task<IActionResult> GetActivities([FromQuery] string[] id, [FromQuery] int offset = 0)
         {
             try
             {
-                _logger.LogInformation("GetActivities called with partnerSupplierId={partnerSupplierId}, ids={ids}, offset={offset}",
-        partnerSupplierId, string.Join(",", id ?? new string[0]), offset);
+                _logger.LogInformation("GetActivities called with partnerSupplierId={partnerSupplierId}, ids={ids}, offset={offset}", "12004", string.Join(",", id ?? new string[0]), offset);
 
                 // Sadece belirli ID'lerle filtrelenmiş tur listesi
                 var query = _context.Activities
                     .Include(a => a.Options)
                     .Include(a => a.MeetingPoints)
-                    .Include(a => a.RoutePoints)
-                    .Where(a => a.PartnerSupplierId == partnerSupplierId);
+                    .Include(a => a.RoutePoints).AsQueryable();
 
                 if (id?.Any() == true)
                 {
@@ -68,16 +131,17 @@ namespace TourManagementApi.Controllers.Api
                 }
 
                 const int pageSize = 50;
-                var total = await _context.Activities.Where(a => a.PartnerSupplierId == partnerSupplierId).CountAsync();
+                var total = await _context.Activities.CountAsync();
 
-                var activityIds = await query.Where(a => a.PartnerSupplierId == partnerSupplierId)
-               .Skip(offset)
-               .Take(pageSize)
-               .Select(a => a.Id)
-               .ToListAsync();
+                var activityIds = await query
+                    .OrderBy(a => a.Id)   // <-- Mutlaka ekle
+                    .Skip(offset)
+                    .Take(pageSize)
+                    .Select(a => a.Id)
+                    .ToListAsync();
 
-                var activities = await _context.Activities.Where(a => a.PartnerSupplierId == partnerSupplierId)
-                    //.Where(a => activityIds.Contains(a.Id))
+                var activities = await _context.Activities
+                    .Where(a => activityIds.Contains(a.Id))
                     .Include(a => a.Options)
                     .Include(a => a.MeetingPoints)
                     .Include(a => a.RoutePoints)
@@ -98,7 +162,7 @@ namespace TourManagementApi.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred in GetActivities for partnerSupplierId={partnerSupplierId}", partnerSupplierId);
+                _logger.LogError(ex, "Error occurred in GetActivities for partnerSupplierId={partnerSupplierId}", "12004");
                 return StatusCode(500, "Internal server error");
             }
         }
