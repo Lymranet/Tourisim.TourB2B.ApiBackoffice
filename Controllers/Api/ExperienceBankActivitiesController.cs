@@ -115,37 +115,32 @@ namespace TourManagementApi.Controllers.Api
         {
             try
             {
-                _logger.LogInformation("GetActivities called with partnerSupplierId={partnerSupplierId}, ids={ids}, offset={offset}", "12004", string.Join(",", id ?? new string[0]), offset);
+                _logger.LogInformation("GetActivities called with partnerSupplierId={partnerSupplierId}, ids={ids}, offset={offset}", "12004", string.Join(",", id ?? Array.Empty<string>()), offset);
 
-                // Sadece belirli ID'lerle filtrelenmiş tur listesi
+                const int pageSize = 50;
+
                 var query = _context.Activities
                     .Include(a => a.Options)
                     .Include(a => a.MeetingPoints)
-                    .Include(a => a.RoutePoints).AsQueryable();
+                    .Include(a => a.RoutePoints)
+                    .AsQueryable();
 
                 if (id?.Any() == true)
                 {
-                    // SQL Server 2014 için OPENJSON kullanmamak adına string id'leri int'e parse etecez hata veriyo
                     var idInts = id.Select(int.Parse).ToList();
                     query = query.Where(a => idInts.Contains(a.Id));
                 }
 
-                const int pageSize = 50;
-                var total = await _context.Activities.CountAsync();
+                // Pagination için ORDER BY şart
+                query = query.OrderBy(a => a.Id);
 
-                var activityIds = await query
-                    .OrderBy(a => a.Id)   // <-- Mutlaka ekle
+                // Bu tek sorguda işlemleri tamamla
+                var activities = await query
                     .Skip(offset)
                     .Take(pageSize)
-                    .Select(a => a.Id)
                     .ToListAsync();
 
-                var activities = await _context.Activities
-                    .Where(a => activityIds.Contains(a.Id))
-                    .Include(a => a.Options)
-                    .Include(a => a.MeetingPoints)
-                    .Include(a => a.RoutePoints)
-                    .ToListAsync();
+                var total = await _context.Activities.CountAsync();
 
                 var result = new
                 {
@@ -157,6 +152,7 @@ namespace TourManagementApi.Controllers.Api
                     },
                     data = activities.Select(MapToExperienceBankDto)
                 };
+
                 _logger.LogInformation("Total activities found: {total}", total);
                 return Ok(result);
             }
@@ -166,6 +162,7 @@ namespace TourManagementApi.Controllers.Api
                 return StatusCode(500, "Internal server error");
             }
         }
+
 
         private object MapToExperienceBankDto(Activity activity)
         {
