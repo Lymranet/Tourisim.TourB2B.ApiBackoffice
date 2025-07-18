@@ -9,6 +9,12 @@ using TourManagementApi.Middleware;
 using TourManagementApi.Models;
 using TourManagementApi.Services;
 using static System.Net.WebRequestMethods;
+// <<< Rezdy Integration <<<
+using Rezdy.Api;                    // (1) Rezdy API client’ın bulunduğu namespace
+using Rezdy.Api.Client;             // (2) IRezdyApiClient & RezdyApiClient
+using TourManagementApi.Services.Rezdy; // (3) ProductService ve BookingService
+// >>> Rezdy Integration >>>
+
 
 var builder = WebApplication.CreateBuilder(args);
 var cultureInfo = new CultureInfo("en-US");
@@ -85,6 +91,24 @@ builder.Services.Configure<ExperienceBankSettings>(builder.Configuration.GetSect
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ExperienceBankService>();
 builder.Services.AddScoped<AuthorizationHeaderHelper>();
+
+
+// <<< Rezdy Integration <<<
+// 1. Rezdy ayarlarını appsettings.json’dan okuyalım:
+builder.Services.Configure<RezdySettings>(builder.Configuration.GetSection("Rezdy"));
+
+// 2. Rezdy API client’ını HttpClientFactory üzerinden kaydedelim:
+builder.Services.AddHttpClient<IRezdyApiClient, RezdyApiClient>(client =>
+{
+    // BaseAddress ve API anahtarı RezdySettings içinden gelecek
+    client.BaseAddress = new Uri(builder.Configuration["Rezdy:BaseUrl"]);
+    client.DefaultRequestHeaders.Add("Authorization",
+        $"ApiKey {builder.Configuration["Rezdy:ApiKey"]}");
+});
+// 3. Rezdy’ye özel servislerimizi ekleyelim:
+builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<BookingService>();
+// >>> Rezdy Integration >>>
 
 var app = builder.Build();
 
@@ -169,6 +193,19 @@ app.UseMiddleware<RequestHeaderValidationMiddleware>();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=ActivitiesWizard}/{action=Index}/{id?}");
+
+// <<< Rezdy Integration <<<
+// Webhook endpoint’inizi buraya yönlendirin:
+app.MapControllerRoute(
+    name: "rezdy-webhook",
+    pattern: "api/webhooks/rezdy",
+    defaults: new { controller = "RezdyWebhook", action = "Handle" });
+//
+// Mevcut default route’unuz:
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=ActivitiesWizard}/{action=Index}/{id?}");
+// >>> Rezdy Integration >>>
 
 // Configure custom URLs
 builder.WebHost.UseUrls("http://localhost:5050");
