@@ -2,7 +2,7 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Rezdy.Api.Models;
+using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Services.Rezdy
 {
@@ -12,7 +12,7 @@ namespace TourManagementApi.Services.Rezdy
         Task<ImageUploadResponse> AddProductImageAsync(string productCode, MultipartFormDataContent content);
         Task<AvailabilityResponse> GetAvailabilityAsync(string productCode, DateTime fromDate, DateTime toDate);
         Task<AvailabilityResponse> CreateAvailabilityAsync(AvailabilityRequest request);
-        Task<AvailabilityResponse> UpdateAvailabilityAsync(int sessionId, AvailabilityRequest request);
+        Task<AvailabilityResponse> UpdateAvailabilityAsync(int sessionId, AvailabilityRequest request); 
         Task<BookingResponse> CreateBookingAsync(BookingCreateRequest request);
     }
 }

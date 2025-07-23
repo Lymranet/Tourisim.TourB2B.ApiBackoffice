@@ -3,7 +3,7 @@ using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Rezdy.Api.Models;
+using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Services.Rezdy
 {

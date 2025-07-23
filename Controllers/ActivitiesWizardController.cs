@@ -15,11 +15,11 @@ using System.Threading.Tasks;
 using TourManagementApi.Data;
 using TourManagementApi.Helper;
 using TourManagementApi.Models;
-using TourManagementApi.Models.Api;
 using TourManagementApi.Models.Common;
 using TourManagementApi.Models.ViewModels;
 using TourManagementApi.Services;
 using Addon = TourManagementApi.Models.Addon;
+using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers
 {
@@ -107,15 +107,15 @@ namespace TourManagementApi.Controllers
             try
             {
                 #if DEBUG
-                Id = "96d2940f09674b0f81d86bc821c69ff6";
-#endif
+                    Id = "96d2940f09674b0f81d86bc821c69ff6";
+                #endif
 
                 if(string.IsNullOrEmpty(Id))
-        {
+                {
                     // Eğer Id boşsa Session'dan oku
                     Id = HttpContext.Session.GetString("B2BAgencyId");
                 }
-        else
+                else
                 {
                     // Eğer Id geldiyse Session'a kaydet
                     HttpContext.Session.SetString("B2BAgencyId", Id);
@@ -268,11 +268,14 @@ namespace TourManagementApi.Controllers
 
                 if (activity == null)
                     return NotFound();
+
                 var finalGalleryList = new List<string>();
+
                 if (model.ExistingGalleryImages != null)
                 {
                     finalGalleryList.AddRange(model.ExistingGalleryImages);
                 }
+                activity.B2BAgencyId = agencyId;    
                 activity.Title = model.Title ?? string.Empty;
                 activity.Category = TxtJson.SerializeStringList(model.Categories?.Take(3).ToList() ?? new List<string>());
                 activity.Description = model.Description ?? string.Empty;
@@ -349,7 +352,6 @@ namespace TourManagementApi.Controllers
             }
         }
 
-        [HttpPost]
         [HttpPost]
         public async Task<IActionResult> DeleteGalleryImage([FromBody] DeleteGalleryImageRequest request)
         {

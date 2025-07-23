@@ -1,7 +1,6 @@
 ﻿// Controllers/RezdyWebhookController.cs
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
-using Rezdy.Api.Models;
 using TourManagementApi.Models.Api;
 using TourManagementApi.Services.Rezdy;
 

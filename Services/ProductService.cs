@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Rezdy.Api.Models;
+using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Services.Rezdy
 {
@@ -31,7 +31,7 @@ namespace TourManagementApi.Services.Rezdy
             };
 
             var resp = await _client.CreateProductAsync(req);
-            return resp.ResponseData.ProductCode;
+            return resp.ResponseData.Product.ProductCode;
         }
 
         public async Task UploadImageAsync(string productCode, Stream imageStream, string filename)

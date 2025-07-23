@@ -1,5 +1,4 @@
 ﻿// Services/Rezdy/BookingService.cs
-using Rezdy.Api.Models;
 using System.Threading.Tasks;
 using TourManagementApi.Models.Api;
 

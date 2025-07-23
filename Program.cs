@@ -10,8 +10,6 @@ using TourManagementApi.Models;
 using TourManagementApi.Services;
 using static System.Net.WebRequestMethods;
 // <<< Rezdy Integration <<<
-using Rezdy.Api;                    // (1) Rezdy API client’ın bulunduğu namespace
-using Rezdy.Api.Client;             // (2) IRezdyApiClient & RezdyApiClient
 using TourManagementApi.Services.Rezdy; // (3) ProductService ve BookingService
 // >>> Rezdy Integration >>>
 
