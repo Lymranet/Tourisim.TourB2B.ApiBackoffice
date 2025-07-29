@@ -3,14 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Globalization;
+using System.Net.Http.Headers;
 using TourManagementApi.Data;
 using TourManagementApi.Helper;
 using TourManagementApi.Middleware;
 using TourManagementApi.Models;
 using TourManagementApi.Services;
-using static System.Net.WebRequestMethods;
 // <<< Rezdy Integration <<<
 using TourManagementApi.Services.Rezdy; // (3) ProductService ve BookingService
+using static System.Net.WebRequestMethods;
 // >>> Rezdy Integration >>>
 
 
@@ -90,22 +91,37 @@ builder.Services.AddHttpClient();
 builder.Services.AddScoped<ExperienceBankService>();
 builder.Services.AddScoped<AuthorizationHeaderHelper>();
 
+// REZDY CONNECTION
+builder.Services.AddSingleton<IProductService, TourManagementApi.Services.ProductService>();
+builder.Services.AddSingleton<AvailabilityService>();
+builder.Services.AddSingleton<PricingService>();
+builder.Services.AddSingleton<TourManagementApi.Services.BookingService>();
 
 // <<< Rezdy Integration <<<
-// 1. Rezdy ayarlarını appsettings.json’dan okuyalım:
+// 1. Rezdy ayarlarını appsettings.json’dan okumaca:
 builder.Services.Configure<RezdySettings>(builder.Configuration.GetSection("Rezdy"));
 
 // 2. Rezdy API client’ını HttpClientFactory üzerinden kaydedelim:
 builder.Services.AddHttpClient<IRezdyApiClient, RezdyApiClient>(client =>
 {
-    // BaseAddress ve API anahtarı RezdySettings içinden gelecek
-    client.BaseAddress = new Uri(builder.Configuration["Rezdy:BaseUrl"]);
-    client.DefaultRequestHeaders.Add("Authorization",
-        $"ApiKey {builder.Configuration["Rezdy:ApiKey"]}");
+    var rezdy = builder.Configuration.GetSection("Rezdy");
+    var baseUrl = rezdy["BaseUrl"]!;
+    var apiKey = rezdy["ApiKey"]!;
+
+    if (!baseUrl.StartsWith("https://"))
+        throw new InvalidOperationException("Rezdy BaseUrl must use HTTPS");
+
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("apiKey", apiKey);
+
+    // 🔑 Payload format headers
+    client.DefaultRequestHeaders.Accept.Clear();
+    client.DefaultRequestHeaders.Accept
+          .Add(new MediaTypeWithQualityHeaderValue("application/json"));
 });
 // 3. Rezdy’ye özel servislerimizi ekleyelim:
-builder.Services.AddScoped<ProductService>();
-builder.Services.AddScoped<BookingService>();
+builder.Services.AddScoped<TourManagementApi.Services.Rezdy.ProductService>();
+builder.Services.AddScoped<TourManagementApi.Services.Rezdy.BookingService>();
 // >>> Rezdy Integration >>>
 
 var app = builder.Build();

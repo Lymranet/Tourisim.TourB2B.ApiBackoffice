@@ -1,69 +1,45 @@
-﻿// Services/Rezdy/ProductService.cs
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using TourManagementApi.Models.Api;
+﻿using TourManagementApi.Models.Api.RezdyConnectModels;
 
-namespace TourManagementApi.Services.Rezdy
+namespace TourManagementApi.Services
 {
-    public class ProductService
+    public class ProductService : IProductService
     {
-        private readonly IRezdyApiClient _client;
-
-        public ProductService(IRezdyApiClient client)
+        private static readonly List<ProductModel> _products = new()
+    {
+        new ProductModel
         {
-            _client = client;
-        }
-
-        public async Task<string> PublishProductAsync(DomainProduct domain)
-        {
-            // 1️⃣ Domain → Rezdy CreateRequest’e çevirin
-            var req = new ProductCreateRequest
+            ProductCode = "KAPADOKYA-BALON",
+            Name = "Kapadokya Balon Turu",
+            Description = "Muhteşem bir balon deneyimi!",
+            DurationMinutes = 120,
+            Location = new ProductLocation
             {
-                Name = domain.Name,
-                Description = domain.Description,
-                PriceOptions = new[] {
-                    new PriceOption { Price = domain.Price, PriceType = "PER_PERSON" }
-                },
-                Locations = new[] { new Location { Code = domain.LocationCode } }
-                // ... diğer gerekli alanlar
-            };
-
-            var resp = await _client.CreateProductAsync(req);
-            return resp.ResponseData.Product.ProductCode;
-        }
-
-        public async Task UploadImageAsync(string productCode, Stream imageStream, string filename)
-        {
-            using var content = new MultipartFormDataContent();
-            content.Add(new StreamContent(imageStream), "file", filename);
-            await _client.AddProductImageAsync(productCode, content);
-        }
-
-        public async Task SyncAvailabilityAsync(string productCode, DateTime date, decimal price, int capacity)
-        {
-            var session = new Session
+                Address = "Göreme, Nevşehir",
+                Geo = new GeoCoordinates { Lat = 38.643, Lon = 34.830 }
+            },
+            Images = new List<ProductImage>
             {
-                Date = date,
-                Price = price,
-                Quantity = capacity
-            };
-            var req = new AvailabilityRequest
+                new ProductImage { Url = "https://cdn.orneksite.com/balon.jpg", IsThumbnail = true }
+            },
+            Options = new List<ProductOption>
             {
-                ProductCode = productCode,
-                Sessions = new[] { session }
-            };
-            await _client.CreateAvailabilityAsync(req);
+                new ProductOption
+                {
+                    Code = "SABAH",
+                    Name = "Sabah Turu",
+                    Pricing = new List<ProductPricing>
+                    {
+                        new ProductPricing { Currency = "EUR", Amount = 150 }
+                    }
+                }
+            }
         }
+    };
+
+        public IEnumerable<ProductModel> GetAll() => _products;
+
+        public ProductModel GetByCode(string productCode) =>
+            _products.FirstOrDefault(p => p.ProductCode == productCode);
     }
 
-    // Domain tarafı için basit bir model
-    public class DomainProduct
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public decimal Price { get; set; }
-        public string LocationCode { get; set; }
-    }
 }

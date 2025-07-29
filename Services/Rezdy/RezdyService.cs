@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using TourManagementApi.Models;
 using Microsoft.Extensions.Logging;
 
-namespace TourManagementApi.Services
+namespace TourManagementApi.Services.Rezdy
 {
     public class RezdyService
     {
@@ -93,7 +93,7 @@ namespace TourManagementApi.Services
             var body = new
             {
                 eventName = @event,
-                url = url
+                url
             };
             var req = new HttpRequestMessage(HttpMethod.Post, $"{_settings.BaseUrl}/v1/webhooks")
             {
