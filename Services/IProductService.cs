@@ -4,8 +4,8 @@ namespace TourManagementApi.Services
 {
     public interface IProductService
     {
-        IEnumerable<ProductModel> GetAll();
-        ProductModel GetByCode(string productCode);
+        List<ProductResponseModel> GetAll();
+        ProductResponseModel GetByCode(string productCode);
     }
 
 }

@@ -14,76 +14,72 @@ namespace TourManagementApi.Services
                 _context = context;
             }
 
-            public async Task OnBookingCreatedAsync(BookingDto booking)
+        public async Task<bool> ConfirmReservationAsync(string orderNumber)
+        {
+            var reservation = await _context.Reservations
+                .FirstOrDefaultAsync(r => r.PartnerBookingId == orderNumber && r.Status == "Processing");
+
+            if (reservation == null)
+                return false;
+
+            reservation.Status = "Confirmed";
+            reservation.ReservationDate = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<BookingDto> CreateProcessingReservationAsync(BookingDto booking)
+        {
+            var activityId = int.Parse(booking.ProductCode); // Doğrudan BookingDto içinden geliyor
+
+            var reservation = new Reservation
             {
-                var activityId = int.Parse(booking.ProductCode); // Ürün kodu ID olarak varsayılıyor
-                var reservation = new Reservation
+                ActivityId = activityId,
+                OptionId = _context.Options.FirstOrDefault(x => x.ActivityId == activityId)?.Id ?? 0,
+                ReservationDate = DateTime.UtcNow,
+                ScheduledDate = booking.StartTime,
+                TotalAmount = booking.TotalAmount,
+                Currency = booking.Currency, // ✨ Corrected
+                GuestCount = booking.Participants.Count,
+                ContactName = booking.Customer.FullName,
+                ContactEmail = booking.Customer.Email,
+                ContactPhone = booking.Customer.Phone,
+                Status = "Processing",
+                BookingId = booking.OrderNumber,
+                PartnerBookingId = booking.OrderNumber,
+                PartnerSupplierId = booking.SupplierId,
+                CreatedAt = DateTime.UtcNow,
+                IsCancelled = false
+            };
+
+            _context.Reservations.Add(reservation);
+            await _context.SaveChangesAsync();
+
+            foreach (var participant in booking.Participants)
+            {
+                var guest = new ReservationGuest
                 {
-                    ActivityId = activityId,
-                    OptionId = _context.Options.FirstOrDefault(x => x.ActivityId == activityId)?.Id ?? 0,
-                    ReservationDate = DateTime.UtcNow,
-                    ScheduledDate = booking.StartTime,
-                    TotalAmount = booking.TotalAmount,
-                    Currency = booking.Currency,
-                    GuestCount = booking.Participants.Count,
-                    ContactName = booking.Customer.FullName,
-                    ContactEmail = booking.Customer.Email,
-                    ContactPhone = booking.Customer.Phone,
-                    Status = "Confirmed",
-                    ExperienceBankBookingId = booking.OrderNumber,
-                    PartnerBookingId = booking.OrderNumber,
-                    PartnerSupplierId = booking.SupplierId,
-                    CreatedAt = DateTime.UtcNow,
-                    IsCancelled = false
+                    ReservationId = reservation.Id,
+                    FirstName = participant.FirstName,
+                    LastName = participant.LastName,
+                    Email = participant.Email,
+                    PhoneNumber = participant.Phone,
+                    TicketCategory = participant.TicketCategory,
+                    Occupancy = 1,
+                    AdditionalFieldsJson = "{}",
+                    AddonsJson = "[]",
+                    GuestName = $"{participant.FirstName} {participant.LastName}",
+                    Age = 0,
+                    TicketId = Guid.NewGuid().ToString()
                 };
 
-                _context.Reservations.Add(reservation);
-                await _context.SaveChangesAsync();
-
-                foreach (var participant in booking.Participants)
-                {
-                    var guest = new ReservationGuest
-                    {
-                        ReservationId = reservation.Id,
-                        FirstName = participant.FirstName,
-                        LastName = participant.LastName,
-                        Email = participant.Email,
-                        PhoneNumber = participant.Phone,
-                        TicketCategory = participant.TicketCategory,
-                        Occupancy = 1,
-                        AdditionalFieldsJson = "{}",
-                        AddonsJson = "[]",
-                        GuestName = $"{participant.FirstName} {participant.LastName}",
-                        Age = 0,
-                        TicketId = Guid.NewGuid().ToString()
-                    };
-
-                    _context.ReservationGuests.Add(guest);
-                }
-
-                await _context.SaveChangesAsync();
+                _context.ReservationGuests.Add(guest);
             }
 
-            public async Task OnBookingUpdatedAsync(BookingDto booking)
-            {
-                // Basit örnek: İleride rezervasyon güncellemesi yapılabilir.
-                await Task.CompletedTask;
-            }
+            await _context.SaveChangesAsync();
 
-            public async Task OnBookingCancelledAsync(string orderNumber)
-            {
-                var reservation = await _context.Reservations
-                    .FirstOrDefaultAsync(r => r.PartnerBookingId == orderNumber);
-
-                if (reservation != null)
-                {
-                    reservation.IsCancelled = true;
-                    reservation.CancelledAt = DateTime.UtcNow;
-                    reservation.Status = "Cancelled";
-
-                    await _context.SaveChangesAsync();
-                }
-            }
+            return booking;
+        }
 
 
 
@@ -103,7 +99,7 @@ namespace TourManagementApi.Services
                 ContactPhone = request.ContactPhone,
                 Status = "Confirmed",
                 CreatedAt = DateTime.UtcNow,
-                ExperienceBankBookingId = Guid.NewGuid().ToString(),
+                BookingId = Guid.NewGuid().ToString(),
                 PartnerBookingId = request.BookingReference,
                 PartnerSupplierId = request.SupplierId,
                 Notes = request.Notes ?? "",
@@ -121,22 +117,22 @@ namespace TourManagementApi.Services
             };
         }
 
-        public bool Cancel(string bookingReference, string reason)
+        public async Task<bool> CancelReservationAsync(string orderNumber, string status = "CANCELLED")
         {
-            var reservation = _context.Reservations
-                .FirstOrDefault(r => r.PartnerBookingId == bookingReference);
+            var reservation = await _context.Reservations
+                .FirstOrDefaultAsync(r => r.PartnerBookingId == orderNumber);
 
             if (reservation == null)
                 return false;
 
+            reservation.Status = status;
             reservation.IsCancelled = true;
             reservation.CancelledAt = DateTime.UtcNow;
-            reservation.CancelNote = reason;
-            reservation.Status = "Cancelled";
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return true;
         }
+
     }
-    }
+}
 

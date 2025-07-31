@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using System.Text;
 using TourManagementApi.Data;
 
 namespace TourManagementApi.Services
@@ -28,17 +30,16 @@ namespace TourManagementApi.Services
             {
                 var rezdyPayload = new
                 {
-                    productCode = activity.Id.ToString(), // veya özel code alanı
+                    productCode = activity.Id.ToString(),
                     name = activity.Title,
                     description = activity.Description,
                     durationMinutes = activity.Duration,
                     status = activity.Status,
                     label = activity.Label,
                     supplierId = activity.PartnerSupplierId,
-                    // diğer alanlar da burada hazırlanabilir
                 };
 
-                var request = new HttpRequestMessage(HttpMethod.Post, "https://api.rezdy.com/v1/products")
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://app.rezdy-staging.com/v1/products")
                 {
                     Content = JsonContent.Create(rezdyPayload)
                 };
@@ -49,6 +50,64 @@ namespace TourManagementApi.Services
                 response.EnsureSuccessStatusCode();
             }
         }
+
+        public async Task TriggerProductUpdateNotificationAsync(string rezdyProductCode, string externalProductCode)
+        {
+            var payload = new
+            {
+                productCode = rezdyProductCode,
+                externalProductCode = externalProductCode,
+                importFeatures = new
+                {
+                    basicDetails = true,
+                    pricing = true,
+                    availability = true,
+                    images = true,
+                    locations = true
+                }
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, $"https://app.rezdy-staging.com/rc/product/update?apiKey={_configuration["Rezdy:ApiKey"]}")
+            {
+                Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json")
+            };
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                // TODO: logla
+                throw new Exception($"Rezdy product update notification failed: {response.StatusCode} - {error}");
+            }
+        }
+
+        public async Task TriggerAvailabilityUpdateNotificationAsync(string rezdyProductCode, string externalProductCode, DateTime fromUtc, DateTime toUtc)
+        {
+            var payload = new
+            {
+                productCode = rezdyProductCode,
+                externalProductCode = externalProductCode,
+                from = fromUtc.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                to = toUtc.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, $"https://app.rezdy-staging.com/rc/availability/update?apiKey={_configuration["Rezdy:ApiKey"]}")
+            {
+                Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json")
+            };
+
+            var response = await _httpClient.SendAsync(request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                // Logla veya hata yönetimini tetikle
+                throw new Exception($"Rezdy availability update notification failed: {response.StatusCode} - {error}");
+            }
+        }
+
     }
+
 
 }

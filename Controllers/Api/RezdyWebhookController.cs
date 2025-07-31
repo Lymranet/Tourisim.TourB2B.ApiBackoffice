@@ -12,6 +12,7 @@ namespace TourManagementApi.Controllers
     /// </summary>
     [Route("api/webhooks/rezdy")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "rezdy")]
     public class RezdyWebhookController : ControllerBase
     {
         private readonly BookingService _bookingService;

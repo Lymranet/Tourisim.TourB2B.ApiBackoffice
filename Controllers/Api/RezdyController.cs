@@ -7,6 +7,7 @@ namespace TourManagementApi.Controllers
 {
     [Route("api/rezdy")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "rezdy")]
     public class RezdyController : ControllerBase
     {
         private readonly RezdyService _rezdy;

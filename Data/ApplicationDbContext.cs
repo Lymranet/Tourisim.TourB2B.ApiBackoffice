@@ -201,12 +201,12 @@ public partial class ApplicationDbContext : DbContext
         {
             entity.HasIndex(e => e.ActivityId, "IX_Reservations_ActivityId");
 
-            entity.HasIndex(e => e.ExperienceBankBookingId, "IX_Reservations_ExperienceBankBookingId").IsUnique();
+            entity.HasIndex(e => e.BookingId, "IX_Reservations_ExperienceBankBookingId").IsUnique();
 
             entity.HasIndex(e => e.OptionId, "IX_Reservations_OptionId");
 
             entity.Property(e => e.CancelledAt).HasColumnType("datetime");
-            entity.Property(e => e.ExperienceBankBookingId).HasDefaultValue("");
+            entity.Property(e => e.BookingId).HasDefaultValue("");
             entity.Property(e => e.MarketplaceBookingId).HasDefaultValue("");
             entity.Property(e => e.MarketplaceId).HasDefaultValue("");
             entity.Property(e => e.Notes).HasDefaultValue("");

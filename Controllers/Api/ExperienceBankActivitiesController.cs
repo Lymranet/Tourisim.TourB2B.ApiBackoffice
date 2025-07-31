@@ -9,6 +9,7 @@ using TourManagementApi.Models.ViewModels;
 namespace TourManagementApi.Controllers.Api
 {
     [Route("supplier/12004/activities")]
+    [ApiExplorerSettings(GroupName = "experiencebank")]
     [ApiController]
     public class ExperienceBankActivitiesController : ControllerBase
     {

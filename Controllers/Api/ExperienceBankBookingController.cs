@@ -7,6 +7,7 @@ using TourManagementApi.Models.Api;
 namespace TourManagementApi.Controllers.Api
 {
     [Route("supplier/12004/booking")]
+    [ApiExplorerSettings(GroupName = "experiencebank")]
     [ApiController]
     public class ExperienceBankBookingController : ControllerBase
     {
@@ -26,7 +27,7 @@ namespace TourManagementApi.Controllers.Api
 
             var bookingExists = await _context.Reservations
                 .Include(b => b.Tickets)
-                .FirstOrDefaultAsync(b => b.ExperienceBankBookingId == request.Data.BookingId);
+                .FirstOrDefaultAsync(b => b.BookingId == request.Data.BookingId);
 
             if (bookingExists != null)
             {
@@ -52,7 +53,7 @@ namespace TourManagementApi.Controllers.Api
             var newBooking = new Reservation
             {
                 PartnerSupplierId = partnerSupplierId,
-                ExperienceBankBookingId = request.Data.BookingId,
+                BookingId = request.Data.BookingId,
                 ContactName = request.Data.Contact.FullName,
                 ContactEmail = request.Data.Contact.Email,
                 ContactPhone = request.Data.Contact.PhoneNumber,

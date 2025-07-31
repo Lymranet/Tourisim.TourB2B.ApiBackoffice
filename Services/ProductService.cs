@@ -36,10 +36,39 @@ namespace TourManagementApi.Services
         }
     };
 
-        public IEnumerable<ProductModel> GetAll() => _products;
 
-        public ProductModel GetByCode(string productCode) =>
-            _products.FirstOrDefault(p => p.ProductCode == productCode);
+        public List<ProductResponseModel> GetAll()
+        {
+            return new List<ProductResponseModel>
+        {
+            new ProductResponseModel
+            {
+                ProductCode = "P123XY",
+                ExternalCode = "MYLOCAL123",
+                Title = "Sunset Cruise Tour",
+                Description = "Enjoy a relaxing evening at sea.",
+                BookingMode = "INVENTORY",
+                BarcodeType = "CODE_128",
+                BarcodeOutputType = "PARTICIPANT",
+                BookingFields = new List<BookingField>
+                {
+                    new BookingField
+                    {
+                        Label = "First Name",
+                        FieldType = "String",
+                        RequiredPerBooking = true,
+                        RequiredPerParticipant = false,
+                        VisiblePerBooking = true,
+                        VisiblePerParticipant = true
+                    }
+                }
+            }
+        };
+        }
+
+        public ProductResponseModel? GetByCode(string productCode)
+        {
+            return GetAll().FirstOrDefault(p => p.ProductCode == productCode);
+        }
     }
-
 }
