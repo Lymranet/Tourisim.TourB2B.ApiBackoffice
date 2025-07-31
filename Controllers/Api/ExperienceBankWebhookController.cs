@@ -13,6 +13,7 @@ namespace TourManagementApi.Controllers.Api
     }
 
     [Route("api/webhooks/experiencebank")]
+    [ApiExplorerSettings(GroupName = "experiencebank")]
     [ApiController]
     public class ExperienceBankWebhookController : ControllerBase
     {

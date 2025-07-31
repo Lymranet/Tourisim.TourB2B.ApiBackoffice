@@ -31,7 +31,7 @@ public partial class Reservation
 
     public DateTime CreatedAt { get; set; }
 
-    public string ExperienceBankBookingId { get; set; } = null!;
+    public string BookingId { get; set; } = null!;
 
     public string MarketplaceBookingId { get; set; } = null!;
 

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Net.Http.Headers;
 using TourManagementApi.Data;
@@ -28,11 +30,31 @@ builder.Services.AddEndpointsApiExplorer();
 // Configure Swagger
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "Tour Management API", 
+    c.SwaggerDoc("rezdy", new OpenApiInfo
+    {
+        Title = "RezdyConnect API",
         Version = "v1",
-        Description = "API for managing tours and activities"
+        Description = "Rezdy Channel Manager entegrasyonu için endpointler"
+    });
+
+    c.SwaggerDoc("experiencebank", new OpenApiInfo
+    {
+        Title = "ExperienceBank API",
+        Version = "v1",
+        Description = "ExperienceBank entegrasyonu için endpointler"
+    });
+
+    c.DocInclusionPredicate((documentName, apiDesc) =>
+    {
+        if (!apiDesc.TryGetMethodInfo(out var methodInfo))
+            return false;
+
+        var groupName = methodInfo.DeclaringType?
+            .GetCustomAttributes(typeof(ApiExplorerSettingsAttribute), true)
+            .Cast<ApiExplorerSettingsAttribute>()
+            .FirstOrDefault()?.GroupName;
+
+        return groupName == documentName;
     });
 });
 
@@ -92,10 +114,11 @@ builder.Services.AddScoped<ExperienceBankService>();
 builder.Services.AddScoped<AuthorizationHeaderHelper>();
 
 // REZDY CONNECTION
-builder.Services.AddSingleton<IProductService, TourManagementApi.Services.ProductService>();
-builder.Services.AddSingleton<AvailabilityService>();
-builder.Services.AddSingleton<PricingService>();
-builder.Services.AddSingleton<TourManagementApi.Services.BookingService>();
+builder.Services.AddScoped<IProductService, TourManagementApi.Services.ProductService>();
+builder.Services.AddScoped<AvailabilityService>();
+builder.Services.AddScoped<PricingService>();
+builder.Services.AddScoped<TourManagementApi.Services.BookingService>();
+
 
 // <<< Rezdy Integration <<<
 // 1. Rezdy ayarlarını appsettings.json’dan okumaca:
@@ -174,7 +197,8 @@ else
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tour Management API V1");
+    c.SwaggerEndpoint("/swagger/rezdy/swagger.json", "RezdyConnect API");
+    c.SwaggerEndpoint("/swagger/experiencebank/swagger.json", "ExperienceBank API");
     c.RoutePrefix = "swagger";
 });
 

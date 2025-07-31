@@ -6,6 +6,7 @@ using TourManagementApi.Models.Api;
 namespace TourManagementApi.Controllers.Api
 {
     [Route("supplier/12004/availabilities")]
+    [ApiExplorerSettings(GroupName = "experiencebank")]
     [ApiController]
     public class ExperienceBankAvailabilitiesController : ControllerBase
     {

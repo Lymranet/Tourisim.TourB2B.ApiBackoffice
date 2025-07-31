@@ -8,6 +8,7 @@ namespace TourManagementApi.Controllers.Api
 {
     [ApiController]
     [Route("supplier/12004/booking/{bookingId}/cancellation")]
+    [ApiExplorerSettings(GroupName = "experiencebank")]
     public class BookingCancellationController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -31,7 +32,7 @@ namespace TourManagementApi.Controllers.Api
        [FromBody] CancelBookingRequest request)
         {
             var reservation = await _context.Reservations
-                .FirstOrDefaultAsync(r => r.ExperienceBankBookingId == bookingId);
+                .FirstOrDefaultAsync(r => r.BookingId == bookingId);
 
             if (reservation == null)
             {
@@ -60,7 +61,7 @@ namespace TourManagementApi.Controllers.Api
 
                 try
                 {
-                    await _experienceBankService.NotifyBookingCancelledAsync(reservation.ExperienceBankBookingId);
+                    await _experienceBankService.NotifyBookingCancelledAsync(reservation.BookingId);
                 }
                 catch (Exception ex)
                 {
