@@ -107,4 +107,6 @@ public partial class Activity
     public virtual TourCompany? TourCompany { get; set; }
 
     public virtual ICollection<Translation> Translations { get; set; } = new List<Translation>();
+
+
 }

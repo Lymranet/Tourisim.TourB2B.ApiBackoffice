@@ -1,0 +1,429 @@
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class Activity
+{
+    public int Id { get; set; }
+
+    public string Title { get; set; } = null!;
+
+    public string Description { get; set; } = null!;
+
+    public string Category { get; set; } = null!;
+
+    public int Duration { get; set; }
+
+    public string? ContactInfoName { get; set; }
+
+    public string? ContactInfoEmail { get; set; }
+
+    public string? ContactInfoPhone { get; set; }
+
+    public string? ContactInfoRole { get; set; }
+
+    public string Status { get; set; } = null!;
+
+    public double Rating { get; set; }
+
+    public string? MediaVideos { get; set; }
+
+    public DateTime CreatedAt { get; set; }
+
+    public DateTime UpdatedAt { get; set; }
+
+    public bool? ContactInfoIsNull { get; set; }
+
+    public string CountryCode { get; set; } = null!;
+
+    public string DestinationCode { get; set; } = null!;
+
+    public string DestinationName { get; set; } = null!;
+
+    public string Exclusions { get; set; } = null!;
+
+    public string? Highlights { get; set; }
+
+    public string ImportantInfo { get; set; } = null!;
+
+    public string Inclusions { get; set; } = null!;
+
+    public bool IsActive { get; set; }
+
+    public string? Itinerary { get; set; }
+
+    public int? TotalRatingCount { get; set; }
+
+    public string? CoverImage { get; set; }
+
+    public string? GalleryImages { get; set; }
+
+    public string? PreviewImage { get; set; }
+
+    public string ExclusionsJson { get; set; } = null!;
+
+    public string GuestFieldsJson { get; set; } = null!;
+
+    public string ImportantInfoJson { get; set; } = null!;
+
+    public string InclusionsJson { get; set; } = null!;
+
+    public string GuestFields { get; set; } = null!;
+
+    public string? DetailsUrl { get; set; }
+
+    public string? B2BAgencyId { get; set; }
+
+
+    public string? PartnerSupplierId { get; set; }
+
+    public string Label { get; set; } = null!;
+
+    public bool? IsFreeCancellation { get; set; }
+
+    public int? TourCompanyId { get; set; }
+
+    public virtual ICollection<ActivityLanguage> ActivityLanguages { get; set; } = new List<ActivityLanguage>();
+
+    public virtual ICollection<Addon> Addons { get; set; } = new List<Addon>();
+
+    public virtual ICollection<Availability> Availabilities { get; set; } = new List<Availability>();
+
+    public virtual ICollection<CancellationPolicyCondition> CancellationPolicyConditions { get; set; } = new List<CancellationPolicyCondition>();
+
+    public virtual ICollection<MeetingPoint> MeetingPoints { get; set; } = new List<MeetingPoint>();
+
+    public virtual ICollection<Option> Options { get; set; } = new List<Option>();
+
+    public virtual ICollection<PriceCategory> PriceCategories { get; set; } = new List<PriceCategory>();
+
+    public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+
+    public virtual ICollection<RoutePoint> RoutePoints { get; set; } = new List<RoutePoint>();
+
+    public virtual ICollection<TimeSlot> TimeSlots { get; set; } = new List<TimeSlot>();
+
+    public virtual TourCompany? TourCompany { get; set; }
+
+    public virtual ICollection<Translation> Translations { get; set; } = new List<Translation>();
+
+
+}
+
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class ActivityLanguage
+{
+    public int Id { get; set; }
+
+    public int ActivityId { get; set; }
+
+    public string LanguageCode { get; set; } = null!;
+
+    public virtual Activity Activity { get; set; } = null!;
+}
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class Addon
+{
+    public int Id { get; set; }
+
+    public int ActivityId { get; set; }
+
+    public string Title { get; set; } = null!;
+
+    public string Type { get; set; } = null!;
+
+    public string? Description { get; set; }
+
+    public decimal PriceAmount { get; set; }
+
+    public string Currency { get; set; } = null!;
+
+    public virtual Activity Activity { get; set; } = null!;
+
+    public virtual ICollection<AddonTranslation> AddonTranslations { get; set; } = new List<AddonTranslation>();
+}
+
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class AddonTranslation
+{
+    public int Id { get; set; }
+
+    public int AddonId { get; set; }
+
+    public string Language { get; set; } = null!;
+
+    public string Title { get; set; } = null!;
+
+    public string? Description { get; set; }
+
+    public virtual Addon Addon { get; set; } = null!;
+}
+
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class Availability
+{
+    public int Id { get; set; }
+
+    public string PartnerSupplierId { get; set; } = null!;
+
+    public int ActivityId { get; set; }
+
+    public int OptionId { get; set; }
+
+    public DateOnly Date { get; set; }
+
+    public DateTimeOffset? StartTime { get; set; }
+
+    public int AvailableCapacity { get; set; }
+
+    public int MaximumCapacity { get; set; }
+
+    public virtual Activity Activity { get; set; } = null!;
+
+    public virtual Option Option { get; set; } = null!;
+
+    public virtual ICollection<TicketCategoryCapacity> TicketCategoryCapacities { get; set; } = new List<TicketCategoryCapacity>();
+}
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class TicketCategoryCapacity
+{
+    public int Id { get; set; }
+
+    public int AvailabilityId { get; set; }
+
+    public int TicketCategoryId { get; set; }
+
+    public int? Capacity { get; set; }
+
+    public virtual Availability Availability { get; set; } = null!;
+
+    public virtual TicketCategory TicketCategory { get; set; } = null!;
+}
+
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class CancellationPolicyCondition
+{
+    public int Id { get; set; }
+
+    public int ActivityId { get; set; }
+
+    public int MinDurationBeforeStartTimeSec { get; set; }
+
+    public int RefundPercentage { get; set; }
+
+    public bool IsFreeCancellation { get; set; }
+
+    public virtual Activity Activity { get; set; } = null!;
+}
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class MeetingPoint
+{
+    public int ActivityId { get; set; }
+
+    public int Id { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public string Latitude { get; set; } = null!;
+
+    public string Longitude { get; set; } = null!;
+
+    public string Address { get; set; } = null!;
+
+    public virtual Activity Activity { get; set; } = null!;
+}
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class Option
+{
+    public int Id { get; set; }
+
+    public int ActivityId { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public string StartTime { get; set; } = null!;
+
+    public int CutOff { get; set; }
+
+    public string Weekdays { get; set; } = null!;
+
+    public bool CanBeBookedAfterStartTime { get; set; }
+
+    public string Duration { get; set; } = null!;
+
+    public DateTime FromDate { get; set; }
+
+    public DateTime UntilDate { get; set; }
+
+    public string? EndTime { get; set; }
+
+    public virtual Activity Activity { get; set; } = null!;
+
+    public virtual ICollection<Availability> Availabilities { get; set; } = new List<Availability>();
+
+    public virtual ICollection<OpeningHour> OpeningHours { get; set; } = new List<OpeningHour>();
+
+    public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
+
+    public virtual ICollection<TicketCategory> TicketCategories { get; set; } = new List<TicketCategory>();
+}
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class Availability
+{
+    public int Id { get; set; }
+
+    public string PartnerSupplierId { get; set; } = null!;
+
+    public int ActivityId { get; set; }
+
+    public int OptionId { get; set; }
+
+    public DateOnly Date { get; set; }
+
+    public DateTimeOffset? StartTime { get; set; }
+
+    public int AvailableCapacity { get; set; }
+
+    public int MaximumCapacity { get; set; }
+
+    public virtual Activity Activity { get; set; } = null!;
+
+    public virtual Option Option { get; set; } = null!;
+
+    public virtual ICollection<TicketCategoryCapacity> TicketCategoryCapacities { get; set; } = new List<TicketCategoryCapacity>();
+}
+
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class OpeningHour
+{
+    public int Id { get; set; }
+
+    public string FromTime { get; set; } = null!;
+
+    public string ToTime { get; set; } = null!;
+
+    public int OptionId { get; set; }
+
+    public virtual Option Option { get; set; } = null!;
+}
+
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class TicketCategory
+{
+    public int Id { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public int MinSeats { get; set; }
+
+    public int MaxSeats { get; set; }
+
+    public decimal Amount { get; set; }
+
+    public string Currency { get; set; } = null!;
+
+    public string PriceType { get; set; } = null!;
+
+    public string Type { get; set; } = null!;
+
+    public int? MinAge { get; set; }
+
+    public int? MaxAge { get; set; }
+
+    public int OptionId { get; set; }
+
+    public virtual Option Option { get; set; } = null!;
+
+    public virtual ICollection<TicketCategoryCapacity> TicketCategoryCapacities { get; set; } = new List<TicketCategoryCapacity>();
+}
+
+public partial class RoutePoint
+{
+    public int ActivityId { get; set; }
+
+    public int Id { get; set; }
+
+    public string Name { get; set; } = null!;
+
+    public string Latitude { get; set; } = null!;
+
+    public string Longitude { get; set; } = null!;
+
+    public virtual Activity Activity { get; set; } = null!;
+}
+
+
+
+namespace TourManagementApi.Models;
+
+public partial class Translation
+{
+    public int Id { get; set; }
+
+    public int ActivityId { get; set; }
+
+    public string Language { get; set; } = null!;
+
+    public string Title { get; set; } = null!;
+
+    public string Description { get; set; } = null!;
+
+    public string Label { get; set; } = null!;
+
+    public string? Highlights { get; set; }
+
+    public string? Itinerary { get; set; }
+
+    public string InclusionsJson { get; set; } = null!;
+
+    public string ExclusionsJson { get; set; } = null!;
+
+    public string ImportantInfoJson { get; set; } = null!;
+
+    public virtual Activity Activity { get; set; } = null!;
+}

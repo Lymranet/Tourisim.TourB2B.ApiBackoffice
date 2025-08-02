@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace TourManagementApi.Models.Api
+namespace TourManagementApi.Models.Api.Rezdy
 {
     /// <summary>
     /// All possible error codes returned in Rezdy’s requestStatus.error.errorCode
@@ -44,8 +44,6 @@ namespace TourManagementApi.Models.Api
         REZDYCONNECT_EXTERNAL_SYSTEM = 33,
         OTHER_OPERATION_IN_PROGRESS = 34
     }
-
-
     public class CustomerDto
     {
         [JsonProperty("firstName")]
@@ -61,7 +59,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("email", NullValueHandling = NullValueHandling.Ignore)]
         public string Email { get; set; }
     }
-
     public class BookingItemDto
     {
         [JsonProperty("productCode")]
@@ -76,7 +73,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("quantities")]
         public QuantityDto[] Quantities { get; set; }
     }
-
     public class QuantityDto
     {
         [JsonProperty("optionLabel")]
@@ -85,7 +81,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("value")]
         public int Value { get; set; }
     }
-
     public class PaymentDto
     {
         [JsonProperty("amount")]
@@ -100,10 +95,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("label", NullValueHandling = NullValueHandling.Ignore)]
         public string Label { get; set; }
     }
-
-
-
-
     public class AvailabilityResponse
     {
         [JsonProperty("requestStatus")]
@@ -112,7 +103,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("sessions")]
         public AvailabilitySession[] Sessions { get; set; }
     }
-
     public class AvailabilitySession
     {
         [JsonProperty("id")]
@@ -145,7 +135,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("priceOptions")]
         public AvailabilityPriceOption[] PriceOptions { get; set; }
     }
-
     public class AvailabilityPriceOption
     {
         [JsonProperty("price")]
@@ -186,7 +175,6 @@ namespace TourManagementApi.Models.Api
             }
         }
     }
-
     public class RezdyErrorDetail
     {
         [JsonProperty("errorCode")]
@@ -195,7 +183,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("errorMessage")]
         public string ErrorMessage { get; set; }
     }
-
     public class PaginatedResponse<T>
     {
         [JsonProperty("requestStatus")]
@@ -204,7 +191,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("responseData")]
         public PaginatedData<T> ResponseData { get; set; }
     }
-
     public class PaginatedData<T>
     {
         [JsonProperty("items")]
@@ -219,7 +205,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("total")]
         public int Total { get; set; }
     }
-
     public class ProductCreateRequest
     {
         [JsonProperty("name")]
@@ -234,7 +219,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("locations")]
         public Location[] Locations { get; set; }
     }
-
     public class BookingUpdateRequest
     {
         [JsonProperty("comments")]
@@ -297,7 +281,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("barcodeType")]
         public string BarcodeType { get; set; }
     }
-
     public class CustomerUpdateDto
     {
         [JsonProperty("id")]
@@ -322,7 +305,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("locationName")]
         public string LocationName { get; set; }
     }
-
     public class QuantityDetailDto
     {
         [JsonProperty("optionLabel")]
@@ -334,7 +316,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("value")]
         public int Value { get; set; }
     }
-
     public class ExtraDto
     {
         // Example: { name, description, price, extraPriceType }
@@ -350,13 +331,11 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("extraPriceType")]
         public string ExtraPriceType { get; set; }
     }
-
     public class ParticipantDetailDto
     {
         [JsonProperty("fields")]
         public BookingFieldUpdate[] Fields { get; set; }
     }
-
     public class PaymentDetailDto
     {
         [JsonProperty("type")]
@@ -377,7 +356,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("recipient")]
         public string Recipient { get; set; }
     }
-
     public class VoucherDto
     {
         // Rezdy dokümanında voucher içeriği boş bir dizi olarak gelmiş
@@ -385,8 +363,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("code")]
         public string Code { get; set; }
     }
-
-
     public class BookingUpdateItemDto
     {
         [JsonProperty("pickupLocation")]
@@ -428,9 +404,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("subtotal")]
         public decimal Subtotal { get; set; }
     }
-
-
-
     public class BookingFieldUpdate
     {
         [JsonProperty("label")]
@@ -439,7 +412,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("value")]
         public string Value { get; set; }
     }
-
     public class ImageUploadResponse
     {
         [JsonProperty("code")]
@@ -451,7 +423,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("responseData")]
         public ImageUploadResponseData ResponseData { get; set; }
     }
-
     public class ImageUploadResponseData
     {
         [JsonProperty("imageId")]
@@ -476,13 +447,11 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("responseData")]
         public ProductResponseData ResponseData { get; set; }
     }
-
     public class ProductResponseData
     {
         [JsonProperty("product")]
         public ProductDetail Product { get; set; }
     }
-
     public class ProductDetail
     {
         [JsonProperty("productType")]
@@ -490,7 +459,6 @@ namespace TourManagementApi.Models.Api
 
         [JsonProperty("name")]
         public string Name { get; set; }
-
         [JsonProperty("shortDescription")]
         public string ShortDescription { get; set; }
 
@@ -605,7 +573,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("isApiBookingSupported")]
         public bool IsApiBookingSupported { get; set; }
     }
-
     public class PriceOption
     {
         [JsonProperty("price")]
@@ -626,7 +593,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("priceType")]
         public string PriceType { get; set; }
     }
-
     public class ImageDetail
     {
         [JsonProperty("id")]
@@ -644,7 +610,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("largeSizeUrl")]
         public string LargeSizeUrl { get; set; }
     }
-
     public class Extra
     {
         [JsonProperty("name")]
@@ -659,7 +624,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("extraPriceType")]
         public string ExtraPriceType { get; set; }
     }
-
     public class BookingFieldDefinition
     {
         [JsonProperty("label")]
@@ -683,7 +647,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("listOptions")]
         public string ListOptions { get; set; }
     }
-
     public class LocationAddress
     {
         [JsonProperty("addressLine")]
@@ -707,7 +670,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("longitude")]
         public double Longitude { get; set; }
     }
-
     public class BookingCreateRequest
     {
         [JsonProperty("productCode")]
@@ -737,7 +699,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("participants")]
         public ParticipantUpdate[] Participants { get; set; }
     }
-
     public class BookingResponse
     {
         [JsonProperty("requestStatus")]
@@ -746,7 +707,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("responseData")]
         public BookingResponseData ResponseData { get; set; }
     }
-
     public class BookingResponseData
     {
         [JsonProperty("orderNumber")]
@@ -755,7 +715,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("booking")]
         public BookingDto Booking { get; set; }
     }
-
     public class BookingDto
     {
         [JsonProperty("orderNumber")]
@@ -782,8 +741,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("participants")]
         public ParticipantUpdate[] Participants { get; set; }
     }
-
-
     public class ParticipantUpdate
     {
         [JsonProperty("participantIndex")]
@@ -792,7 +749,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("fields")]
         public BookingFieldUpdate[] Fields { get; set; }
     }
-
     public class CancelBookingResponse
     {
         [JsonProperty("requestStatus")]
@@ -801,12 +757,10 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("responseData")]
         public object ResponseData { get; set; }
     }
-
     public class RateLimitExceededException : Exception
     {
         public RateLimitExceededException(string message) : base(message) { }
     }
-
     public class RezdyApiException : Exception
     {
         public RezdyErrorCode ErrorCode { get; }
@@ -817,7 +771,6 @@ namespace TourManagementApi.Models.Api
             ErrorCode = errorCode;
         }
     }
-
     public class AvailabilityRequest
     {
         [JsonProperty("productCode")]
@@ -826,7 +779,6 @@ namespace TourManagementApi.Models.Api
         [JsonProperty("sessions")]
         public Session[] Sessions { get; set; }
     }
-
     public class Session
     {
         [JsonProperty("date")]

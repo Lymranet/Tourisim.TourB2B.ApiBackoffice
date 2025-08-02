@@ -4,7 +4,7 @@ namespace TourManagementApi.Services
 {
     public interface IProductService
     {
-        List<ProductResponseModel> GetAll();
+        List<RezdyProductDto> GetAll();
         ProductResponseModel GetByCode(string productCode);
     }
 

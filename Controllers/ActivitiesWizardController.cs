@@ -106,11 +106,11 @@ namespace TourManagementApi.Controllers
         {
             try
             {
-                #if DEBUG
-                    Id = "96d2940f09674b0f81d86bc821c69ff6";
-                #endif
+#if DEBUG
+                Id = "96d2940f09674b0f81d86bc821c69ff6";
+#endif
 
-                if(string.IsNullOrEmpty(Id))
+                if (string.IsNullOrEmpty(Id))
                 {
                     // Eğer Id boşsa Session'dan oku
                     Id = HttpContext.Session.GetString("B2BAgencyId");
@@ -120,7 +120,7 @@ namespace TourManagementApi.Controllers
                     // Eğer Id geldiyse Session'a kaydet
                     HttpContext.Session.SetString("B2BAgencyId", Id);
                 }
-                var activities = _context.Activities.Where(a=>a.B2BAgencyId==Id)
+                var activities = _context.Activities.Where(a => a.B2BAgencyId == Id)
                     .Include(a => a.Options)
                     .Include(a => a.TourCompany)
                    .Select(a => new ActivityBasicViewModel
@@ -246,10 +246,10 @@ namespace TourManagementApi.Controllers
             if (!ModelState.IsValid)
             {
                 model.TourCompanies = await _context.TourCompanies.OrderBy(tc => tc.CompanyName).Select(tc => new SelectListItem
-                   {
-                       Value = tc.Id.ToString(),
-                       Text = tc.CompanyName
-                   }).ToListAsync();
+                {
+                    Value = tc.Id.ToString(),
+                    Text = tc.CompanyName
+                }).ToListAsync();
 
                 return View(model);
             }
@@ -275,7 +275,7 @@ namespace TourManagementApi.Controllers
                 {
                     finalGalleryList.AddRange(model.ExistingGalleryImages);
                 }
-                activity.B2BAgencyId = agencyId;    
+                activity.B2BAgencyId = agencyId;
                 activity.Title = model.Title ?? string.Empty;
                 activity.Category = TxtJson.SerializeStringList(model.Categories?.Take(3).ToList() ?? new List<string>());
                 activity.Description = model.Description ?? string.Empty;
@@ -690,16 +690,16 @@ namespace TourManagementApi.Controllers
                 .ToListAsync();
 
             var allLanguages = new Dictionary<string, string>
-                {
-                    { "en", "İngilizce" },
-                    { "de", "Almanca" },
-                    { "fr", "Fransızca" },
-                    { "es", "İspanyolca" },
-                    { "it", "İtalyanca" },
-                    { "ru", "Rusça" },
-                    { "ar", "Arapça" },
-                    { "zh", "Çince" }
-                };
+            {
+                { "en", "en_us" }, // İngilizce - ABD İngilizcesi
+                { "de", "de_de" }, // Almanca - Almanya
+                { "fr", "fr_fr" }, // Fransızca - Fransa
+                { "es", "es_es" }, // İspanyolca - İspanya
+                { "it", "it_it" }, // İtalyanca - İtalya
+                { "ru", "ru_ru" }, // Rusça - Rusya
+                { "ar", "ar_ae" }, // Arapça - BAE (genel kullanım için)
+                { "zh", "zh_cn" }  // Çince - Çin (Basitleştirilmiş Çince)
+            };
 
             // Eğer düzenleme için geldiyse dil zaten eklenmiştir
             Dictionary<string, string> languageOptions = (languageCode != null)
@@ -922,7 +922,10 @@ namespace TourManagementApi.Controllers
                     ActivityId = model.ActivityId,
                     OptionId = model.OptionId,
                     Date = date,
-                    StartTime = new DateTimeOffset(DateTime.Today.Add(model.StartTime.ToTimeSpan())),
+                    StartTime = new DateTimeOffset(
+                        new DateTime(date.Year, date.Month, date.Day, model.StartTime.Hour, model.StartTime.Minute, model.StartTime.Second),
+                        TimeSpan.FromHours(3) // veya: TimeZoneInfo.Local.GetUtcOffset(...)
+                    ),
                     AvailableCapacity = model.AvailableCapacity,
                     MaximumCapacity = model.MaximumCapacity,
                     PartnerSupplierId = "12004",

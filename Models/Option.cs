@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TourManagementApi.Models.Api.RezdyConnectModels;
 
 namespace TourManagementApi.Models;
 
@@ -36,4 +37,9 @@ public partial class Option
     public virtual ICollection<Reservation> Reservations { get; set; } = new List<Reservation>();
 
     public virtual ICollection<TicketCategory> TicketCategories { get; set; } = new List<TicketCategory>();
+
+    internal RezdyProductDto ToRezdyDto(string? apiKey, string? baseImageUrl1, string? baseImageUrl2)
+    {
+        throw new NotImplementedException();
+    }
 }

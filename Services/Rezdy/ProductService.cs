@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using TourManagementApi.Models.Api;
+using TourManagementApi.Models.Api.Rezdy;
 
 namespace TourManagementApi.Services.Rezdy
 {

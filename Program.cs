@@ -207,27 +207,28 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
 // Frame Policy Middleware
-app.Use(async (context, next) =>
-{
-    var allowedOrigins = new[]
-    {
-        "https://b2b.hotelwidget.com",
-        "http://localhost:44392",
-        "https://tour.hotelwidget.com/"
-    };
+//app.Use(async (context, next) =>
+//{
+//    var allowedOrigins = new[]
+//    {
+//        "https://b2b.hotelwidget.com",
+//        "http://localhost:44392",
+//        "https://tour.hotelwidget.com/"
+//    };
 
-    context.Response.Headers.Remove("X-Frame-Options");
+//    context.Response.Headers.Remove("X-Frame-Options");
 
-    // Frame-ancestors policy'yi oluştur
-    var policy = $"frame-ancestors 'self' {string.Join(" ", allowedOrigins)}";
-    context.Response.Headers["Content-Security-Policy"] = policy;
+//    // Frame-ancestors policy'yi oluştur
+//    var policy = $"frame-ancestors 'self' {string.Join(" ", allowedOrigins)}";
+//    context.Response.Headers["Content-Security-Policy"] = policy;
 
-    await next();
-});
+//    await next();
+//});
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.UseStatusCodePages("text/plain", "Status Code: {0}");
 app.UseAuthorization();
-app.UseMiddleware<RequestHeaderValidationMiddleware>();
+//app.UseMiddleware<RequestHeaderValidationMiddleware>();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=ActivitiesWizard}/{action=Index}/{id?}");

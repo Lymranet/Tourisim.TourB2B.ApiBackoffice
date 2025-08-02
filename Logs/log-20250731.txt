@@ -1,0 +1,14 @@
+[2025-07-31 23:49:45 WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+[2025-07-31 23:49:45 ERR] Veritabanı güncellenirken bir hata oluştu.
+System.InvalidOperationException: An error was generated for warning 'Microsoft.EntityFrameworkCore.Migrations.PendingModelChangesWarning': The model for context 'ApplicationDbContext' has pending changes. Add a new migration before updating the database. See https://aka.ms/efcore-docs-pending-changes. This exception can be suppressed or logged by passing event ID 'RelationalEventId.PendingModelChangesWarning' to the 'ConfigureWarnings' method in 'DbContext.OnConfiguring' or 'AddDbContext'.
+   at Microsoft.EntityFrameworkCore.Diagnostics.EventDefinition`1.Log[TLoggerCategory](IDiagnosticsLogger`1 logger, TParam arg)
+   at Microsoft.EntityFrameworkCore.Diagnostics.RelationalLoggerExtensions.PendingModelChangesWarning(IDiagnosticsLogger`1 diagnostics, Type contextType)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.ValidateMigrations(Boolean useTransaction, String targetMigration)
+   at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.Migrate(String targetMigration)
+   at Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.Migrate(DatabaseFacade databaseFacade)
+   at Program.<Main>$(String[] args) in D:\TFS\Lymranet\Tourism\B2B\HotelWidget\TourManagement\Program.cs:line 160
+[2025-07-31 23:49:46 INF] User profile is available. Using 'C:\Users\OZKAN\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+[2025-07-31 23:49:46 INF] Now listening on: http://localhost:5050
+[2025-07-31 23:49:46 INF] Application started. Press Ctrl+C to shut down.
+[2025-07-31 23:49:46 INF] Hosting environment: Development
+[2025-07-31 23:49:46 INF] Content root path: D:\TFS\Lymranet\Tourism\B2B\HotelWidget\TourManagement
