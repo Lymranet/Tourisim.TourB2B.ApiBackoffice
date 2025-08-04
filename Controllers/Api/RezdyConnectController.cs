@@ -187,63 +187,283 @@ namespace TourManagementApi.Controllers.Api
             });
         }
 
-        [HttpPut("booking")]
-        public async Task<IActionResult> ConfirmBooking([FromQuery] string apiKey, [FromBody] RezdyBookingDto request)
+
+        [HttpPut("booking1")]
+        public async Task<IActionResult> ConfirmBookingNoResponse([FromQuery] string apiKey, [FromBody] RezdyBookingDto request)
         {
             if (apiKey != _validApiKey)
-                return Unauthorized("Invalid API Key");
+            {
+                return Unauthorized(new
+                {
+                    requestStatus = new { code = "401", message = "Invalid API Key" },
+                    error = new
+                    {
+                        errorCode = "RC_INVALID_API_KEY",
+                        errorMessage = "Provided API Key is not valid."
+                    }
+                });
+            }
 
             if (request.Status != "CONFIRMED")
-                return BadRequest(new { message = "Status must be CONFIRMED for confirmation call." });
+            {
+                return BadRequest(new
+                {
+                    requestStatus = new { code = "400", message = "Invalid request status" },
+                    error = new
+                    {
+                        errorCode = "RC_INVALID_DATA",
+                        errorMessage = "Status must be CONFIRMED for confirmation call.",
+                        fields = new[]
+                        {
+                    new {
+                        field = "Status",
+                        message = "Must be 'CONFIRMED'"
+                    }
+                }
+                    }
+                });
+            }
 
             var result = await _bookingService.ConfirmReservationAsync(request.OrderNumber);
 
             if (!result)
-                return NotFound(new { success = false, message = "Reservation not found or already confirmed." });
+            {
+                return NotFound(new
+                {
+                    requestStatus = new { code = "404", message = "Reservation not found or already confirmed." },
+                    error = new
+                    {
+                        errorCode = "RC_RESERVATION_NOT_FOUND",
+                        errorMessage = "Reservation not found or already confirmed."
+                    }
+                });
+            }
 
+            // Başarılı ise hiç veri dönmeden 200 OK
+            return Ok(); // HTTP 200, empty body
+        }
+
+        [HttpPut("booking")]
+        public async Task<IActionResult> ConfirmBookingWithSchemaCompliance([FromQuery] string apiKey, [FromBody] RezdyBookingDto request)
+        {
+            // Geçersiz API Key
+            if (apiKey != _validApiKey)
+            {
+                return Ok(new
+                {
+                    bookings = new object[0],
+                    requestStatus = new { code = "401", message = "Unauthorized - Invalid API Key" },
+                    error = new
+                    {
+                        errorCode = "RC_INVALID_API_KEY",
+                        errorMessage = "The API key provided is invalid."
+                    }
+                });
+            }
+
+            // Status kontrolü
+            if (request.Status != "CONFIRMED")
+            {
+                return Ok(new
+                {
+                    bookings = new object[0],
+                    requestStatus = new { code = "400", message = "Bad Request - Invalid Status" },
+                    error = new
+                    {
+                        errorCode = "RC_INVALID_DATA",
+                        errorMessage = "Status must be 'CONFIRMED'.",
+                        fields = new[]
+                        {
+                    new {
+                        field = "Status",
+                        message = "Must be 'CONFIRMED'."
+                    }
+                }
+                    }
+                });
+            }
+
+            // Rezervasyon onayı
+            var result = await _bookingService.ConfirmReservationAsync(request.OrderNumber);
+            if (!result)
+            {
+                return Ok(new
+                {
+                    bookings = new object[0],
+                    requestStatus = new { code = "404", message = "Reservation not found or already confirmed." },
+                    error = new
+                    {
+                        errorCode = "RC_RESERVATION_NOT_FOUND",
+                        errorMessage = "Reservation not found or already confirmed."
+                    }
+                });
+            }
+
+            // Booking response oluştur
             var item = request.Items.FirstOrDefault();
+
+            var bookingResponse = new
+            {
+                orderNumber = request.OrderNumber,
+                barcodeType = request.BarcodeType,
+                comments = request.Comments,
+                resellerComments = "",
+                fields = request.Fields?.Select(f => new {
+                    barcodeType = "CODE_128",//f.BarcodeType,
+                    label = f.Label,
+                    value = f.Value
+                }),
+                items = new[] {
+            new {
+                productCode = item?.ProductCode,
+                totalQuantity = item?.TotalQuantity ?? 0,
+                participants = item?.Participants?.Select(p => new {
+                    fields = p.Fields?.Select(pf => new {
+                        barcodeType = "CODE_128",
+                        label = pf.Label,
+                        value = pf.Value
+                    })
+                })
+            }
+        }
+            };
 
             return Ok(new
             {
-                bookings = new[] {
-            new {
-                request.OrderNumber,
-                Status = "CONFIRMED",
-                BarcodeType = request.BarcodeType,
-                Comments = request.Comments,
-                Fields = request.Fields,
-                Items = new[] {
-                    new {
-                        ProductCode = item?.ProductCode,
-                        Participants = item?.Participants,
-                        TotalQuantity = item?.TotalQuantity ?? 0
-                    }
-                }
-            }
-        },
-                requestStatus = new { code = "200", message = "Reservation confirmed" }
+                bookings = new[] { bookingResponse }
+                // Başarılı ise requestStatus ve error alanları dönülmez.
             });
         }
+
+
+        //[HttpPut("booking")]
+        //public async Task<IActionResult> ConfirmBookingWithStatus([FromQuery] string apiKey, [FromBody] RezdyBookingDto request)
+        //{
+        //    if (apiKey != _validApiKey)
+        //    {
+        //        return Unauthorized(new
+        //        {
+        //            bookings = new object[0],
+        //            requestStatus = new { code = "401", message = "Invalid API Key" },
+        //            error = new
+        //            {
+        //                errorCode = "RC_INVALID_API_KEY",
+        //                errorMessage = "Provided API Key is not valid."
+        //            }
+        //        });
+        //    }
+
+        //    if (request.Status != "CONFIRMED")
+        //    {
+        //        return BadRequest(new
+        //        {
+        //            bookings = new object[0],
+        //            requestStatus = new { code = "400", message = "Invalid request status" },
+        //            error = new
+        //            {
+        //                errorCode = "RC_INVALID_DATA",
+        //                errorMessage = "Status must be CONFIRMED for confirmation call.",
+        //                fields = new[]
+        //                {
+        //            new {
+        //                field = "Status",
+        //                message = "Must be 'CONFIRMED'"
+        //            }
+        //        }
+        //            }
+        //        });
+        //    }
+
+        //    var result = await _bookingService.ConfirmReservationAsync(request.OrderNumber);
+
+        //    if (!result)
+        //    {
+        //        return NotFound(new
+        //        {
+        //            bookings = new object[0],
+        //            requestStatus = new { code = "404", message = "Reservation not found or already confirmed." },
+        //            error = new
+        //            {
+        //                errorCode = "RC_RESERVATION_NOT_FOUND",
+        //                errorMessage = "Reservation not found or already confirmed."
+        //            }
+        //        });
+        //    }
+
+        //    var item = request.Items.FirstOrDefault();
+
+        //    // Başarılı ise error gönderme (ya hiç gönderme veya null gönder)
+
+        //    return Ok(new
+        //    {
+        //        bookings = new[] {
+        //            new {
+        //                orderNumber = request.OrderNumber,
+        //                barcodeType = request.BarcodeType,
+        //                comments = request.Comments,
+        //                resellerComments = "",
+        //                fields = request.Fields?.Select(f => new {
+        //                    barcodeType = "CODE_128",
+        //                    label = f.Label,
+        //                    value = f.Value
+        //                }),
+        //                items = new[] {
+        //                    new {
+        //                        productCode = item?.ProductCode,
+        //                        totalQuantity = item?.TotalQuantity ?? 0,
+        //                        participants = item?.Participants?.Select(p => new {
+        //                            fields = p.Fields?.Select(pf => new {
+        //                                barcodeType = "CODE_128",
+        //                                label = pf.Label,
+        //                                value = pf.Value
+        //                            })
+        //                        })
+        //                    }
+        //                }
+        //            }
+        //        }
+
+        //    });
+        //}
 
 
         [HttpPut("cancellation")]
         public async Task<IActionResult> CancelBooking([FromQuery] string apiKey, [FromBody] RezdyBookingDto booking)
         {
             if (apiKey != _validApiKey)
-                return Unauthorized("Invalid API Key");
+            {
+                return Unauthorized(new
+                {
+                    requestStatus = new { code = "401", message = "Invalid API Key" },
+                    error = new
+                    {
+                        errorCode = "RC_INVALID_API_KEY",
+                        errorMessage = "Provided API Key is not valid."
+                    }
+                });
+            }
 
-            var status = "CANCELLED"; // Doğru değer
+            var status = "CANCELLED";
 
             var result = await _bookingService.CancelReservationAsync(booking.OrderNumber, status);
 
             if (!result)
-                return NotFound(new { message = "Booking not found." });
-
-            return Ok(new
             {
-                requestStatus = new { code = "200", message = "Booking cancelled" }
-            });
+                return NotFound(new
+                {
+                    requestStatus = new { code = "404", message = "Booking not found." },
+                    error = new
+                    {
+                        errorCode = "RC_RESERVATION_NOT_FOUND",
+                        errorMessage = "Booking not found or already cancelled."
+                    }
+                });
+            }
+
+            // Sadece boş bir JSON nesnesi dönülüyor
+            return Ok(new { });
         }
+
 
         [HttpPost("reservation")]
         public async Task<IActionResult> CreateProcessingReservation(

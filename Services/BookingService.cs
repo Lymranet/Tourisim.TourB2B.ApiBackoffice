@@ -72,6 +72,7 @@ namespace TourManagementApi.Services
                     PartnerSupplierId = booking.SupplierId.ToString(),
                     CreatedAt = DateTime.UtcNow,
                     IsCancelled = false
+                    //,Notes= (booking.Notes ?? "")+ (booking.Comments ?? "") + (booking.ResellerComments ?? ""),
                 };
 
 
@@ -166,8 +167,6 @@ namespace TourManagementApi.Services
                 return false;
             }
         }
-
-
     }
 }
 

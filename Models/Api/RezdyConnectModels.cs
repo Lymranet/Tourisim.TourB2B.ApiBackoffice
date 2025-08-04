@@ -199,6 +199,7 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string BarcodeType { get; set; } = "QR_CODE";
         public string Comments { get; set; } = string.Empty;
         public List<RezdyFieldDto> Fields { get; set; } = new();
+        public string ResellerComments { get; set; } = "";
     }
 
 
@@ -277,6 +278,7 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
     {
         public string Label { get; set; }
         public string Value { get; set; }
+   
     }
 
     public class CustomerDto
@@ -370,6 +372,7 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         /// Sadece List tipindeki alanlar için gerekli. Örn: "A\nB\nC"
         /// </summary>
         public string? ListOptions { get; set; }
+  
     }
     public class RezdyProductDto
     {
