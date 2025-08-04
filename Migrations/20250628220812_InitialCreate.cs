@@ -399,7 +399,7 @@ namespace TourManagementApi.Migrations
                     ContactPhone = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ExperienceBankBookingId = table.Column<string>(type: "nvarchar(450)", nullable: false, defaultValue: ""),
+                   
                     MarketplaceBookingId = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
                     MarketplaceId = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),
                     Notes = table.Column<string>(type: "nvarchar(max)", nullable: false, defaultValue: ""),

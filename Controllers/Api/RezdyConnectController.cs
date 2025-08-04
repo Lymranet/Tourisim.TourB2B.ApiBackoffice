@@ -56,13 +56,47 @@ namespace TourManagementApi.Controllers.Api
                     Phone = rezdy.Customer.Mobile,
                     Email = rezdy.Customer.Email
                 },
-                Participants = item?.Participants.Select(p => new ParticipantDto
-                {
-                    FirstName = p.Fields.FirstOrDefault(f => f.Label == "First Name")?.Value,
-                    LastName = p.Fields.FirstOrDefault(f => f.Label == "Last Name")?.Value
-                }).ToList()
+                Participants = item?.Participants != null
+                    ? item.Participants.Select(p => new ParticipantDto
+                    {
+                        FirstName = p.Fields.FirstOrDefault(f => f.Label == "First Name")?.Value,
+                        LastName = p.Fields.FirstOrDefault(f => f.Label == "Last Name")?.Value,
+                        Email = p.Fields.FirstOrDefault(f => f.Label == "Email")?.Value,
+                        Phone = p.Fields.FirstOrDefault(f => f.Label == "Mobile")?.Value,
+                        Fields = p.Fields.Select(f => new BookingField
+                        {
+                            Label = f.Label,
+                            Value = f.Value
+                        }).ToList(),
+                        TicketCategory = item.Quantities?.FirstOrDefault()?.OptionLabel, // varsayım: her katılımcı için aynı
+                        CommissionType = "NETT" // Default olarak ayarlanıyor
+                    }).ToList()
+                    : new List<ParticipantDto>(),
+
+                Quantities = item?.Quantities != null
+                    ? item.Quantities.Select(q => new QuantityDto
+                    {
+                        OptionLabel = q.OptionLabel,
+                        OptionPrice = q.OptionPrice,
+                        Value = q.Value,
+                        CommissionType = "NETT"
+                    }).ToList()
+                    : new List<QuantityDto>(),
+
+                PickupLocation = item?.PickupLocation != null
+                    ? new PickupLocationDto
+                    {
+                        LocationName = item.PickupLocation.LocationName,
+                        Address = item.PickupLocation.Address,
+                        PickupTime = item.PickupLocation.PickupTime
+                    }
+                    : null,
+
+                Subtotal = item?.Subtotal ?? 0,
+                TotalItemTax = item?.TotalItemTax ?? 0
             };
         }
+
 
 
         [HttpGet("products")]
@@ -154,7 +188,7 @@ namespace TourManagementApi.Controllers.Api
         }
 
         [HttpPut("booking")]
-        public async Task<IActionResult> ConfirmBooking([FromQuery] string apiKey, [FromBody] RezdyBookingConfirmRequest request)
+        public async Task<IActionResult> ConfirmBooking([FromQuery] string apiKey, [FromBody] RezdyBookingDto request)
         {
             if (apiKey != _validApiKey)
                 return Unauthorized("Invalid API Key");
@@ -167,10 +201,11 @@ namespace TourManagementApi.Controllers.Api
             if (!result)
                 return NotFound(new { success = false, message = "Reservation not found or already confirmed." });
 
+            var item = request.Items.FirstOrDefault();
+
             return Ok(new
             {
-                bookings = new[]
-                {
+                bookings = new[] {
             new {
                 request.OrderNumber,
                 Status = "CONFIRMED",
@@ -179,9 +214,9 @@ namespace TourManagementApi.Controllers.Api
                 Fields = request.Fields,
                 Items = new[] {
                     new {
-                        ProductCode = request.ProductCode,
-                        Participants = request.Participants,
-                        TotalQuantity = request.Participants.Count
+                        ProductCode = item?.ProductCode,
+                        Participants = item?.Participants,
+                        TotalQuantity = item?.TotalQuantity ?? 0
                     }
                 }
             }
@@ -190,8 +225,9 @@ namespace TourManagementApi.Controllers.Api
             });
         }
 
+
         [HttpPut("cancellation")]
-        public async Task<IActionResult> CancelBooking([FromQuery] string apiKey, [FromBody] BookingCancelRequest booking)
+        public async Task<IActionResult> CancelBooking([FromQuery] string apiKey, [FromBody] RezdyBookingDto booking)
         {
             if (apiKey != _validApiKey)
                 return Unauthorized("Invalid API Key");

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Serilog.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Globalization;
 using System.Net.Http.Headers;
@@ -82,20 +83,34 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
     serverOptions.Limits.MaxRequestBodySize = 1024 * 1024 * 100; // 100 MB
 });
 builder.Services.AddSession();
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
-    .WriteTo.File("Logs/log-.txt",
-                  rollingInterval: RollingInterval.Day,
-                  outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+
+    // Genel log
+    .WriteTo.File("Logs/general-.log", rollingInterval: RollingInterval.Day)
+
+    // Sadece API requestleri
     .WriteTo.Logger(lc => lc
         .Filter.ByIncludingOnly(le =>
-            le.Properties.ContainsKey("SourceContext") &&
-            le.Properties["SourceContext"].ToString().Contains("GlobalExceptionMiddleware"))
-        .WriteTo.File("Logs/hatalar-.log",
-                      rollingInterval: RollingInterval.Day,
-                      outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-    )
+            le.Properties.ContainsKey("RequestType") &&
+            le.Properties["RequestType"].ToString().Contains("API"))
+        .WriteTo.File("Logs/api-.log", rollingInterval: RollingInterval.Day))
+
+    // Sadece MVC requestleri
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(le =>
+            le.Properties.ContainsKey("RequestType") &&
+            le.Properties["RequestType"].ToString().Contains("MVC"))
+        .WriteTo.File("Logs/mvc-.log", rollingInterval: RollingInterval.Day))
+
+    // Exception logları
+    .WriteTo.Logger(lc => lc
+        .Filter.ByIncludingOnly(Matching.WithProperty<string>("SourceContext", sc => sc.Contains("GlobalExceptionMiddleware")))
+        .WriteTo.File("Logs/errors-.log", rollingInterval: RollingInterval.Day))
+
     .CreateLogger();
+
 
 
 builder.Host.UseSerilog();

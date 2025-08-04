@@ -45,27 +45,35 @@ namespace TourManagementApi.Services
         {
             try
             {
-                var activityId = int.Parse(booking.ExternalProductCode); // Doğrudan BookingDto içinden geliyor
+
+                int activityId=0;
+                int optionId = 0;
+                if (booking.ExternalProductCode.Contains("-"))
+                {
+                    var id = booking.ExternalProductCode.Split('-');
+                    activityId = int.Parse(id[0]);
+                    optionId = int.Parse(id[1]);
+                }
 
                 var reservation = new Reservation
                 {
                     ActivityId = activityId,
-                    OptionId = _context.Options.FirstOrDefault(x => x.ActivityId == activityId)?.Id ?? 0,
+                    OptionId = optionId,
                     ReservationDate = DateTime.UtcNow,
                     ScheduledDate = booking.StartTime,
                     TotalAmount = booking.TotalAmount,
-                    Currency = booking.Currency, // ✨ Corrected
+                    Currency = booking.Currency,
                     GuestCount = booking.Participants.Count,
                     ContactName = booking.Customer.FullName,
                     ContactEmail = booking.Customer.Email,
                     ContactPhone = booking.Customer.Phone,
                     Status = "Processing",
-                    BookingId = booking.OrderNumber,
-                    PartnerBookingId = booking.OrderNumber,
+                    PartnerBookingId = booking.OrderNumber,      
                     PartnerSupplierId = booking.SupplierId.ToString(),
                     CreatedAt = DateTime.UtcNow,
                     IsCancelled = false
                 };
+
 
                 _context.Reservations.Add(reservation);
                 await _context.SaveChangesAsync();

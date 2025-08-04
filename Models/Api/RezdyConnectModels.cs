@@ -18,7 +18,10 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string OrderNumber { get; set; }
         public int SupplierId { get; set; }
         public string Status { get; internal set; }
-
+        public List<QuantityDto> Quantities { get; set; } = new();
+        public decimal Subtotal { get; set; }
+        public decimal TotalItemTax { get; set; }
+        public PickupLocationDto PickupLocation { get; set; }
         public string ExternalProductCode { get; set; } = null!; // For Rezdy, this is the ExternalCode
     }
 
@@ -169,32 +172,35 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
 
     public class RezdyBookingDto
     {
-        public string OrderNumber { get; set; }
-        public string Status { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
+        public string Status { get; set; } = "Pending";
         public int SupplierId { get; set; }
-        public string SupplierName { get; set; }
-        public string SupplierAlias { get; set; }
-        public CreatedByDto CreatedBy { get; set; }
+        public string SupplierName { get; set; } = string.Empty;
+        public string SupplierAlias { get; set; } = string.Empty;
+        public CreatedByDto CreatedBy { get; set; } = new();
         public int ResellerId { get; set; }
-        public string ResellerName { get; set; }
-        public string ResellerAlias { get; set; }
-        public ResellerUserDto ResellerUser { get; set; }
-        public RezdyCustomerDto Customer { get; set; }
-        public List<RezdyItemDto> Items { get; set; }
+        public string ResellerName { get; set; } = string.Empty;
+        public string ResellerAlias { get; set; } = string.Empty;
+        public ResellerUserDto ResellerUser { get; set; } = new();
+        public RezdyCustomerDto Customer { get; set; } = new();
+        public List<RezdyItemDto> Items { get; set; } = new();
         public decimal TotalAmount { get; set; }
-        public string TotalCurrency { get; set; }
+        public string TotalCurrency { get; set; } = "EUR";
         public decimal TotalPaid { get; set; }
         public decimal TotalDue { get; set; }
-        public DateTime DateCreated { get; set; }
+        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
         public DateTime? DateConfirmed { get; set; }
         public DateTime? DatePaid { get; set; }
-        public List<PaymentDto> Payments { get; set; }
-        public string Source { get; set; }
-        public string SourceChannel { get; set; }
+        public List<PaymentDto> Payments { get; set; } = new();
+        public string Source { get; set; } = "Rezdy";
+        public string SourceChannel { get; set; } = string.Empty;
         public decimal Commission { get; set; }
-        public string ResellerReference { get; set; }
-        public string BarcodeType { get; set; }
+        public string ResellerReference { get; set; } = string.Empty;
+        public string BarcodeType { get; set; } = "QR_CODE";
+        public string Comments { get; set; } = string.Empty;
+        public List<RezdyFieldDto> Fields { get; set; } = new();
     }
+
 
     public class CreatedByDto
     {
@@ -233,35 +239,39 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
 
     public class RezdyItemDto
     {
-        public string ProductName { get; set; }
-        public string ProductCode { get; set; }
+        public string ProductName { get; set; } = string.Empty;
+        public string ProductCode { get; set; } = string.Empty;
         public DateTime StartTime { get; set; }
         public DateTime EndTime { get; set; }
-        public string StartTimeLocal { get; set; }
-        public string EndTimeLocal { get; set; }
-        public List<QuantityDto> Quantities { get; set; }
+        public string StartTimeLocal { get; set; } = string.Empty;
+        public string EndTimeLocal { get; set; } = string.Empty;
+        public List<QuantityDto> Quantities { get; set; } = new();
         public int TotalQuantity { get; set; }
         public decimal Amount { get; set; }
-        public List<RezdyParticipantDto> Participants { get; set; }
+        public List<RezdyParticipantDto> Participants { get; set; } = new();
         public bool TransferReturn { get; set; }
         public decimal Subtotal { get; set; }
         public decimal TotalItemTax { get; set; }
-        public string ExternalProductCode { get; set; }
+        public string ExternalProductCode { get; set; } = string.Empty;
+        public PickupLocationDto PickupLocation { get; set; } = new();
     }
+
 
     public class QuantityDto
     {
-        public string OptionLabel { get; set; }
+        public string OptionLabel { get; set; } = string.Empty;
         public decimal OptionPrice { get; set; }
         public int Value { get; set; }
-        public string CommissionType { get; set; }
+        public string CommissionType { get; set; } = string.Empty;
         public decimal CommissionValue { get; set; }
     }
 
+
     public class RezdyParticipantDto
     {
-        public List<RezdyFieldDto> Fields { get; set; }
+        public List<RezdyFieldDto> Fields { get; set; } = new();
     }
+
 
     public class RezdyFieldDto
     {
@@ -308,6 +318,8 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string Email { get; set; } = null!;
         public string Phone { get; set; } = null!;
         public string TicketCategory { get; set; } = null!;
+        public string CommissionType { get; set; }
+        public List<BookingField> Fields { get; set; } = new();
     }
     public class CustomerData
     {
@@ -348,7 +360,7 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         /// Her katılımcı için bu alan görünür mü?
         /// </summary>
         public bool VisiblePerParticipant { get; set; }
-
+        public string Value { get; set; }  // örn: kullanıcının verdiği cevap
         /// <summary>
         /// Rezervasyon seviyesinde bu alan görünür mü?
         /// </summary>
@@ -421,13 +433,15 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
 
     public class PickupLocationDto
     {
-        public string Address { get; set; }
+        public string Address { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
-        public string LocationName { get; set; }
+        public string LocationName { get; set; } = string.Empty;
         public int MinutesPrior { get; set; } = 60;
-        public string PickupInstructions { get; set; }
+        public string PickupInstructions { get; set; } = string.Empty;
+        public string PickupTime { get; set; } = string.Empty;
     }
+
 
     public class RezdyConnectSettings
     {

@@ -631,9 +631,6 @@ namespace TourManagementApi.Migrations
 
                     b.HasIndex(new[] { "ActivityId" }, "IX_Reservations_ActivityId");
 
-                    b.HasIndex(new[] { "ExperienceBankBookingId" }, "IX_Reservations_ExperienceBankBookingId")
-                        .IsUnique();
-
                     b.HasIndex(new[] { "OptionId" }, "IX_Reservations_OptionId");
 
                     b.ToTable("Reservations");
