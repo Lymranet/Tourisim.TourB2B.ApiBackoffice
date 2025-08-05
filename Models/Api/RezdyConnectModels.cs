@@ -24,18 +24,33 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public PickupLocationDto PickupLocation { get; set; }
         public string ExternalProductCode { get; set; } = null!; // For Rezdy, this is the ExternalCode
     }
+    public class CustomerDto
+    {
+        [Required]
+        public string FullName { get; set; }
 
+        public string Email { get; set; }
 
+        [Required]
+        public string Phone { get; set; }
+    }
+    public class ParticipantDto
+    {
+        public string FirstName { get; set; } = null!;
+        public string LastName { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+        public string TicketCategory { get; set; } = null!;
+        public string CommissionType { get; set; }
+        public List<BookingField> Fields { get; set; } = new();
+    }
 
     public class ProductLocation
     {
         public string Address { get; set; }
         public GeoCoordinates Geo { get; set; }
     }
-    public class ConfirmationRequest
-    {
-        public string ReservationId { get; set; } = null!;
-    }
+
     public class GeoCoordinates
     {
         public double Lat { get; set; }
@@ -163,13 +178,6 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string Status { get; set; } = "Confirmed";
     }
 
-
-
-
-
-
-
-
     public class RezdyBookingDto
     {
         public string OrderNumber { get; set; } = string.Empty;
@@ -257,7 +265,10 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public PickupLocationDto PickupLocation { get; set; } = new();
     }
 
-
+    public class RezdyParticipantDto
+    {
+        public List<RezdyFieldDto> Fields { get; set; } = new();
+    }
     public class QuantityDto
     {
         public string OptionLabel { get; set; } = string.Empty;
@@ -268,10 +279,7 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
     }
 
 
-    public class RezdyParticipantDto
-    {
-        public List<RezdyFieldDto> Fields { get; set; } = new();
-    }
+
 
 
     public class RezdyFieldDto
@@ -281,16 +289,7 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
    
     }
 
-    public class CustomerDto
-    {
-        [Required]
-        public string FullName { get; set; }
 
-        public string Email { get; set; }
-
-        [Required]
-        public string Phone { get; set; }
-    }
     public partial class BookingRequest
     {
         public string BookingReference { get; set; } = null!;
@@ -313,16 +312,7 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string OrderNumber { get; internal set; }
     }
 
-    public class ParticipantDto
-    {
-        public string FirstName { get; set; } = null!;
-        public string LastName { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public string Phone { get; set; } = null!;
-        public string TicketCategory { get; set; } = null!;
-        public string CommissionType { get; set; }
-        public List<BookingField> Fields { get; set; } = new();
-    }
+
     public class CustomerData
     {
         public string FullName { get; set; }
@@ -336,6 +326,63 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string LastName { get; set; }
     }
 
+ 
+
+
+
+
+
+    public class RezdyProductDto
+    {
+        public string InternalCode { get; set; }
+        public string Name { get; set; }
+        public string ShortDescription { get; set; }
+        public string Description { get; set; }
+        public int DurationMinutes { get; set; }
+        public string BookingMode { get; set; } = "INVENTORY";
+        public string ConfirmMode { get; set; } = "AUTOCONFIRM";
+        public string ProductType { get; set; } = "ACTIVITY";
+        public bool QuantityRequired { get; set; } = true;
+        public int QuantityRequiredMin { get; set; } = 1;
+        public int QuantityRequiredMax { get; set; } = 10;
+        public string UnitLabel { get; set; } = "Passenger";
+        public string UnitLabelPlural { get; set; } = "Passengers";
+        public string BarcodeType { get; set; } = "QR_CODE";
+        public string BarcodeOutputType { get; set; } = "PARTICIPANT";
+        public string ProductCode { get; internal set; }
+        public string ExternalCode { get; internal set; }
+        public decimal AdvertisedPrice { get; set; }
+        public string Terms { get; set; }
+        public string AdditionalInformation { get; set; }
+        public string Label { get; set; }
+        public string SupplierId { get; set; }
+        public List<string> Languages { get; set; }
+        public RezdyConnectSettings RezdyConnectSettings { get; set; }
+        public List<TaxDto> Taxes { get; set; }
+        public List<BookingField> BookingFields { get; set; }
+        public List<PriceOptionDto> PriceOptions { get; set; }
+        public List<ExtraDto> Extras { get; set; }
+        public List<ImageItem> Images { get; set; }
+        public List<PickupLocationDto> PickupLocations { get; set; }
+        public LocationAddressDto LocationAddress { get; set; }
+    }
+    public class RezdyConnectSettings
+    {
+        public string ExternalAvailabilityApi { get; set; }
+        public string ExternalReservationApi { get; set; }
+        public string ExternalBookingApi { get; set; }
+        public string ExternalCancellationApi { get; set; }
+    }
+    public class TaxDto
+    {
+        public string TaxFeeType { get; set; }
+        public string Label { get; set; }
+        public string TaxType { get; set; }
+        public decimal TaxPercent { get; set; }
+        public decimal TaxAmount { get; set; } = 0;
+        public bool PriceInclusive { get; set; }
+        public bool Compound { get; set; }
+    }
     public class BookingField
     {
         /// <summary>
@@ -372,58 +419,14 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         /// Sadece List tipindeki alanlar için gerekli. Örn: "A\nB\nC"
         /// </summary>
         public string? ListOptions { get; set; }
-  
+
     }
-    public class RezdyProductDto
-    {
-        public string InternalCode { get; set; }
-        public string Name { get; set; }
-        public string ShortDescription { get; set; }
-        public string Description { get; set; }
-        public int DurationMinutes { get; set; }
-        public string BookingMode { get; set; } = "INVENTORY";
-        public string ConfirmMode { get; set; } = "AUTOCONFIRM";
-        public string ProductType { get; set; } = "ACTIVITY";
-        public bool QuantityRequired { get; set; } = true;
-        public int QuantityRequiredMin { get; set; } = 1;
-        public int QuantityRequiredMax { get; set; } = 10;
-        public string UnitLabel { get; set; } = "Passenger";
-        public string UnitLabelPlural { get; set; } = "Passengers";
-        public List<BookingField> BookingFields { get; set; }
-        public List<PriceOptionDto> PriceOptions { get; set; }
-        public List<ExtraDto> Extras { get; set; }
-        public List<ImageItem> Images { get; set; }
-        public List<PickupLocationDto> PickupLocations { get; set; }
-        public List<string> Languages { get; set; }
-        public LocationAddressDto LocationAddress { get; set; }
-        public string BarcodeType { get; set; } = "QR_CODE";
-        public string BarcodeOutputType { get; set; } = "PARTICIPANT";
-        public RezdyConnectSettings RezdyConnectSettings { get; set; }
-
-        public string ProductCode { get; internal set; }
-        public string ExternalCode { get; internal set; }
-
-        public decimal AdvertisedPrice { get; set; }
-        public string Terms { get; set; }
-        public string AdditionalInformation { get; set; }
-        public List<TaxDto> Taxes { get; set; }
-
-        public string Label { get; set; }
-        public string SupplierId { get; set; }
-    }
-
-    public class ImageItem
-    {
-        public string ItemUrl { get; set; }
-    }
-
     public class PriceOptionDto
     {
         public string Label { get; set; }
         public decimal Price { get; set; }
         public int SeatsUsed { get; set; } = 1;
     }
-
     public class ExtraDto
     {
         public string Name { get; set; }
@@ -433,7 +436,10 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public int Quantity { get; set; }
         public ImageItem Image { get; set; }
     }
-
+    public class ImageItem
+    {
+        public string ItemUrl { get; set; }
+    }
     public class PickupLocationDto
     {
         public string Address { get; set; } = string.Empty;
@@ -444,27 +450,6 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string PickupInstructions { get; set; } = string.Empty;
         public string PickupTime { get; set; } = string.Empty;
     }
-
-
-    public class RezdyConnectSettings
-    {
-        public string ExternalAvailabilityApi { get; set; }
-        public string ExternalReservationApi { get; set; }
-        public string ExternalBookingApi { get; set; }
-        public string ExternalCancellationApi { get; set; }
-    }
-    public class BookingConfirmRequest
-    {
-        [Required]
-        public string OrderNumber { get; set; }
-    }
-
-    public class BookingCancelRequest
-    {
-        [Required]
-        public string OrderNumber { get; set; }
-    }
-    // Yardımcı adres DTO'su:
     public class LocationAddressDto
     {
         public string AddressLine { get; set; }
@@ -473,46 +458,5 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public string PostCode { get; set; }
         public string State { get; set; }
     }
-
-    // Yardımcı Tax DTO'su:
-    public class TaxDto
-    {
-        public string TaxFeeType { get; set; }
-        public string Label { get; set; }
-        public string TaxType { get; set; }
-        public decimal TaxPercent { get; set; }
-        public decimal TaxAmount { get; set; } = 0;
-        public bool PriceInclusive { get; set; }
-        public bool Compound { get; set; }
-    }
-    public class RezdyBookingConfirmRequest
-    {
-        [Required]
-        public string OrderNumber { get; set; }
-
-        [Required]
-        public string Status { get; set; }  // CONFIRMED
-
-        [Required]
-        public CustomerDto Customer { get; set; }
-
-        [Required]
-        public List<ParticipantDto> Participants { get; set; }
-
-        [Required]
-        public string ProductCode { get; set; }
-
-        [Required]
-        public string Currency { get; set; }
-
-        public decimal TotalAmount { get; set; }
-
-        public string Comments { get; set; }
-        public List<BookingField> Fields { get; set; }
-        public string BarcodeType { get; set; } = "QR_CODE";
-
-        // Diğer isteğe bağlı alanları da eklersiniz
-    }
-
-
+   
 }

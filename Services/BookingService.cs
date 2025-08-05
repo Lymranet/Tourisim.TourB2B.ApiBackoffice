@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using TourManagementApi.Data;
 using TourManagementApi.Models;
 using TourManagementApi.Models.Api;
 using TourManagementApi.Models.Api.RezdyConnectModels;
-using BookingDto = TourManagementApi.Models.Api.RezdyConnectModels.BookingDto;
 
 namespace TourManagementApi.Services
 {
@@ -39,20 +39,20 @@ namespace TourManagementApi.Services
             }
             return false;
         }
-
-
-        public async Task<BookingDto> CreateProcessingReservationAsync(BookingDto booking)
+        public async Task<BookingRequest> CreateProcessingReservationAsync(BookingRequest booking)
         {
+            //BookingDto booking = MapRezdyToBookingDto(rezdy);
+
             try
             {
-
-                int activityId=0;
+                int activityId = 0;
                 int optionId = 0;
-                if (booking.ExternalProductCode.Contains("-"))
+
+                if (!string.IsNullOrWhiteSpace(booking.ExternalProductCode) && booking.ExternalProductCode.Contains("-"))
                 {
-                    var id = booking.ExternalProductCode.Split('-');
-                    activityId = int.Parse(id[0]);
-                    optionId = int.Parse(id[1]);
+                    var ids = booking.ExternalProductCode.Split('-');
+                    activityId = int.Parse(ids[0]);
+                    optionId = int.Parse(ids[1]);
                 }
 
                 var reservation = new Reservation
@@ -68,13 +68,15 @@ namespace TourManagementApi.Services
                     ContactEmail = booking.Customer.Email,
                     ContactPhone = booking.Customer.Phone,
                     Status = "Processing",
-                    PartnerBookingId = booking.OrderNumber,      
+                    PartnerBookingId = booking.OrderNumber,
                     PartnerSupplierId = booking.SupplierId.ToString(),
                     CreatedAt = DateTime.UtcNow,
-                    IsCancelled = false
-                    //,Notes= (booking.Notes ?? "")+ (booking.Comments ?? "") + (booking.ResellerComments ?? ""),
+                    IsCancelled = false,
+                    Notes = string.Join(" | ", new[] {
+                        rezdy.Comments,
+                        rezdy.ResellerComments
+                    }.Where(x => !string.IsNullOrWhiteSpace(x)))
                 };
-
 
                 _context.Reservations.Add(reservation);
                 await _context.SaveChangesAsync();
@@ -90,7 +92,7 @@ namespace TourManagementApi.Services
                         PhoneNumber = participant.Phone,
                         TicketCategory = participant.TicketCategory,
                         Occupancy = 1,
-                        AdditionalFieldsJson = "{}",
+                        AdditionalFieldsJson = JsonConvert.SerializeObject(participant.Fields),
                         AddonsJson = "[]",
                         GuestName = $"{participant.FirstName} {participant.LastName}",
                         Age = 0,
@@ -104,45 +106,115 @@ namespace TourManagementApi.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Reservation notification failed.");
-                _logger.LogError(ex.Message, "Detail.");
+                _logger.LogError(ex, "Reservation creation failed.");
             }
+
             return booking;
         }
 
-        public BookingCreateResponse Create(BookingRequest request)
-        {
-            var reservation = new Reservation
-            {
-                ActivityId = int.Parse(request.ProductCode),
-                OptionId = request.OptionId,
-                ReservationDate = DateTime.UtcNow,
-                ScheduledDate = request.ScheduledDate,
-                GuestCount = request.GuestCount,
-                TotalAmount = request.TotalAmount,
-                Currency = request.Currency,
-                ContactName = request.ContactName,
-                ContactEmail = request.ContactEmail,
-                ContactPhone = request.ContactPhone,
-                Status = "Confirmed",
-                CreatedAt = DateTime.UtcNow,
-                BookingId = Guid.NewGuid().ToString(),
-                PartnerBookingId = request.BookingReference,
-                PartnerSupplierId = request.SupplierId,
-                Notes = request.Notes ?? "",
-                IsCancelled = false
-            };
 
-            _context.Reservations.Add(reservation);
-            _context.SaveChanges();
+        //public async Task<BookingDto> CreateProcessingReservationAsync(BookingDto booking)
+        //{
+        //    try
+        //    {
 
-            return new BookingCreateResponse
-            {
-                BookingId = reservation.Id,
-                BookingReference = reservation.PartnerBookingId,
-                Status = reservation.Status
-            };
-        }
+        //        int activityId=0;
+        //        int optionId = 0;
+        //        if (booking.ExternalProductCode.Contains("-"))
+        //        {
+        //            var id = booking.ExternalProductCode.Split('-');
+        //            activityId = int.Parse(id[0]);
+        //            optionId = int.Parse(id[1]);
+        //        }
+
+        //        var reservation = new Reservation
+        //        {
+        //            ActivityId = activityId,
+        //            OptionId = optionId,
+        //            ReservationDate = DateTime.UtcNow,
+        //            ScheduledDate = booking.StartTime,
+        //            TotalAmount = booking.TotalAmount,
+        //            Currency = booking.Currency,
+        //            GuestCount = booking.Participants.Count,
+        //            ContactName = booking.Customer.FullName,
+        //            ContactEmail = booking.Customer.Email,
+        //            ContactPhone = booking.Customer.Phone,
+        //            Status = "Processing",
+        //            PartnerBookingId = booking.OrderNumber,      
+        //            PartnerSupplierId = booking.SupplierId.ToString(),
+        //            CreatedAt = DateTime.UtcNow,
+        //            IsCancelled = false
+        //            //,Notes= (booking.Notes ?? "")+ (booking.Comments ?? "") + (booking.ResellerComments ?? ""),
+        //        };
+
+
+        //        _context.Reservations.Add(reservation);
+        //        await _context.SaveChangesAsync();
+
+        //        foreach (var participant in booking.Participants)
+        //        {
+        //            var guest = new ReservationGuest
+        //            {
+        //                ReservationId = reservation.Id,
+        //                FirstName = participant.FirstName,
+        //                LastName = participant.LastName,
+        //                Email = participant.Email,
+        //                PhoneNumber = participant.Phone,
+        //                TicketCategory = participant.TicketCategory,
+        //                Occupancy = 1,
+        //                AdditionalFieldsJson = "{}",
+        //                AddonsJson = "[]",
+        //                GuestName = $"{participant.FirstName} {participant.LastName}",
+        //                Age = 0,
+        //                TicketId = Guid.NewGuid().ToString()
+        //            };
+
+        //            _context.ReservationGuests.Add(guest);
+        //        }
+
+        //        await _context.SaveChangesAsync();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Reservation notification failed.");
+        //        _logger.LogError(ex.Message, "Detail.");
+        //    }
+        //    return booking;
+        //}
+
+        //public BookingCreateResponse Create(BookingRequest request)
+        //{
+        //    var reservation = new Reservation
+        //    {
+        //        ActivityId = int.Parse(request.ProductCode),
+        //        OptionId = request.OptionId,
+        //        ReservationDate = DateTime.UtcNow,
+        //        ScheduledDate = request.ScheduledDate,
+        //        GuestCount = request.GuestCount,
+        //        TotalAmount = request.TotalAmount,
+        //        Currency = request.Currency,
+        //        ContactName = request.ContactName,
+        //        ContactEmail = request.ContactEmail,
+        //        ContactPhone = request.ContactPhone,
+        //        Status = "Confirmed",
+        //        CreatedAt = DateTime.UtcNow,
+        //        BookingId = Guid.NewGuid().ToString(),
+        //        PartnerBookingId = request.BookingReference,
+        //        PartnerSupplierId = request.SupplierId,
+        //        Notes = request.Notes ?? "",
+        //        IsCancelled = false
+        //    };
+
+        //    _context.Reservations.Add(reservation);
+        //    _context.SaveChanges();
+
+        //    return new BookingCreateResponse
+        //    {
+        //        BookingId = reservation.Id,
+        //        BookingReference = reservation.PartnerBookingId,
+        //        Status = reservation.Status
+        //    };
+        //}
 
         public async Task<bool> CancelReservationAsync(string orderNumber, string status = "CANCELLED")
         {
