@@ -11,7 +11,7 @@ using TourManagementApi.Data;
 
 namespace TourManagementApi.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [DbContext(typeof(TourManagementDbContext))]
     [Migration("20250628220812_InitialCreate")]
     partial class InitialCreate
     {

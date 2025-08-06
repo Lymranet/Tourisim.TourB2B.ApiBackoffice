@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourManagementApi.Data;
-using TourManagementApi.Models.Api;
+using TourManagementApi.Models.Api.ExperinceBank;
 
 namespace TourManagementApi.Controllers.Api
 {
@@ -10,10 +10,10 @@ namespace TourManagementApi.Controllers.Api
     [ApiController]
     public class ExperienceBankAvailabilitiesController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly ILogger<ExperienceBankAvailabilitiesController> _logger;
 
-        public ExperienceBankAvailabilitiesController(ApplicationDbContext context, ILogger<ExperienceBankAvailabilitiesController> logger)
+        public ExperienceBankAvailabilitiesController(TourManagementDbContext context, ILogger<ExperienceBankAvailabilitiesController> logger)
         {
             _context = context;
             _logger = logger;
@@ -65,7 +65,7 @@ namespace TourManagementApi.Controllers.Api
                         ? $"https://tour.hotelwidget.com/supplier/12004/availabilities?offset={offset + pageSize}&dateRangeStart={dateRangeStart:yyyy-MM-dd}&dateRangeEnd={dateRangeEnd:yyyy-MM-dd}"
                         : null
                 },
-                data = availabilities.Select(a => new AvailabilityResponseDto
+                data = availabilities.Select(a => new ExperincebankAvailabilityResponseDto
                 {
                     dateTime = a.StartTime.HasValue
                         ? a.StartTime.Value.ToString("o")

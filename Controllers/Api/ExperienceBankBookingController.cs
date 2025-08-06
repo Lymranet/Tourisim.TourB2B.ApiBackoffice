@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using TourManagementApi.Data;
 using TourManagementApi.Models;
-using TourManagementApi.Models.Api;
+using TourManagementApi.Models.Api.ExperinceBank;
 
 namespace TourManagementApi.Controllers.Api
 {
@@ -11,10 +11,10 @@ namespace TourManagementApi.Controllers.Api
     [ApiController]
     public class ExperienceBankBookingController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly ILogger<ExperienceBankBookingController> _logger;
 
-        public ExperienceBankBookingController(ApplicationDbContext context, ILogger<ExperienceBankBookingController> logger)
+        public ExperienceBankBookingController(TourManagementDbContext context, ILogger<ExperienceBankBookingController> logger)
         {
             _context = context;
             _logger = logger;

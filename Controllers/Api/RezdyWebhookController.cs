@@ -5,7 +5,6 @@ using TourManagementApi.Services.Rezdy;
 
 namespace TourManagementApi.Controllers
 {
-
     /// <summary>
     /// Rezdy Webhook Controller
     /// </summary>

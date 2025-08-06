@@ -15,7 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\ActivitiesController.cs" />
+    <Compile Remove="Data\ApplicationDbContext.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="openapi.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -41,6 +45,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Logs\" />
     <Folder Include="Views\Shared\" />
     <Folder Include="Views\Home\" />
     <Folder Include="wwwroot\" />
@@ -52,7 +57,7 @@
 
   <ItemGroup>
     <None Include="TourManagementApi.sln" />
-    <None Include="Views\ActivitiesWizard\CreateAvailability.cshtml" />
+    <None Include="Views\Activities\CreateAvailability.cshtml" />
   </ItemGroup>
 
 </Project> 

@@ -84,7 +84,7 @@
 
 <p>
     <h2>@ViewData["Title"]</h2>
-    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">← Turlara Dön</a>
+    <a class="btn btn-secondary" asp-controller="Activities" asp-action="Index">← Turlara Dön</a>
 </p>
 
 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
@@ -466,7 +466,7 @@
 
                          try {
                              const activityId = document.getElementById("ActivityId").value;
-                             const response = await fetch('/ActivitiesWizard/DeleteCoverOrPreviewImage', {
+                             const response = await fetch('/Activities/DeleteCoverOrPreviewImage', {
                                  method: 'POST',
                                  headers: {
                                      'Content-Type': 'application/json',
@@ -496,7 +496,7 @@
 
                  try {
                      const activityId = document.getElementById("ActivityId").value;
-                     const response = await fetch('/ActivitiesWizard/DeleteGalleryImage', {
+                     const response = await fetch('/Activities/DeleteGalleryImage', {
                          method: 'POST',
                          headers: {
                              'Content-Type': 'application/json',

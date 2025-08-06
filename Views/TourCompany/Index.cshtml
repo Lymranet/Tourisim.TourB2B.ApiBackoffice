@@ -4,7 +4,7 @@
 
 <p>
     <a class="btn btn-primary" asp-action="Create">Yeni Şirket Ekle</a>
-    <a class="btn btn-secondary" asp-controller="ActivitiesWizard" asp-action="Index">← Turlara Dön</a>
+    <a class="btn btn-secondary" asp-controller="Activities" asp-action="Index">← Turlara Dön</a>
 </p>
 
 @if (TempData["Error"] != null)
@@ -50,7 +50,7 @@
                     <a href="@item.VergiLevhasıPath">Vergi Levhası</a> |
                     <a href="@item.SigortaBelgesiPath">Sigorta</a> |
                     <a href="@item.HizmetDetayiPath">Hizmet Detayı</a> |
-                    <a href="@item.AracD2belgesiPath">D2</a> |
+                    <a href="@item.AracD2BelgesiPath">D2</a> |
                     <a href="@item.SportifFaaliyetBelgesiPath">Sportif</a>
                 </td>
                 <td>

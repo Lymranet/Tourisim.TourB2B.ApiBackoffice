@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TourManagementApi.Data;
-using TourManagementApi.Models.Api;
+using TourManagementApi.Models.Api.ExperinceBank;
 using TourManagementApi.Services;
 
 namespace TourManagementApi.Controllers.Api
@@ -9,16 +9,16 @@ namespace TourManagementApi.Controllers.Api
     [ApiController]
     [Route("supplier/12004/booking/{bookingId}/cancellation")]
     [ApiExplorerSettings(GroupName = "experiencebank")]
-    public class BookingCancellationController : ControllerBase
+    public class ExperiencebankBookingCancellationController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly ExperienceBankService _experienceBankService;
-        private readonly ILogger<BookingCancellationController> _logger;
+        private readonly ILogger<ExperiencebankBookingCancellationController> _logger;
 
-        public BookingCancellationController(
-            ApplicationDbContext context,
+        public ExperiencebankBookingCancellationController(
+            TourManagementDbContext context,
             ExperienceBankService experienceBankService,
-            ILogger<BookingCancellationController> logger)
+            ILogger<ExperiencebankBookingCancellationController> logger)
         {
             _context = context;
             _experienceBankService = experienceBankService;

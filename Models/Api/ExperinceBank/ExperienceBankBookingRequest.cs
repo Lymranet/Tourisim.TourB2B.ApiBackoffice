@@ -1,4 +1,4 @@
-﻿namespace TourManagementApi.Models.Api
+﻿namespace TourManagementApi.Models.Api.ExperinceBank
 {
     public class ExperienceBankBookingRequest
     {

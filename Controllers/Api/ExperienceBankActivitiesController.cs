@@ -13,7 +13,7 @@ namespace TourManagementApi.Controllers.Api
     [ApiController]
     public class ExperienceBankActivitiesController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         public Dictionary<string, List<int>> categoryMapping = new Dictionary<string, List<int>>
         {
             { "Hiking", new List<int> { 1, 10 } },
@@ -40,7 +40,7 @@ namespace TourManagementApi.Controllers.Api
             { "Retreat", new List<int> { 11 } },
         };
         private readonly ILogger<ExperienceBankActivitiesController> _logger;
-        public ExperienceBankActivitiesController(ApplicationDbContext context, ILogger<ExperienceBankActivitiesController> logger)
+        public ExperienceBankActivitiesController(TourManagementDbContext context, ILogger<ExperienceBankActivitiesController> logger)
         {
             _context = context;
             _logger = logger;
@@ -267,7 +267,7 @@ namespace TourManagementApi.Controllers.Api
                             teaser = activity.PreviewImage,
                             gallery = TxtJson.DeserializeStringList(activity.GalleryImages) ?? new List<string>()
                         },
-                        videos = TxtJson.DeserializeStringList(activity.MediaVideos) ?? new List<string>()
+                        videos = TxtJson.DeserializeStringList(activity.Media_Videos) ?? new List<string>()
                     },
                     rating = activity.Rating != null ? new
                     {

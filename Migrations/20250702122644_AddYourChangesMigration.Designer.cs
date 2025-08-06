@@ -11,7 +11,7 @@ using TourManagementApi.Data;
 
 namespace TourManagementApi.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
+    [DbContext(typeof(TourManagementDbContext))]
     [Migration("20250702122644_AddYourChangesMigration")]
     partial class AddYourChangesMigration
     {

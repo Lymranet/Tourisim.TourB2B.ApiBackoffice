@@ -31,8 +31,6 @@ public partial class Reservation
 
     public DateTime CreatedAt { get; set; }
 
-    public string BookingId { get; set; } = null!;
-
     public string MarketplaceBookingId { get; set; } = null!;
 
     public string MarketplaceId { get; set; } = null!;
@@ -50,6 +48,8 @@ public partial class Reservation
     public string? CancelReason { get; set; }
 
     public string? CancelNote { get; set; }
+
+    public string? BookingId { get; set; }
 
     public virtual Activity Activity { get; set; } = null!;
 

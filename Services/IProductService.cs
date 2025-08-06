@@ -1,4 +1,5 @@
-﻿using TourManagementApi.Models.Api.RezdyConnectModels;
+﻿using TourManagementApi.Models.Api;
+using TourManagementApi.Models.Api.RezdyConnectModels;
 
 namespace TourManagementApi.Services
 {
@@ -7,5 +8,4 @@ namespace TourManagementApi.Services
         List<RezdyProductDto> GetAll();
         ProductResponseModel GetByCode(string productCode);
     }
-
 }

@@ -1,6 +1,6 @@
-﻿namespace TourManagementApi.Models.Api
+﻿namespace TourManagementApi.Models.Api.ExperinceBank
 {
-    public class AvailabilityResponseDto
+    public class ExperincebankAvailabilityResponseDto
     {
         public string dateTime { get; set; }
         public List<OpeningHourDto> openingHours { get; set; } = new();
@@ -26,7 +26,7 @@
     public class AvailabilityResultDto
     {
         public LinksDto links { get; set; }
-        public List<AvailabilityResponseDto> data { get; set; }
+        public List<ExperincebankAvailabilityResponseDto> data { get; set; }
     }
 
     public class LinksDto

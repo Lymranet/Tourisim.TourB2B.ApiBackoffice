@@ -10,8 +10,8 @@ using TourManagementApi.Data;
 
 namespace TourManagementApi.Migrations
 {
-    [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(TourManagementDbContext))]
+    partial class TourManagementDbContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {

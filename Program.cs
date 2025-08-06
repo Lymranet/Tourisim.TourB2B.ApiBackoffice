@@ -115,7 +115,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();
 // Add SQL Server Configuration
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<TourManagementDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sqlOptions => sqlOptions.EnableRetryOnFailure())
@@ -131,9 +131,7 @@ builder.Services.AddScoped<AuthorizationHeaderHelper>();
 // REZDY CONNECTION
 builder.Services.AddScoped<IProductService, TourManagementApi.Services.ProductService>();
 builder.Services.AddScoped<AvailabilityService>();
-builder.Services.AddScoped<PricingService>();
 builder.Services.AddScoped<TourManagementApi.Services.BookingService>();
-
 
 // <<< Rezdy Integration <<<
 // 1. Rezdy ayarlarını appsettings.json’dan okumaca:
@@ -170,7 +168,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var context = services.GetRequiredService<ApplicationDbContext>();
+        var context = services.GetRequiredService<TourManagementDbContext>();
         // Sadece migration'ları uygula, veritabanını silme
         context.Database.Migrate();
     }
@@ -246,7 +244,7 @@ app.UseAuthorization();
 //app.UseMiddleware<RequestHeaderValidationMiddleware>();
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=ActivitiesWizard}/{action=Index}/{id?}");
+    pattern: "{controller=Activities}/{action=Index}/{id?}");
 
 // <<< Rezdy Integration <<<
 // Webhook endpoint’inizi buraya yönlendirin:
@@ -258,7 +256,7 @@ app.MapControllerRoute(
 // Mevcut default route’unuz:
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=ActivitiesWizard}/{action=Index}/{id?}");
+    pattern: "{controller=Activities}/{action=Index}/{id?}");
 // >>> Rezdy Integration >>>
 
 // Configure custom URLs

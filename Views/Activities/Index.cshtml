@@ -140,11 +140,11 @@
                             <li><a class="dropdown-item" asp-action="CreateLocation" asp-route-id="@(item?.ActivityId ?? 0)">Lokasyon</a></li>
                             <li><a class="dropdown-item" asp-controller="Options" asp-action="Index" asp-route-activityId="@(item?.ActivityId ?? 0)">Seçenekler</a></li>
                             <li><a class="dropdown-item" asp-action="CreateAddons" asp-route-id="@item.ActivityId">Ek Ürünler</a></li>
-                            <li><a class="dropdown-item" asp-controller="ActivitiesWizard" asp-action="Availabilities" asp-route-activityId="@item.ActivityId">Kapasite Tanımları</a></li>
+                            <li><a class="dropdown-item" asp-controller="Activities" asp-action="Availabilities" asp-route-activityId="@item.ActivityId">Kapasite Tanımları</a></li>
                             <li><a class="dropdown-item" asp-action="ManageLanguages" asp-route-id="@(item?.ActivityId ?? 0)">Dil Yönetimi</a></li>
                             <li><a class="dropdown-item" asp-action="PricingYield" asp-route-id="@item.ActivityId">Fiyatlandırma</a></li>
                             <li>
-                                <form asp-action="DeleteActivity" asp-controller="ActivitiesWizard" method="post" onsubmit="return confirm('Bu tur ve tüm alt verileri silinecek. Emin misiniz?');">
+                                <form asp-action="DeleteActivity" asp-controller="Activities" method="post" onsubmit="return confirm('Bu tur ve tüm alt verileri silinecek. Emin misiniz?');">
                                     <input type="hidden" name="id" value="@item.ActivityId" />
                                     <button type="submit" class="dropdown-item text-danger">Sil</button>
                                 </form>
@@ -189,7 +189,7 @@
         });
 
         function updateStatus(id, newStatus) {
-            fetch(`/ActivitiesWizard/UpdateStatus/${id}`, {
+            fetch(`/Activities/UpdateStatus/${id}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

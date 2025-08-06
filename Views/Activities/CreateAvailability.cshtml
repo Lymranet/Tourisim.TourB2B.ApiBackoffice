@@ -70,7 +70,7 @@
             const activityId = @Model.ActivityId;
 
             if (optionId) {
-                fetch(`/ActivitiesWizard/GetTicketCategories?optionId=${optionId}`)
+                fetch(`/Activities/GetTicketCategories?optionId=${optionId}`)
                     .then(res => res.json())
                     .then(data => {
                         const container = document.getElementById("ticketCategoriesContainer");
@@ -100,7 +100,7 @@
             const date = document.querySelector("input[name='Date']").value;
 
             if (activityId && optionId && date) {
-                fetch(`/ActivitiesWizard/CheckAvailabilityExists?activityId=${activityId}&optionId=${optionId}&date=${date}`)
+                fetch(`/Activities/CheckAvailabilityExists?activityId=${activityId}&optionId=${optionId}&date=${date}`)
                     .then(res => res.json())
                     .then(data => {
                         const warning = document.getElementById("availabilityWarning");

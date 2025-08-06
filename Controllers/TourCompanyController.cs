@@ -24,13 +24,13 @@ namespace TourManagementApi.Controllers
 {
     public class TourCompanyController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<TourCompanyController> _logger;
         private readonly ExperienceBankService _experienceBankService;
 
         public TourCompanyController(
-            ApplicationDbContext context,
+            TourManagementDbContext context,
             IWebHostEnvironment env,
             ILogger<TourCompanyController> logger, ExperienceBankService experienceBankService)
         {
@@ -73,7 +73,7 @@ namespace TourManagementApi.Controllers
                 company.VergiLevhasıPath = await SaveFile(model.VergiLevhası, "docs");
                 company.SigortaBelgesiPath = await SaveFile(model.SigortaBelgesi, "docs");
                 company.HizmetDetayiPath = await SaveFile(model.HizmetDetayi, "docs");
-                company.AracD2belgesiPath = await SaveFile(model.AracD2Belgesi, "docs");
+                company.AracD2BelgesiPath = await SaveFile(model.AracD2Belgesi, "docs");
                 company.SportifFaaliyetBelgesiPath = await SaveFile(model.SportifFaaliyetBelgesi, "docs");
 
                 _context.Add(company);
@@ -105,7 +105,7 @@ namespace TourManagementApi.Controllers
                 VergiLevhasıPath = company.VergiLevhasıPath,
                 SigortaBelgesiPath = company.SigortaBelgesiPath,
                 HizmetDetayiPath = company.HizmetDetayiPath,
-                AracD2BelgesiPath = company.AracD2belgesiPath,
+                AracD2BelgesiPath = company.AracD2BelgesiPath,
                 SportifFaaliyetBelgesiPath = company.SportifFaaliyetBelgesiPath
             };
             return View(model);
@@ -132,7 +132,7 @@ namespace TourManagementApi.Controllers
                 company.VergiLevhasıPath = model.VergiLevhası != null ? await SaveFile(model.VergiLevhası, "docs") : company.VergiLevhasıPath;
                 company.SigortaBelgesiPath = model.SigortaBelgesi != null ? await SaveFile(model.SigortaBelgesi, "docs") : company.SigortaBelgesiPath;
                 company.HizmetDetayiPath = model.HizmetDetayi != null ? await SaveFile(model.HizmetDetayi, "docs") : company.HizmetDetayiPath;
-                company.AracD2belgesiPath = model.AracD2Belgesi != null ? await SaveFile(model.AracD2Belgesi, "docs") : company.AracD2belgesiPath;
+                company.AracD2BelgesiPath = model.AracD2Belgesi != null ? await SaveFile(model.AracD2Belgesi, "docs") : company.AracD2BelgesiPath;
                 company.SportifFaaliyetBelgesiPath = model.SportifFaaliyetBelgesi != null ? await SaveFile(model.SportifFaaliyetBelgesi, "docs") : company.SportifFaaliyetBelgesiPath;
 
                 await _context.SaveChangesAsync();

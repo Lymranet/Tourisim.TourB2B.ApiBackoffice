@@ -31,7 +31,7 @@ public partial class TourCompany
 
     public string? HizmetDetayiPath { get; set; }
 
-    public string? AracD2belgesiPath { get; set; }
+    public string? AracD2BelgesiPath { get; set; }
 
     public string? SportifFaaliyetBelgesiPath { get; set; }
 

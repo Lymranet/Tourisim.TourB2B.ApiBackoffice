@@ -34,7 +34,5 @@ namespace TourManagementApi.Controllers.Api
             await _syncService.TriggerAvailabilityUpdateNotificationAsync(rezdyCode, externalCode, DateTime.UtcNow, DateTime.UtcNow.AddDays(7));
             return Ok("Rezdy'ye availability update bildirimi gönderildi.");
         }
-
     }
-
 }

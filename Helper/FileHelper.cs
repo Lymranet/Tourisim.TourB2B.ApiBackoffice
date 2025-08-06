@@ -35,7 +35,7 @@ namespace TourManagementApi.Helper
             return "/uploads/gallery/" + fileName;
         }
 
-        public static async Task<string> SaveImage(IFormFile file, string folder, IWebHostEnvironment _environment, ILogger<ActivitiesWizardController> _logger)
+        public static async Task<string> SaveImage(IFormFile file, string folder, IWebHostEnvironment _environment, ILogger<ActivitiesController> _logger)
         {
             if (file == null || file.Length == 0)
                 return null;

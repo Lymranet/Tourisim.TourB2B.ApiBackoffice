@@ -20,12 +20,12 @@ namespace TourManagementApi.Controllers
 {
     public class ReportsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<ReportsController> _logger;
 
         public ReportsController(
-            ApplicationDbContext context,
+            TourManagementDbContext context,
             IWebHostEnvironment environment,
             ILogger<ReportsController> logger)
         {

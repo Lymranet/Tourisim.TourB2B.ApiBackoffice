@@ -1,220 +1,336 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using TourManagementApi.Data;
+using TourManagementApi.Extensions;
 using TourManagementApi.Models;
 using TourManagementApi.Models.Api;
+using TourManagementApi.Models.Api.Rezdy;
 using TourManagementApi.Models.Api.RezdyConnectModels;
 
 namespace TourManagementApi.Services
 {
     public class BookingService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly ILogger<BookingService> _logger;
-        public BookingService(ApplicationDbContext context, ILogger<BookingService> logger)
+        public BookingService(TourManagementDbContext context, ILogger<BookingService> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        public async Task<bool> ConfirmReservationAsync(string orderNumber)
+        public async Task<bool> ConfirmBookingAsync(RezdyBookingRequest booking)
         {
             try
             {
-                var reservation = await _context.Reservations
-                .FirstOrDefaultAsync(r => r.PartnerBookingId == orderNumber && r.Status == "Processing");
-
-                if (reservation == null)
+                if (string.IsNullOrWhiteSpace(booking?.OrderNumber))
                     return false;
 
-                reservation.Status = "Confirmed";
-                reservation.ReservationDate = DateTime.UtcNow;
+                var existingBooking = await _context.Bookings
+                    .FirstOrDefaultAsync(b => b.OrderNumber == booking.OrderNumber && b.Status == "PROCESSING");
+
+                if (existingBooking == null)
+                    return false;
+
+                existingBooking.Status = booking.Status;
+                existingBooking.DateConfirmed = DateTime.UtcNow;
+
+                ObjectMapperExtensions.MapWithFallback(booking, existingBooking);
+
                 await _context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Booking failed.");
-                _logger.LogError(ex.Message, "Detail.");
+                _logger.LogError(ex, "Booking confirmation failed.");
             }
+
             return false;
         }
-        public async Task<BookingRequest> CreateProcessingReservationAsync(BookingRequest booking)
-        {
-            //BookingDto booking = MapRezdyToBookingDto(rezdy);
 
+        public async Task<RezdyBookingRequest> CreateReservationAsync(RezdyBookingRequest booking, string externalProductCode)
+        {
             try
             {
-                int activityId = 0;
-                int optionId = 0;
-
-                if (!string.IsNullOrWhiteSpace(booking.ExternalProductCode) && booking.ExternalProductCode.Contains("-"))
+                var newBooking = new Booking
                 {
-                    var ids = booking.ExternalProductCode.Split('-');
-                    activityId = int.Parse(ids[0]);
-                    optionId = int.Parse(ids[1]);
-                }
-
-                var reservation = new Reservation
-                {
-                    ActivityId = activityId,
-                    OptionId = optionId,
-                    ReservationDate = DateTime.UtcNow,
-                    ScheduledDate = booking.StartTime,
+                    ApiKey = booking.ApiKey,
+                    Comments = booking.Comments,
+                    Commission = booking.Commission,
+                    Coupon = booking.Coupon,
+                    Status = booking.Status,
+                    Code = booking.Code,
+                    DateConfirmed = ParseDate(booking.DateConfirmed),
+                    DateCreated = ParseDate(booking.DateCreated),
+                    DatePaid = ParseDate(booking.DatePaid),
+                    DateReconciled = ParseDate(booking.DateReconciled),
+                    DateUpdated = ParseDate(booking.DateUpdated),
+                    InternalNotes = booking.InternalNotes,
+                    OrderNumber = booking.OrderNumber,
+                    PaymentOption = booking.PaymentOption,
+                    ResellerAlias = booking.ResellerAlias,
+                    ResellerComments = booking.ResellerComments,
+                    ResellerId = booking.ResellerId,
+                    ResellerName = booking.ResellerName,
+                    ResellerReference = booking.ResellerReference,
+                    ResellerSource = booking.ResellerSource,
+                    SendNotifications = booking.SendNotifications,
+                    Source = booking.Source,
+                    SourceChannel = booking.SourceChannel,
+                    SourceReferrer = booking.SourceReferrer,
+                    SupplierAlias = booking.SupplierAlias,
+                    SupplierId = booking.SupplierId,
+                    SupplierName = booking.SupplierName,
+                    Surcharge = booking.Surcharge,
                     TotalAmount = booking.TotalAmount,
-                    Currency = booking.Currency,
-                    GuestCount = booking.Participants.Count,
-                    ContactName = booking.Customer.FullName,
-                    ContactEmail = booking.Customer.Email,
-                    ContactPhone = booking.Customer.Phone,
-                    Status = "Processing",
-                    PartnerBookingId = booking.OrderNumber,
-                    PartnerSupplierId = booking.SupplierId.ToString(),
-                    CreatedAt = DateTime.UtcNow,
-                    IsCancelled = false,
-                    Notes = string.Join(" | ", new[] {
-                        rezdy.Comments,
-                        rezdy.ResellerComments
-                    }.Where(x => !string.IsNullOrWhiteSpace(x)))
+                    TotalCurrency = booking.TotalCurrency,
+                    TotalDue = booking.TotalDue,
+                    TotalPaid = booking.TotalPaid,
+                    BarcodeType = booking.BarcodeType
                 };
 
-                _context.Reservations.Add(reservation);
+                _context.Bookings.Add(newBooking);
                 await _context.SaveChangesAsync();
 
-                foreach (var participant in booking.Participants)
+                // CreatedBy
+                if (booking.CreatedBy is not null)
                 {
-                    var guest = new ReservationGuest
+                    _context.BookingCreatedBies.Add(new BookingCreatedBy
                     {
-                        ReservationId = reservation.Id,
-                        FirstName = participant.FirstName,
-                        LastName = participant.LastName,
-                        Email = participant.Email,
-                        PhoneNumber = participant.Phone,
-                        TicketCategory = participant.TicketCategory,
-                        Occupancy = 1,
-                        AdditionalFieldsJson = JsonConvert.SerializeObject(participant.Fields),
-                        AddonsJson = "[]",
-                        GuestName = $"{participant.FirstName} {participant.LastName}",
-                        Age = 0,
-                        TicketId = Guid.NewGuid().ToString()
+                        BookingId = newBooking.BookingId,
+                        Code = booking.CreatedBy.Code,
+                        Email = booking.CreatedBy.Email,
+                        FirstName = booking.CreatedBy.FirstName,
+                        LastName = booking.CreatedBy.LastName
+                    });
+                }
+
+                // Customer
+                if (booking.Customer is not null)
+                {
+                    _context.BookingCustomers.Add(new BookingCustomer
+                    {
+                        BookingId = newBooking.BookingId,
+                        AboutUs = booking.Customer.AboutUs,
+                        AddressLine = booking.Customer.AddressLine,
+                        AddressLine2 = booking.Customer.AddressLine2,
+                        City = booking.Customer.City,
+                        CompanyName = booking.Customer.CompanyName,
+                        CountryCode = booking.Customer.CountryCode,
+                        Dob = booking.Customer.Dob,
+                        Email = booking.Customer.Email,
+                        Fax = booking.Customer.Fax,
+                        FirstName = booking.Customer.FirstName,
+                        Gender = booking.Customer.Gender,
+                        CustomerExternalId = booking.Customer.Id,
+                        LastName = booking.Customer.LastName,
+                        Marketing = booking.Customer.Marketing,
+                        MiddleName = booking.Customer.MiddleName,
+                        Mobile = booking.Customer.Mobile,
+                        Name = booking.Customer.Name,
+                        Newsletter = booking.Customer.Newsletter,
+                        Phone = booking.Customer.Phone,
+                        PostCode = booking.Customer.PostCode,
+                        PreferredLanguage = booking.Customer.PreferredLanguage,
+                        Skype = booking.Customer.Skype,
+                        State = booking.Customer.State,
+                        Title = booking.Customer.Title
+                    });
+                }
+
+                // Credit Card
+                if (booking.CreditCard is not null)
+                {
+                    _context.BookingCreditCards.Add(new BookingCreditCard
+                    {
+                        BookingId = newBooking.BookingId,
+                        CardToken = booking.CreditCard.CardToken,
+                        CardType = booking.CreditCard.CardType,
+                        ExpiryMonth = booking.CreditCard.ExpiryMonth,
+                        ExpiryYear = booking.CreditCard.ExpiryYear,
+                        CardName = booking.CreditCard.CardName,
+                        CardNumber = booking.CreditCard.CardNumber,
+                        CardSecurityNumber = booking.CreditCard.CardSecurityNumber
+                    });
+                }
+
+                // Fields
+                if (booking.Fields is not null)
+                {
+                    foreach (var field in booking.Fields)
+                    {
+                        _context.BookingFields.Add(new BookingField
+                        {
+                            BookingId = newBooking.BookingId,
+                            Label = field.Label,
+                            Value = field.Value,
+                            BarcodeType = field.BarcodeType
+                        });
+                    }
+                }
+
+                // Payments
+                if (booking.Payments is not null)
+                {
+                    foreach (var payment in booking.Payments)
+                    {
+                        _context.BookingPayments.Add(new BookingPayment
+                        {
+                            BookingId = newBooking.BookingId,
+                            Amount = payment.Amount,
+                            Currency = payment.Currency,
+                            Date = payment.Date,
+                            Label = payment.Label,
+                            Recipient = payment.Recipient,
+                            Type = payment.Type
+                        });
+                    }
+                }
+
+                // ResellerUser
+                if (booking.ResellerUser is not null)
+                {
+                    _context.BookingResellerUsers.Add(new BookingResellerUser
+                    {
+                        BookingId = newBooking.BookingId,
+                        Code = booking.ResellerUser.Code,
+                        Email = booking.ResellerUser.Email,
+                        FirstName = booking.ResellerUser.FirstName,
+                        LastName = booking.ResellerUser.LastName
+                    });
+                }
+
+                // Items & alt ilişkileri
+                foreach (var item in booking.Items)
+                {
+                    var itemEntity = new BookingItem
+                    {
+                        BookingId = newBooking.BookingId,
+                        ProductCode = item.ProductCode,
+                        TotalQuantity = item.TotalQuantity,
+                        ProductName = item.ProductName,
+                        Amount = item.Amount,
+                        Subtotal = item.Subtotal,
+                        TotalItemTax = item.TotalItemTax,
+                        StartTime = item.StartTime,
+                        StartTimeLocal = item.StartTimeLocal,
+                        EndTime = item.EndTime,
+                        EndTimeLocal = item.EndTimeLocal,
+                        ExternalProductCode = item.ExternalProductCode,
+                        TransferFrom = item.TransferFrom,
+                        TransferTo = item.TransferTo,
+                        TransferReturn = item.TransferReturn
                     };
 
-                    _context.ReservationGuests.Add(guest);
+                    _context.BookingItems.Add(itemEntity);
+                    await _context.SaveChangesAsync();
+
+                    if (item.Quantities is not null)
+                    {
+                        foreach (var q in item.Quantities)
+                        {
+                            _context.BookingQuantities.Add(new BookingQuantity
+                            {
+                                ItemId = itemEntity.ItemId,
+                                OptionLabel = q.OptionLabel,
+                                OptionPrice = q.OptionPrice,
+                                OptionSeatsUsed = q.OptionSeatsUsed,
+                                Value = q.Value
+                            });
+                        }
+                    }
+
+                    if (item.Extras is not null)
+                    {
+                        foreach (var x in item.Extras)
+                        {
+                            _context.BookingExtras.Add(new BookingExtra
+                            {
+                                ItemId = itemEntity.ItemId,
+                                Name = x.Name,
+                                Description = x.Description,
+                                ExtraPriceType = x.ExtraPriceType,
+                                Price = x.Price,
+                                Quantity = x.Quantity
+                            });
+                        }
+                    }
+
+                    if (item.Vouchers is not null)
+                    {
+                        foreach (var v in item.Vouchers)
+                        {
+                            _context.BookingVouchers.Add(new BookingVoucher
+                            {
+                                ItemId = itemEntity.ItemId,
+                                Code = v.Code,
+                                ExpiryDate = v.ExpiryDate,
+                                InternalNotes = v.InternalNotes,
+                                InternalReference = v.InternalReference,
+                                IssueDate = v.IssueDate,
+                                Status = v.Status,
+                                Value = v.Value,
+                                ValueType = v.ValueType
+                            });
+                        }
+                    }
+
+                    if (item.Participants is not null)
+                    {
+                        foreach (var p in item.Participants)
+                        {
+                            var partEntity = new BookingParticipant
+                            {
+                                ItemId = itemEntity.ItemId
+                            };
+
+                            _context.BookingParticipants.Add(partEntity);
+                            await _context.SaveChangesAsync();
+
+                            foreach (var pf in p.Fields)
+                            {
+                                _context.BookingParticipantFields.Add(new BookingParticipantField
+                                {
+                                    ParticipantId = partEntity.ParticipantId,
+                                    Label = pf.Label,
+                                    Value = pf.Value,
+                                    BarcodeType = pf.BarcodeType
+                                });
+                            }
+                        }
+                    }
+
+                    if (item.PickupLocation is not null)
+                    {
+                        _context.BookingPickupLocations.Add(new BookingPickupLocation
+                        {
+                            ItemId = itemEntity.ItemId,
+                            LocationName = item.PickupLocation.LocationName,
+                            Address = item.PickupLocation.Address,
+                            Latitude = item.PickupLocation.Latitude,
+                            Longitude = item.PickupLocation.Longitude,
+                            MinutesPrior = item.PickupLocation.MinutesPrior,
+                            PickupInstructions = item.PickupLocation.PickupInstructions,
+                            PickupTime = item.PickupLocation.PickupTime
+                        });
+                    }
                 }
 
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Reservation creation failed.");
+                _logger.LogError(ex, "Rezdy booking insert failed.");
             }
 
             return booking;
         }
 
-
-        //public async Task<BookingDto> CreateProcessingReservationAsync(BookingDto booking)
-        //{
-        //    try
-        //    {
-
-        //        int activityId=0;
-        //        int optionId = 0;
-        //        if (booking.ExternalProductCode.Contains("-"))
-        //        {
-        //            var id = booking.ExternalProductCode.Split('-');
-        //            activityId = int.Parse(id[0]);
-        //            optionId = int.Parse(id[1]);
-        //        }
-
-        //        var reservation = new Reservation
-        //        {
-        //            ActivityId = activityId,
-        //            OptionId = optionId,
-        //            ReservationDate = DateTime.UtcNow,
-        //            ScheduledDate = booking.StartTime,
-        //            TotalAmount = booking.TotalAmount,
-        //            Currency = booking.Currency,
-        //            GuestCount = booking.Participants.Count,
-        //            ContactName = booking.Customer.FullName,
-        //            ContactEmail = booking.Customer.Email,
-        //            ContactPhone = booking.Customer.Phone,
-        //            Status = "Processing",
-        //            PartnerBookingId = booking.OrderNumber,      
-        //            PartnerSupplierId = booking.SupplierId.ToString(),
-        //            CreatedAt = DateTime.UtcNow,
-        //            IsCancelled = false
-        //            //,Notes= (booking.Notes ?? "")+ (booking.Comments ?? "") + (booking.ResellerComments ?? ""),
-        //        };
-
-
-        //        _context.Reservations.Add(reservation);
-        //        await _context.SaveChangesAsync();
-
-        //        foreach (var participant in booking.Participants)
-        //        {
-        //            var guest = new ReservationGuest
-        //            {
-        //                ReservationId = reservation.Id,
-        //                FirstName = participant.FirstName,
-        //                LastName = participant.LastName,
-        //                Email = participant.Email,
-        //                PhoneNumber = participant.Phone,
-        //                TicketCategory = participant.TicketCategory,
-        //                Occupancy = 1,
-        //                AdditionalFieldsJson = "{}",
-        //                AddonsJson = "[]",
-        //                GuestName = $"{participant.FirstName} {participant.LastName}",
-        //                Age = 0,
-        //                TicketId = Guid.NewGuid().ToString()
-        //            };
-
-        //            _context.ReservationGuests.Add(guest);
-        //        }
-
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Reservation notification failed.");
-        //        _logger.LogError(ex.Message, "Detail.");
-        //    }
-        //    return booking;
-        //}
-
-        //public BookingCreateResponse Create(BookingRequest request)
-        //{
-        //    var reservation = new Reservation
-        //    {
-        //        ActivityId = int.Parse(request.ProductCode),
-        //        OptionId = request.OptionId,
-        //        ReservationDate = DateTime.UtcNow,
-        //        ScheduledDate = request.ScheduledDate,
-        //        GuestCount = request.GuestCount,
-        //        TotalAmount = request.TotalAmount,
-        //        Currency = request.Currency,
-        //        ContactName = request.ContactName,
-        //        ContactEmail = request.ContactEmail,
-        //        ContactPhone = request.ContactPhone,
-        //        Status = "Confirmed",
-        //        CreatedAt = DateTime.UtcNow,
-        //        BookingId = Guid.NewGuid().ToString(),
-        //        PartnerBookingId = request.BookingReference,
-        //        PartnerSupplierId = request.SupplierId,
-        //        Notes = request.Notes ?? "",
-        //        IsCancelled = false
-        //    };
-
-        //    _context.Reservations.Add(reservation);
-        //    _context.SaveChanges();
-
-        //    return new BookingCreateResponse
-        //    {
-        //        BookingId = reservation.Id,
-        //        BookingReference = reservation.PartnerBookingId,
-        //        Status = reservation.Status
-        //    };
-        //}
+        // Yardımcı fonksiyon:
+        private static DateTime? ParseDate(string? input)
+        {
+            return DateTime.TryParse(input, out var dt) ? dt : null;
+        }
 
         public async Task<bool> CancelReservationAsync(string orderNumber, string status = "CANCELLED")
         {

@@ -15,19 +15,19 @@ public partial class Activity
 
     public int Duration { get; set; }
 
-    public string? ContactInfoName { get; set; }
+    public string? ContactInfo_Name { get; set; }
 
-    public string? ContactInfoEmail { get; set; }
+    public string? ContactInfo_Email { get; set; }
 
-    public string? ContactInfoPhone { get; set; }
+    public string? ContactInfo_Phone { get; set; }
 
-    public string? ContactInfoRole { get; set; }
+    public string? ContactInfo_Role { get; set; }
 
     public string Status { get; set; } = null!;
 
     public double Rating { get; set; }
 
-    public string? MediaVideos { get; set; }
+    public string? Media_Videos { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
@@ -73,9 +73,6 @@ public partial class Activity
 
     public string? DetailsUrl { get; set; }
 
-    public string? B2BAgencyId { get; set; }
-
-
     public string? PartnerSupplierId { get; set; }
 
     public string Label { get; set; } = null!;
@@ -83,6 +80,8 @@ public partial class Activity
     public bool? IsFreeCancellation { get; set; }
 
     public int? TourCompanyId { get; set; }
+
+    public string? B2BAgencyId { get; set; }
 
     public virtual ICollection<ActivityLanguage> ActivityLanguages { get; set; } = new List<ActivityLanguage>();
 
@@ -107,6 +106,4 @@ public partial class Activity
     public virtual TourCompany? TourCompany { get; set; }
 
     public virtual ICollection<Translation> Translations { get; set; } = new List<Translation>();
-
-
 }

@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TourManagementApi.Models.Api;
 using TourManagementApi.Models.Api.Rezdy;
+using TourManagementApi.Models.Api.TourManagementApi.Models.Api.Rezdy;
 using TourManagementApi.Services;
 using TourManagementApi.Services.Rezdy;
-using CancellationRequest = TourManagementApi.Models.Api.RezdyConnectModels.CancellationRequest;
-using CustomerDto = TourManagementApi.Models.Api.RezdyConnectModels.CustomerDto;
 
 namespace TourManagementApi.Controllers.Api
 {
@@ -16,140 +15,75 @@ namespace TourManagementApi.Controllers.Api
 
         private readonly IProductService _productService;
         private readonly AvailabilityService _availabilityService;
-        private readonly PricingService _pricingService;
         private readonly Services.BookingService _bookingService;
         private readonly string _validApiKey;
 
         public RezdyConnectController(
             IProductService productService,
             AvailabilityService availabilityService,
-            PricingService pricingService,
              IConfiguration configuration,
             Services.BookingService bookingService)
         {
             _productService = productService;
             _availabilityService = availabilityService;
-            _pricingService = pricingService;
             _bookingService = bookingService;
             _validApiKey = configuration["Rezdy:ApiKey"];
         }
 
         private bool IsApiKeyValid(string? apiKey) => apiKey == _validApiKey;
-        //public BookingDto MapRezdyToBookingDto(RezdyBookingDto rezdy)
-        //{
-        //    var item = rezdy.Items.FirstOrDefault();
-
-        //    return new BookingDto
-        //    {
-        //        OrderNumber = rezdy.OrderNumber,
-        //        Status = rezdy.Status,
-        //        ProductCode = item?.ProductCode,
-        //        ExternalProductCode = item?.ExternalProductCode,
-        //        StartTime = item?.StartTime ?? DateTime.MinValue,
-        //        Currency = rezdy.TotalCurrency,
-        //        TotalAmount = rezdy.TotalAmount,
-        //        SupplierId = rezdy.SupplierId,
-        //        Customer = new CustomerDto
-        //        {
-        //            FullName = rezdy.Customer.Name,
-        //            Phone = rezdy.Customer.Mobile,
-        //            Email = rezdy.Customer.Email
-        //        },
-        //        Participants = item?.Participants != null
-        //            ? item.Participants.Select(p => new ParticipantDto
-        //            {
-        //                FirstName = p.Fields.FirstOrDefault(f => f.Label == "First Name")?.Value,
-        //                LastName = p.Fields.FirstOrDefault(f => f.Label == "Last Name")?.Value,
-        //                Email = p.Fields.FirstOrDefault(f => f.Label == "Email")?.Value,
-        //                Phone = p.Fields.FirstOrDefault(f => f.Label == "Mobile")?.Value,
-        //                Fields = p.Fields.Select(f => new BookingField
-        //                {
-        //                    Label = f.Label,
-        //                    Value = f.Value
-        //                }).ToList(),
-        //                TicketCategory = item.Quantities?.FirstOrDefault()?.OptionLabel, // varsayım: her katılımcı için aynı
-        //                CommissionType = "NETT" // Default olarak ayarlanıyor
-        //            }).ToList()
-        //            : new List<ParticipantDto>(),
-
-        //        Quantities = item?.Quantities != null
-        //            ? item.Quantities.Select(q => new QuantityDto
-        //            {
-        //                OptionLabel = q.OptionLabel,
-        //                OptionPrice = q.OptionPrice,
-        //                Value = q.Value,
-        //                CommissionType = "NETT"
-        //            }).ToList()
-        //            : new List<QuantityDto>(),
-
-        //        PickupLocation = item?.PickupLocation != null
-        //            ? new PickupLocationDto
-        //            {
-        //                LocationName = item.PickupLocation.LocationName,
-        //                Address = item.PickupLocation.Address,
-        //                PickupTime = item.PickupLocation.PickupTime
-        //            }
-        //            : null,
-
-        //        Subtotal = item?.Subtotal ?? 0,
-        //        TotalItemTax = item?.TotalItemTax ?? 0
-        //    };
-        //}
-
-
 
         [HttpGet("products")]
         public IActionResult GetProducts(
-    [FromQuery] string apiKey,
-    [FromQuery] int offset = 0,
-    [FromQuery] int limit = 100,
-    [FromQuery(Name = "productCode")] List<string>? productCodes = null,
-    [FromQuery(Name = "externalProductCode")] List<string>? externalProductCodes = null)
-        {
-            if (apiKey != _validApiKey)
-                return Unauthorized("Invalid API Key");
-
-            List<RezdyProductDto> allProducts = _productService.GetAll();
-            var matchedProducts = new List<RezdyProductDto>();
-
-            // externalProductCode ile filtre
-            if (externalProductCodes != null && externalProductCodes.Any())
-            {
-                foreach (var code in externalProductCodes)
+            [FromQuery] string apiKey,
+            [FromQuery] int offset = 0,
+            [FromQuery] int limit = 100,
+            [FromQuery(Name = "productCode")] List<string>? productCodes = null,
+            [FromQuery(Name = "externalProductCode")] List<string>? externalProductCodes = null)
                 {
-                    var match = allProducts.FirstOrDefault(p => p.InternalCode == code);
-                    if (match == null)
-                        return UnprocessableEntity(new
+                    if (apiKey != _validApiKey)
+                        return Unauthorized("Invalid API Key");
+
+                    List<RezdyProductDto> allProducts = _productService.GetAll();
+                    var matchedProducts = new List<RezdyProductDto>();
+
+                    // externalProductCode ile filtre
+                    if (externalProductCodes != null && externalProductCodes.Any())
+                    {
+                        foreach (var code in externalProductCodes)
                         {
-                            requestStatus = new
-                            {
-                                success = false,
-                                message = $"Product with externalProductCode '{code}' not found."
-                            }
-                        });
+                            var match = allProducts.FirstOrDefault(p => p.InternalCode == code);
+                            if (match == null)
+                                return UnprocessableEntity(new
+                                {
+                                    requestStatus = new
+                                    {
+                                        success = false,
+                                        message = $"Product with externalProductCode '{code}' not found."
+                                    }
+                                });
 
-                    matchedProducts.Add(match);
+                            matchedProducts.Add(match);
+                        }
+                    }
+
+
+                    // Hiçbir filtre yoksa tüm ürünler
+                    if (!(productCodes?.Any() ?? false) && !(externalProductCodes?.Any() ?? false))
+                    {
+                        matchedProducts = allProducts;
+                    }
+
+                    // Pagination
+                    var paged = matchedProducts.Skip(offset).Take(limit).ToList();
+                    var hasMore = offset + limit < matchedProducts.Count;
+                    Response.Headers.Add("pagination-has-more", hasMore ? "true" : "false");
+
+                    return Ok(new
+                    {
+                        requestStatus = new { success = true },
+                        products = paged
+                    });
                 }
-            }
-
-
-            // Hiçbir filtre yoksa tüm ürünler
-            if (!(productCodes?.Any() ?? false) && !(externalProductCodes?.Any() ?? false))
-            {
-                matchedProducts = allProducts;
-            }
-
-            // Pagination
-            var paged = matchedProducts.Skip(offset).Take(limit).ToList();
-            var hasMore = offset + limit < matchedProducts.Count;
-            Response.Headers.Add("pagination-has-more", hasMore ? "true" : "false");
-
-            return Ok(new
-            {
-                requestStatus = new { success = true },
-                products = paged
-            });
-        }
 
         [HttpGet("products/{productCode}")]
         public IActionResult GetProductDetail(string productCode, [FromQuery] string apiKey)
@@ -166,13 +100,13 @@ namespace TourManagementApi.Controllers.Api
 
         [HttpGet("availability")]
         public IActionResult GetAvailability(
-       [FromQuery] string apiKey,
-       [FromQuery] string productCode,
-       [FromQuery] string externalProductCode,
-       [FromQuery] DateTime from,
-       [FromQuery] DateTime to,
-       [FromQuery] string fromLocal,
-       [FromQuery] string toLocal)
+            [FromQuery] string apiKey,
+            [FromQuery] string productCode,
+            [FromQuery] string externalProductCode,
+            [FromQuery] DateTime from,
+            [FromQuery] DateTime to,
+            [FromQuery] string fromLocal,
+            [FromQuery] string toLocal)
         {
             if (apiKey != _validApiKey)
                 return Unauthorized(new { requestStatus = new { success = false, message = "Invalid API Key" } });
@@ -186,9 +120,73 @@ namespace TourManagementApi.Controllers.Api
             });
         }
 
+        //TODO: Errorcodes 
+        // TODO  : Rezervasyon ve booking de gelen dataları kontrol et
+        [HttpPost("reservation")]
+        public async Task<IActionResult> CreateReservation(
+            [FromQuery] string apiKey,
+            [FromQuery] string externalProductCode,
+            [FromBody] RezdyBookingRequest request)
+        {
+            if (apiKey != _validApiKey)
+                return Unauthorized(new
+                {
+                    requestStatus = new { success = false, message = "Invalid API Key" }
+                });
+
+            try
+            {
+                var req = await _bookingService.CreateReservationAsync(request, externalProductCode);
+                var responseBooking = new BookingResponseBooking
+                {
+                    OrderNumber = req.OrderNumber,
+                    Comments = req.Comments,
+                    ResellerComments = req.ResellerComments,
+                    BarcodeType = req.Fields?.FirstOrDefault()?.BarcodeType ?? "QR_CODE",
+                    Fields = req.Fields?.Select(f => new BookingRequestField
+                    {
+                        Label = f.Label,
+                        Value = f.Value,
+                        BarcodeType = f.BarcodeType
+                    }).ToList() ?? new(),
+                    Items = req.Items?.Select(i => new BookingResponseItem
+                    {
+                        Participants = i.Participants?.Select(p => new BookingResponseParticipant
+                        {
+                            Fields = p.Fields.Select(f => new BookingRequestField
+                            {
+                                Label = f.Label,
+                                Value = f.Value,
+                                BarcodeType = f.BarcodeType
+                            }).ToList()
+                        }).ToList() ?? new()
+                    }).ToList() ?? new(),
+                    RequestStatus = new Models.Api.TourManagementApi.Models.Api.Rezdy.RequestStatus
+                    {
+                        Code = "SUCCESS",
+                        Message = "Reservation created",
+                        HttpStatus = 200
+                    }
+                };
+
+                return Ok(new
+                {
+                    requestStatus = new { success = true },
+                    bookings = new[] { responseBooking }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    requestStatus = new { success = false, message = ex.Message }
+                });
+            }
+        }
+
         [HttpPut("booking")]
-        public async Task<IActionResult> ConfirmBookingWithSchemaCompliance([FromQuery] string apiKey, 
-            [FromBody] BookingRequest request)
+        public async Task<IActionResult> ConfirmBooking([FromQuery] string apiKey,
+        [FromBody] RezdyBookingRequest request)
         {
             // Geçersiz API Key
             if (apiKey != _validApiKey)
@@ -228,7 +226,7 @@ namespace TourManagementApi.Controllers.Api
             }
 
             // Rezervasyon onayı
-            var result = await _bookingService.ConfirmReservationAsync(request.OrderNumber);
+            var result = await _bookingService.ConfirmBookingAsync(request);
             if (!result)
             {
                 return Ok(new
@@ -252,7 +250,8 @@ namespace TourManagementApi.Controllers.Api
                 barcodeType = "CODE_128",
                 comments = request.Comments,
                 resellerComments = "",
-                fields = request.Fields?.Select(f => new {
+                fields = request.Fields?.Select(f => new
+                {
                     barcodeType = "CODE_128",
                     label = f.Label,
                     value = f.Value
@@ -280,7 +279,7 @@ namespace TourManagementApi.Controllers.Api
         }
 
         [HttpPut("cancellation")]
-        public async Task<IActionResult> CancelBooking([FromQuery] string apiKey, [FromBody] BookingRequest booking)
+        public async Task<IActionResult> CancelBooking([FromQuery] string apiKey, [FromBody] RezdyBookingRequest booking)
         {
             if (apiKey != _validApiKey)
             {
@@ -315,45 +314,5 @@ namespace TourManagementApi.Controllers.Api
             // Sadece boş bir JSON nesnesi dönülüyor
             return Ok(new { });
         }
-
-
-        [HttpPost("reservation")]
-        public async Task<IActionResult> CreateProcessingReservation(
-        [FromQuery] string apiKey,
-        [FromBody] BookingRequest request)
-        {
-            if (apiKey != _validApiKey)
-                return Unauthorized(new { requestStatus = new { success = false, message = "Invalid API Key" } });
-
-            try
-            {
-                //var mapped = MapRezdyToBookingDto(request);
-                var result = await _bookingService.CreateProcessingReservationAsync(request);
-
-                return Ok(new
-                {
-                    requestStatus = new { success = true },
-                    bookings = new[] { result }
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    requestStatus = new { success = false, message = ex.Message }
-                });
-            }
-        }
-
-        [HttpPost("confirmation")]
-        public IActionResult ConfirmBooking([FromQuery] string apiKey, [FromBody] ConfirmationRequest request)
-        {
-            if (apiKey != _validApiKey)
-                return Unauthorized("Invalid API Key");
-
-            var result = _bookingService.ConfirmReservationAsync(request.ReservationId);
-            return Ok(new { success = result });
-        }
-
     }
 }

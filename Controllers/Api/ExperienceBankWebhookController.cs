@@ -17,10 +17,10 @@ namespace TourManagementApi.Controllers.Api
     [ApiController]
     public class ExperienceBankWebhookController : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly ILogger<ExperienceBankWebhookController> _logger;
 
-        public ExperienceBankWebhookController(ApplicationDbContext context, ILogger<ExperienceBankWebhookController> logger)
+        public ExperienceBankWebhookController(TourManagementDbContext context, ILogger<ExperienceBankWebhookController> logger)
         {
             _context = context;
             _logger = logger;

@@ -11,9 +11,9 @@ namespace TourManagementApi.Controllers
 {
     public class OptionsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
 
-        public OptionsController(ApplicationDbContext context)
+        public OptionsController(TourManagementDbContext context)
         {
             _context = context;
         }

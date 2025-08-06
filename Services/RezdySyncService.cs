@@ -7,11 +7,11 @@ namespace TourManagementApi.Services
 {
     public class RezdySyncService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
 
-        public RezdySyncService(ApplicationDbContext context, HttpClient httpClient, IConfiguration configuration)
+        public RezdySyncService(TourManagementDbContext context, HttpClient httpClient, IConfiguration configuration)
         {
             _context = context;
             _httpClient = httpClient;

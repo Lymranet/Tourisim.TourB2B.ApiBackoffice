@@ -1,234 +1,1212 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 using TourManagementApi.Data;
+using TourManagementApi.Helper;
 using TourManagementApi.Models;
-using Newtonsoft.Json;
+using TourManagementApi.Models.Common;
+using TourManagementApi.Models.ViewModels;
+using TourManagementApi.Services;
+using Addon = TourManagementApi.Models.Addon;
+using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers
 {
     public class ActivitiesController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly TourManagementDbContext _context;
+        private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<ActivitiesController> _logger;
+        private readonly ExperienceBankService _experienceBankService;
 
-        public ActivitiesController(ApplicationDbContext context)
+        public ActivitiesController(
+            TourManagementDbContext context,
+            IWebHostEnvironment environment,
+            ILogger<ActivitiesController> logger, ExperienceBankService experienceBankService)
         {
             _context = context;
+            _environment = environment;
+            _logger = logger;
+            _experienceBankService = experienceBankService;
+
         }
 
-        // MVC Actions
-        public async Task<IActionResult> Index()
+        #region Activies
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteActivity(int id)
+        {
+
+
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .Include(a => a.Addons)
+                .Include(a => a.Availabilities)
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.RoutePoints)
+                .Include(a => a.TimeSlots)
+                .Include(a => a.Translations)
+                .Include(a => a.PriceCategories)
+                .Include(a => a.CancellationPolicyConditions)
+                .Include(a => a.ActivityLanguages)
+                .Include(a => a.Reservations)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null)
+                return NotFound();
+
+            if (activity.Status == "active")
+                return BadRequest("Aktif turlar silinemez.");
+            // Alt ilişkili veriler siliniyor
+            _context.Options.RemoveRange(activity.Options);
+            _context.Addons.RemoveRange(activity.Addons);
+            _context.Availabilities.RemoveRange(activity.Availabilities);
+            _context.MeetingPoints.RemoveRange(activity.MeetingPoints);
+            _context.RoutePoints.RemoveRange(activity.RoutePoints);
+            _context.TimeSlots.RemoveRange(activity.TimeSlots);
+            _context.Translations.RemoveRange(activity.Translations);
+            _context.PriceCategories.RemoveRange(activity.PriceCategories);
+            _context.CancellationPolicyConditions.RemoveRange(activity.CancellationPolicyConditions);
+            _context.ActivityLanguages.RemoveRange(activity.ActivityLanguages);
+            _context.Reservations.RemoveRange(activity.Reservations);
+
+            // Ana activity silipduru
+            _context.Activities.Remove(activity);
+            await _context.SaveChangesAsync();
+
+            try
+            {
+                // ExperienceBank notification
+                await _experienceBankService.NotifyActivityUpdatedAsync(
+                    activityId: activity.Id.ToString(),
+                    partnerSupplierId: activity.PartnerSupplierId
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ExperienceBank notify failed after DeleteActivity");
+            }
+
+            return RedirectToAction("Index");
+        }
+
+
+        public IActionResult Index(string Id)
         {
             try
             {
-                var activities = await _context.Activities
-                    .Include(a => a.Location)
-                    .ToListAsync();
+#if DEBUG
+                Id = "96d2940f09674b0f81d86bc821c69ff6";
+#endif
+
+                if (string.IsNullOrEmpty(Id))
+                {
+                    // Eğer Id boşsa Session'dan oku
+                    Id = HttpContext.Session.GetString("B2BAgencyId");
+                }
+                else
+                {
+                    // Eğer Id geldiyse Session'a kaydet
+                    HttpContext.Session.SetString("B2BAgencyId", Id);
+                }
+                var activities = _context.Activities.Where(a => a.B2BAgencyId == Id)
+                    .Include(a => a.Options)
+                    .Include(a => a.TourCompany)
+                   .Select(a => new ActivityBasicViewModel
+                   {
+                       ActivityId = a.Id,
+                       Title = a.Title ?? string.Empty,
+                       Description = a.Description ?? string.Empty,
+                       Category = a.Category ?? string.Empty,
+                       TourCompany = a.TourCompany.CompanyName,
+                       Label = a.Label ?? string.Empty,
+                       Status = a.Status ?? "draft",
+                       Options = a.Options ?? new List<Option>(),
+                       CountryCode = a.CountryCode ?? string.Empty,
+                       DestinationCode = a.DestinationCode ?? string.Empty,
+                       DestinationName = a.DestinationName ?? string.Empty,
+
+                       // Yeni eklenen property'leri set et
+                       CreatedAt = a.CreatedAt,
+                       UpdatedAt = a.UpdatedAt,
+                       Rating = a.Rating,
+                       IsFreeCancellation = a.IsFreeCancellation,
+                       ReservationsCount = a.Reservations.Count(),
+                       AvailabilitiesCount = a.Availabilities.Count()
+                   })
+
+                    .ToList();
 
                 return View(activities);
             }
             catch (Exception ex)
             {
-                // Log the exception
-                Console.WriteLine($"Error fetching activities: {ex.Message}");
-                return View("Error");
+                return View(new List<Activity>());
             }
         }
 
+        [HttpPatch]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] StatusUpdateDto dto)
+        {
+            var activity = await _context.Activities.FindAsync(id);
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            activity.Status = dto.Status;
+            _context.Update(activity);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+
+
+        // 1. Adım: Temel Bilgiler (Basic Information)
         [HttpGet]
-        public IActionResult Create()
+        [IgnoreAntiforgeryToken]
+
+        public async Task<IActionResult> CreateBasic(int? id)
         {
-            return View(new Activity());
-        }
-
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
+            var tourCompanies = await _context.TourCompanies.OrderBy(tc => tc.CompanyName).Select(tc => new SelectListItem
             {
-                return NotFound();
+                Value = tc.Id.ToString(),
+                Text = tc.CompanyName
+            }).ToListAsync();
+            try
+            {
+
+                if (id.HasValue)
+                {
+                    var activity = await _context.Activities.FindAsync(id.Value);
+                    if (activity == null) return NotFound();
+
+                    var vm = new ActivityBasicViewModel
+                    {
+                        ActivityId = activity.Id,
+                        Title = activity.Title,
+                        Categories = TxtJson.DeserializeStringList(activity.Category),
+                        Description = activity.Description,
+                        ContactInfo = activity.ContactInfo_Name != null ? new ContactInfoViewModel
+                        {
+                            Name = activity.ContactInfo_Name,
+                            Role = activity.ContactInfo_Role,
+                            Email = activity.ContactInfo_Email,
+                            Phone = activity.ContactInfo_Phone
+                        } : new ContactInfoViewModel(),
+                        CoverImageUrl = activity.CoverImage,
+                        PreviewImageUrl = activity.PreviewImage,
+                        GalleryImageUrls = TxtJson.DeserializeStringList(activity.GalleryImages),
+                        ExistingGalleryImages = TxtJson.DeserializeStringList(activity.GalleryImages),
+                        VideoUrls = TxtJson.DeserializeStringList(activity.Media_Videos),
+                        Highlights = activity.Highlights,
+                        Inclusions = TxtJson.DeserializeStringList(activity.Inclusions),
+                        Exclusions = TxtJson.DeserializeStringList(activity.Exclusions),
+                        ImportantInfo = TxtJson.DeserializeStringList(activity.ImportantInfo),
+                        Itinerary = activity.Itinerary,
+                        CountryCode = activity.CountryCode,
+                        DestinationCode = activity.DestinationCode,
+                        DestinationName = activity.DestinationName,
+                        TourCompanyId = activity.TourCompanyId,
+                        TourCompanies = tourCompanies
+                    };
+                    return View(vm);
+                }
+            }
+            catch (Exception ex)
+            {
+
+                throw;
             }
 
-            var activity = await _context.Activities
-                .Include(a => a.Location)
-                .Include(a => a.TimeSlots)
-                .Include(a => a.MeetingPoints)
-                .Include(a => a.GuestFields)
-                .Include(a => a.Options)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (activity == null)
+            return View(new ActivityBasicViewModel
             {
-                return NotFound();
-            }
-
-            return View(activity);
-        }
-
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var activity = await _context.Activities
-                .Include(a => a.Location)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (activity == null)
-            {
-                return NotFound();
-            }
-
-            return View(activity);
+                TourCompanies = tourCompanies
+            });
         }
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
-        public async Task<IActionResult> Create(IFormCollection form)
+        [DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = 1024 * 1024 * 100)]
+        public async Task<IActionResult> CreateBasic(ActivityBasicViewModel model)
         {
-            Activity? activity = null;
-
-            // 1. JSON ile mi geldi?
-            if (Request.ContentType != null && Request.ContentType.Contains("application/json"))
+            if (!ModelState.IsValid)
             {
-                using (var reader = new StreamReader(Request.Body))
+                model.TourCompanies = await _context.TourCompanies.OrderBy(tc => tc.CompanyName).Select(tc => new SelectListItem
                 {
-                    var body = await reader.ReadToEndAsync();
-                    activity = JsonConvert.DeserializeObject<Activity>(body);
+                    Value = tc.Id.ToString(),
+                    Text = tc.CompanyName
+                }).ToListAsync();
+
+                return View(model);
+            }
+
+            var agencyId = HttpContext.Session.GetString("B2BAgencyId");
+            if (string.IsNullOrEmpty(agencyId))
+            {
+                // Eğer Id boşsa Session'dan oku
+                agencyId = "96d2940f09674b0f81d86bc821c69ff6";
+            }
+            try
+            {
+                var activity = model.ActivityId.HasValue
+                    ? await _context.Activities.FindAsync(model.ActivityId.Value)
+                    : new Activity();
+
+                if (activity == null)
+                    return NotFound();
+
+                var finalGalleryList = new List<string>();
+
+                if (model.ExistingGalleryImages != null)
+                {
+                    finalGalleryList.AddRange(model.ExistingGalleryImages);
+                }
+                activity.B2BAgencyId = agencyId;
+                activity.Title = model.Title ?? string.Empty;
+                activity.Category = TxtJson.SerializeStringList(model.Categories?.Take(3).ToList() ?? new List<string>());
+                activity.Description = model.Description ?? string.Empty;
+                activity.DetailsUrl = "";
+                activity.PartnerSupplierId = "";
+                if (model.CoverImage != null)
+                {
+                    activity.CoverImage = await FileHelper.SaveImage(model.CoverImage, "cover", _environment, _logger);
+                }
+
+                if (model.PreviewImage != null)
+                {
+                    activity.PreviewImage = await FileHelper.SaveImage(model.PreviewImage, "preview", _environment, _logger);
+                }
+
+                if (model.GalleryImages != null && model.GalleryImages.Any())
+                {
+                    foreach (var image in model.GalleryImages.Take(10))
+                    {
+
+                        //var imageUrl = await SaveResizedImageAsync(file, Path.Combine(_environment.WebRootPath, "uploads", "gallery"));
+                        var imagePath = await FileHelper.SaveImage(image, "gallery", _environment, _logger);
+                        if (!string.IsNullOrEmpty(imagePath))
+                        {
+                            finalGalleryList.Add(imagePath);
+                        }
+                    }
+                    activity.GalleryImages = JsonSerializer.Serialize(finalGalleryList);
+                }
+
+                activity.Media_Videos = JsonSerializer.Serialize(model.VideoUrls?.Where(url => !string.IsNullOrWhiteSpace(url)).ToList() ?? new List<string>());
+
+                activity.ContactInfo_Name = model.ContactInfo.Name ?? string.Empty;
+                activity.ContactInfo_Role = model.ContactInfo.Role ?? string.Empty;
+                activity.ContactInfo_Email = model.ContactInfo.Email ?? string.Empty;
+                activity.ContactInfo_Phone = model.ContactInfo.Phone ?? string.Empty;
+
+                activity.Highlights = model.Highlights ?? string.Empty;
+                activity.Inclusions = JsonSerializer.Serialize(model.Inclusions?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>());
+                activity.Exclusions = JsonSerializer.Serialize(model.Exclusions?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>());
+                activity.ImportantInfo = JsonSerializer.Serialize(model.ImportantInfo?.Where(x => !string.IsNullOrWhiteSpace(x)).ToList() ?? new List<string>());
+                activity.Itinerary = model.Itinerary;
+
+                activity.TourCompanyId = model.TourCompanyId;
+                activity.CountryCode = model.CountryCode;
+                activity.DestinationCode = model.DestinationCode;
+                activity.DestinationName = model.DestinationName;
+                activity.Status = "draft";
+                if (!model.ActivityId.HasValue)
+                {
+                    _context.Activities.Add(activity);
+                }
+
+                await _context.SaveChangesAsync();
+
+                try
+                {
+                    await _experienceBankService.NotifyActivityUpdatedAsync(
+                        activityId: activity.Id.ToString(),
+                        partnerSupplierId: activity.PartnerSupplierId
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "ExperienceBank notify failed after CreateBasic");
+                }
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
+                return View(model);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteGalleryImage([FromBody] DeleteGalleryImageRequest request)
+        {
+            var activity = await _context.Activities.FindAsync(request.ActivityId);
+            if (activity == null || string.IsNullOrWhiteSpace(activity.GalleryImages))
+                return Json(new { success = false, message = "Aktivite bulunamadı." });
+
+            var galleryList = TxtJson.DeserializeStringList(activity.GalleryImages);
+
+            var filename = Path.GetFileName(request.ImagePath);
+            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "gallery", filename);
+
+            if (System.IO.File.Exists(fullPath))
+            {
+                System.IO.File.Delete(fullPath);
+            }
+
+            galleryList.RemoveAll(img => img.EndsWith(filename));
+            activity.GalleryImages = TxtJson.SerializeStringList(galleryList);
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteCoverOrPreviewImage([FromBody] DeleteImageRequest request)
+        {
+            var activity = await _context.Activities.FindAsync(request.ActivityId);
+            if (activity == null)
+                return Json(new { success = false, message = "Aktivite bulunamadı." });
+
+            string? imagePath = null;
+            string? folder = null;
+
+            if (request.ImageType == "cover" && !string.IsNullOrEmpty(activity.CoverImage))
+            {
+                imagePath = activity.CoverImage;
+                folder = "cover";
+                activity.CoverImage = null;
+            }
+            else if (request.ImageType == "preview" && !string.IsNullOrEmpty(activity.PreviewImage))
+            {
+                imagePath = activity.PreviewImage;
+                folder = "preview";
+                activity.PreviewImage = null;
+            }
+
+            if (imagePath != null)
+            {
+                var filename = Path.GetFileName(imagePath);
+                var fullPath = Path.Combine(_environment.WebRootPath, "uploads", folder, filename);
+                if (System.IO.File.Exists(fullPath))
+                {
+                    System.IO.File.Delete(fullPath);
+                }
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+
+            return Json(new { success = false, message = "Silinecek görsel bulunamadı." });
+        }
+        #endregion
+
+
+        // Controller aksiyonu
+        public async Task<IActionResult> PricingYield(int id)
+        {
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .ThenInclude(o => o.TicketCategories)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null) return NotFound();
+
+            var vm = new FiyatlandirmaViewModel
+            {
+                ActivityId = activity.Id,
+                ActivityTitle = activity.Title,
+                Options = activity.Options.Select(o =>
+                {
+                    var platformKomOrani = 0.3m;
+
+                    var ticketCategories = o.TicketCategories.Select(tc => new TicketCategoryPricingViewModel
+                    {
+                        TicketCategoryId = tc.Id,
+                        TicketCategoryName = tc.Name,
+                        Amount = (tc.Amount * 150 / 100), // Satış fiyatı örneği
+                        Currency = tc.Currency,
+                        SupplierCost = tc.Amount
+                    }).ToList();
+
+                    var toplamSatis = ticketCategories.Sum(tc => tc.Amount);
+                    var toplamTaseronMaliyeti = ticketCategories.Sum(tc => tc.SupplierCost);
+                    var komisyonMaliyeti = toplamSatis * platformKomOrani;
+                    var kalanTutar = toplamSatis - komisyonMaliyeti - toplamTaseronMaliyeti;
+                    var toplamMaliyet = ticketCategories.Sum(tc => tc.SupplierCost) + komisyonMaliyeti;
+                    return new OptionPricingViewModel
+                    {
+                        OptionId = o.Id,
+                        OptionName = o.Name,
+                        TicketCategories = ticketCategories,
+                        AracMaliyeti = 0,
+                        TopMaliyeti = 0,
+                        GelirVergisi = (kalanTutar * 20 / 100),
+                        RehberBonus = 0,
+                        PlatformKomisyonTutari = komisyonMaliyeti + 0,
+                        KomisyonMaliyeti = komisyonMaliyeti,
+                        PlatformKomOrani = platformKomOrani,
+                        Karlilik = (toplamSatis - toplamMaliyet) / toplamSatis
+                    };
+                }).ToList()
+            };
+
+            return View(vm);
+        }
+
+
+
+        #region Location
+
+        [HttpGet]
+        public async Task<IActionResult> CreateLocation(int? id)
+        {
+            if (!id.HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var activity = await _context.Activities
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.RoutePoints)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            var viewModel = new ActivityLocationViewModel
+            {
+                ActivityId = activity.Id,
+                MeetingPoints = activity.MeetingPoints?.Select(mp => new MeetingPointViewModel
+                {
+                    Name = mp.Name,
+                    Address = mp.Address,
+                    Latitude = mp.Latitude,
+                    Longitude = mp.Longitude
+                }).ToList() ?? new List<MeetingPointViewModel>(),
+                RoutePoints = activity.RoutePoints?.Select(rp => new RoutePointViewModel
+                {
+                    Name = rp.Name,
+                    Latitude = rp.Latitude,
+                    Longitude = rp.Longitude
+                }).ToList() ?? new List<RoutePointViewModel>()
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> CreateLocation(ActivityLocationViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            try
+            {
+                var activity = await _context.Activities
+                    .Include(a => a.MeetingPoints)
+                    .Include(a => a.RoutePoints)
+                    .FirstOrDefaultAsync(a => a.Id == model.ActivityId);
+
+                if (activity == null)
+                {
+                    return NotFound();
+                }
+
+                activity.MeetingPoints.Clear();
+                if (model.MeetingPoints != null)
+                {
+                    foreach (var mp in model.MeetingPoints)
+                    {
+                        activity.MeetingPoints.Add(new MeetingPoint
+                        {
+                            Name = mp.Name,
+                            Address = mp.Address,
+                            Latitude = mp.Latitude,
+                            Longitude = mp.Longitude
+                        });
+                    }
+                }
+
+                activity.RoutePoints.Clear();
+                if (model.RoutePoints != null)
+                {
+                    foreach (var rp in model.RoutePoints)
+                    {
+                        activity.RoutePoints.Add(new RoutePoint
+                        {
+                            Name = rp.Name,
+                            Latitude = rp.Latitude,
+                            Longitude = rp.Longitude
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Kayıt sırasında bir hata oluştu: " + ex.Message);
+                return View(model);
+            }
+        }
+
+        #endregion
+
+        #region Addon 
+
+        public async Task<IActionResult> AddonsIndex()
+        {
+            var activitiesWithAddons = await _context.Activities
+                .Include(a => a.Addons)
+                .Where(a => a.Addons != null && a.Addons.Any())
+                .ToListAsync();
+
+            return View(activitiesWithAddons);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CreateAddons(int id)
+        {
+            var addOns = await _context.Addons.Where(a => a.ActivityId == id).ToListAsync();
+            if (addOns == null) return NotFound();
+            var vm = new ActivityAddonsViewModel
+            {
+                ActivityId = id,
+                Addons = addOns?.Select(a => new AddonViewModel
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    Type = a.Type,
+                    Description = a.Description,
+                    PriceAmount = a.PriceAmount,
+                    Currency = a.Currency ?? "TRY",
+                    Translations = a.AddonTranslations?.Select(t => new AddonTranslationViewModel
+                    {
+                        Language = t.Language,
+                        Title = t.Title,
+                        Description = t.Description
+                    }).ToList() ?? new List<AddonTranslationViewModel>()
+                }).ToList() ?? new List<AddonViewModel>()
+            };
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAddons(ActivityAddonsViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var activity = await _context.Activities
+                .Include(a => a.Addons)
+                .FirstOrDefaultAsync(a => a.Id == model.ActivityId);
+
+            if (activity == null) return NotFound();
+
+            activity.Addons = model.Addons?.Select(a => new Addon
+            {
+                Id = a.Id,
+                Title = a.Title,
+                Type = a.Type,
+                Description = a.Description,
+                PriceAmount = a.PriceAmount ?? 0, // varsayılan
+                Currency = a.Currency ?? "TRY",
+                AddonTranslations = a.Translations?.Select(t => new AddonTranslation
+                {
+                    Language = t.Language,
+                    Title = t.Title,
+                    Description = t.Description
+                }).ToList() ?? new()
+            }).ToList() ?? new();
+
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("CreateLocation", new { id = model.ActivityId });
+        }
+
+        #endregion
+
+        #region Translation Alanı
+        // GET: translation yönetimi sayfası
+        [HttpGet]
+        public async Task<IActionResult> ManageLanguages(int id)
+        {
+            var activity = await _context.Activities
+                .Include(a => a.ActivityLanguages)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null)
+                return NotFound();
+
+            var existingLangs = await _context.ActivityLanguages
+                .Where(x => x.ActivityId == id)
+                .Select(x => x.LanguageCode)
+                .ToListAsync();
+
+            var model = new TourTranslationViewModel
+            {
+                ActivityId = id,
+                Title = activity.Title,
+                ExistingLanguages = existingLangs
+            };
+
+            return View(model);
+        }
+
+        // GET: Yeni dil ekleme formu
+        [HttpGet]
+        public async Task<IActionResult> AddLanguage(int activityId, string? languageCode = null)
+        {
+            var activity = await _context.Activities.FindAsync(activityId);
+            if (activity == null) return NotFound();
+
+            var existingLanguages = await _context.ActivityLanguages
+                .Where(x => x.ActivityId == activityId)
+                .Select(x => x.LanguageCode)
+                .ToListAsync();
+
+            var allLanguages = new Dictionary<string, string>
+            {
+                { "en", "en_us" }, // İngilizce - ABD İngilizcesi
+                { "de", "de_de" }, // Almanca - Almanya
+                { "fr", "fr_fr" }, // Fransızca - Fransa
+                { "es", "es_es" }, // İspanyolca - İspanya
+                { "it", "it_it" }, // İtalyanca - İtalya
+                { "ru", "ru_ru" }, // Rusça - Rusya
+                { "ar", "ar_ae" }, // Arapça - BAE (genel kullanım için)
+                { "zh", "zh_cn" }  // Çince - Çin (Basitleştirilmiş Çince)
+            };
+
+            // Eğer düzenleme için geldiyse dil zaten eklenmiştir
+            Dictionary<string, string> languageOptions = (languageCode != null)
+                ? new Dictionary<string, string> { { languageCode, allLanguages[languageCode] } }
+                : allLanguages
+                    .Where(x => !existingLanguages.Contains(x.Key))
+                    .ToDictionary(x => x.Key, x => x.Value);
+
+            ViewBag.LanguageOptions = languageOptions;
+
+            var translation = await _context.Translations
+                .FirstOrDefaultAsync(t => t.ActivityId == activityId && t.Language == languageCode);
+
+            var model = new AddLanguageViewModel
+            {
+                ActivityId = activityId,
+                LanguageCode = languageCode ?? string.Empty,
+                Original = new ActivityTranslationDTO
+                {
+                    Title = activity.Title,
+                    Description = activity.Description,
+                    Highlights = activity.Highlights,
+                    Itinerary = activity.Itinerary,
+                    Inclusions = string.IsNullOrWhiteSpace(activity.Inclusions)
+        ? new List<string>()
+        : JsonSerializer.Deserialize<List<string>>(activity.Inclusions) ?? new List<string>(),
+
+                    Exclusions = string.IsNullOrWhiteSpace(activity.Exclusions)
+        ? new List<string>()
+        : JsonSerializer.Deserialize<List<string>>(activity.Exclusions) ?? new List<string>(),
+
+                    ImportantInfo = string.IsNullOrWhiteSpace(activity.ImportantInfo)
+        ? new List<string>()
+        : JsonSerializer.Deserialize<List<string>>(activity.ImportantInfo) ?? new List<string>()
+                },
+                Translated = translation != null
+                    ? new ActivityTranslationDTO
+                    {
+                        Title = translation.Title,
+                        Description = translation.Description,
+                        Highlights = translation.Highlights,
+                        Itinerary = translation.Itinerary,
+                        Inclusions = string.IsNullOrWhiteSpace(translation.InclusionsJson)
+                            ? new List<string>()
+                            : JsonSerializer.Deserialize<List<string>>(translation.InclusionsJson) ?? new List<string>(),
+
+                        Exclusions = string.IsNullOrWhiteSpace(translation.ExclusionsJson)
+                            ? new List<string>()
+                            : JsonSerializer.Deserialize<List<string>>(translation.ExclusionsJson) ?? new List<string>(),
+
+                        ImportantInfo = string.IsNullOrWhiteSpace(translation.ImportantInfoJson)
+                            ? new List<string>()
+                            : JsonSerializer.Deserialize<List<string>>(translation.ImportantInfoJson) ?? new List<string>()
+                    }
+                    : new ActivityTranslationDTO()
+            };
+
+            return View(model);
+        }
+
+
+
+        // POST: Yeni dil ve çeviri kaydetme
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> AddLanguage(AddLanguageViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var translation = await _context.Translations
+                .FirstOrDefaultAsync(t => t.ActivityId == model.ActivityId && t.Language == model.LanguageCode);
+
+            if (translation == null)
+            {
+                // Yeni çeviri
+                _context.Translations.Add(new Translation
+                {
+                    ActivityId = model.ActivityId,
+                    Language = model.LanguageCode,
+                    Title = model.Translated.Title,
+                    Description = model.Translated.Description,
+                    Highlights = model.Translated.Highlights,
+                    Itinerary = model.Translated.Itinerary,
+                    Label = "",
+                    InclusionsJson = JsonSerializer.Serialize(model.Translated.Inclusions.Where(x => !string.IsNullOrWhiteSpace(x))),
+                    ExclusionsJson = JsonSerializer.Serialize(model.Translated.Exclusions.Where(x => !string.IsNullOrWhiteSpace(x))),
+                    ImportantInfoJson = JsonSerializer.Serialize(model.Translated.ImportantInfo.Where(x => !string.IsNullOrWhiteSpace(x)))
+                });
+
+                // ActivityLanguage varsa ekleme
+                var exists = await _context.ActivityLanguages
+                    .AnyAsync(x => x.ActivityId == model.ActivityId && x.LanguageCode == model.LanguageCode);
+
+                if (!exists)
+                {
+                    _context.ActivityLanguages.Add(new ActivityLanguage
+                    {
+                        ActivityId = model.ActivityId,
+                        LanguageCode = model.LanguageCode
+                    });
                 }
             }
             else
             {
-                // 2. Klasik form submit ile mi geldi?
-                activity = new Activity();
-                await TryUpdateModelAsync(activity);
+                // Var olan çeviriyi güncelle
+                translation.Title = model.Translated.Title;
+                translation.Description = model.Translated.Description;
+                translation.Highlights = model.Translated.Highlights;
+                translation.Itinerary = model.Translated.Itinerary;
+                translation.InclusionsJson = JsonSerializer.Serialize(model.Translated.Inclusions.Where(x => !string.IsNullOrWhiteSpace(x)));
+                translation.ExclusionsJson = JsonSerializer.Serialize(model.Translated.Exclusions.Where(x => !string.IsNullOrWhiteSpace(x)));
+                translation.ImportantInfoJson = JsonSerializer.Serialize(model.Translated.ImportantInfo.Where(x => !string.IsNullOrWhiteSpace(x)));
             }
 
-            if (activity == null)
-                return BadRequest("Veri alınamadı.");
+            await _context.SaveChangesAsync();
+            return RedirectToAction("ManageLanguages", new { id = model.ActivityId });
+        }
 
-            // Eğer timeSlots boşsa, default bir zaman dilimi ekle (isteğe bağlı)
-            if (activity.TimeSlots == null || activity.TimeSlots.Count == 0)
+
+        // POST: Dil silme
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> DeleteLanguage(int activityId, string languageCode)
+        {
+            var langEntry = await _context.ActivityLanguages
+                .FirstOrDefaultAsync(x => x.ActivityId == activityId && x.LanguageCode == languageCode);
+
+            if (langEntry != null)
             {
-                activity.TimeSlots = new List<TourManagementApi.Models.Common.TimeSlot>
+                _context.ActivityLanguages.Remove(langEntry);
+
+                // İlgili Translation kaydını da sil
+                var translation = await _context.Translations
+                    .FirstOrDefaultAsync(t => t.Language == languageCode);
+
+                if (translation != null)
                 {
-                    new TourManagementApi.Models.Common.TimeSlot
-                    {
-                        StartTime = "09:00",
-                        EndTime = "17:00",
-                        DaysOfWeek = new List<string> { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday" }
-                    }
-                };
+                    _context.Translations.Remove(translation);
+                }
+
+                await _context.SaveChangesAsync();
             }
 
-            _context.Activities.Add(activity);
+            return RedirectToAction("ManageLanguages", new { id = activityId });
+        }
+
+
+
+        #endregion
+
+        #region Availability Alanı
+
+        [HttpGet]
+        public async Task<IActionResult> CreateAvailability(int id)
+        {
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .ThenInclude(o => o.TicketCategories)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null) return NotFound();
+
+            var viewModel = new CreateAvailabilityViewModel
+            {
+                ActivityId = activity.Id,
+                OptionList = activity.Options.Select(o => new SelectListItem
+                {
+                    Value = o.Id.ToString(),
+                    Text = o.Name
+                }).ToList()
+            };
+
+            return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetTicketCategories(int optionId)
+        {
+            var option = await _context.Options
+                .Include(o => o.TicketCategories)
+                .FirstOrDefaultAsync(o => o.Id == optionId);
+
+            if (option == null)
+                return Json(new List<object>());
+
+            var categories = option.TicketCategories.Select(tc => new
+            {
+                id = tc.Id,
+                name = tc.Name
+            }).ToList();
+
+            return Json(categories);
+        }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> CreateAvailability(CreateAvailabilityViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var existingDates = await _context.Availabilities
+                .Where(a =>
+                    a.ActivityId == model.ActivityId &&
+                    a.OptionId == model.OptionId &&
+                    a.Date >= model.StartDate && a.Date <= model.EndDate)
+                .Select(a => a.Date)
+                .ToListAsync();
+
+            var newAvailabilities = new List<Availability>();
+
+            for (var date = model.StartDate; date <= model.EndDate; date = date.AddDays(1))
+            {
+                if (existingDates.Contains(date))
+                    continue; //  kayıt var geçççç
+
+                var availability = new Availability
+                {
+                    ActivityId = model.ActivityId,
+                    OptionId = model.OptionId,
+                    Date = date,
+                    StartTime = new DateTimeOffset(
+                        new DateTime(date.Year, date.Month, date.Day, model.StartTime.Hour, model.StartTime.Minute, model.StartTime.Second),
+                        TimeSpan.FromHours(3) // veya: TimeZoneInfo.Local.GetUtcOffset(...)
+                    ),
+                    AvailableCapacity = model.AvailableCapacity,
+                    MaximumCapacity = model.MaximumCapacity,
+                    PartnerSupplierId = "12004",
+                    TicketCategoryCapacities = model.TicketCategories
+                        .Where(tc => tc.TicketCategoryId > 0)
+                        .Select(tc => new TicketCategoryCapacity
+                        {
+                            TicketCategoryId = tc.TicketCategoryId,
+                            Capacity = tc.Capacity
+                        }).ToList()
+                };
+
+                newAvailabilities.Add(availability);
+            }
+
+            if (!newAvailabilities.Any())
+            {
+                ModelState.AddModelError("", "Tüm günler için zaten kapasite tanımlanmış.");
+                model.OptionList = await _context.Options
+                    .Where(o => o.ActivityId == model.ActivityId)
+                    .Select(o => new SelectListItem
+                    {
+                        Value = o.Id.ToString(),
+                        Text = o.Name
+                    }).ToListAsync();
+
+                model.TicketCategories = await _context.TicketCategories
+                    .Where(tc => tc.OptionId == model.OptionId)
+                    .Select(tc => new TicketCategoryInputModel
+                    {
+                        TicketCategoryId = tc.Id,
+                        Name = tc.Name
+                    }).ToListAsync();
+
+                return View(model);
+            }
+
+            _context.Availabilities.AddRange(newAvailabilities);
             await _context.SaveChangesAsync();
 
-            // JSON istekse JSON dön, klasik submit ise redirect
-            if (Request.ContentType != null && Request.ContentType.Contains("application/json"))
-                return Json(new { success = true, id = activity.Id });
+            // ExperienceBank notification
+            try
+            {
+                foreach (var availability in newAvailabilities)
+                {
+                    // Örneğin availability availableCapacity < 30 ise veya oldCapacity = 0 -> current > 0 ise trigger et
+                    if (availability.AvailableCapacity < 30 || availability.AvailableCapacity > 0)
+                    {
+                        await _experienceBankService.NotifyAvailabilityUpdatedAsync(
+                            supplierId: availability.PartnerSupplierId,
+                            activityId: availability.ActivityId.ToString(),
+                            optionId: availability.OptionId.ToString(),
+                            localDateTime: availability.Date.ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                            availableCapacity: availability.AvailableCapacity,
+                            oldCapacity: 0 // ilk create olduğunda eski kapasite yok
+                        );
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ExperienceBank availability notify failed (CreateAvailability)");
+            }
+
 
             return RedirectToAction("Index");
         }
 
-        [HttpPost]
-        public async Task<IActionResult> UpdateStatus(int id, string status)
+        public async Task<IActionResult> EditAvailability(int id)
         {
-            var activity = await _context.Activities.FindAsync(id);
-            if (activity == null)
+            var availability = await _context.Availabilities
+                .Include(a => a.TicketCategoryCapacities)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (availability == null)
                 return NotFound();
-            activity.Status = status;
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
-    }
 
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ActivitiesApiController : ControllerBase
-    {
-        private readonly ApplicationDbContext _context;
+            var option = await _context.Options.FindAsync(availability.OptionId);
 
-        public ActivitiesApiController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Activity>>> GetActivities()
-        {
-            return await _context.Activities.ToListAsync();
-        }
-
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Activity>> GetActivity(int id)
-        {
-            var activity = await _context.Activities.FindAsync(id);
-
-            if (activity == null)
+            var model = new CreateAvailabilityViewModel
             {
-                return NotFound();
-            }
+                Id = availability.Id,
+                ActivityId = availability.ActivityId,
+                OptionId = availability.OptionId,
+                StartDate = availability.Date,
+                EndDate = availability.Date,
+                StartTime = TimeOnly.FromDateTime(availability.StartTime?.UtcDateTime ?? DateTime.UtcNow),
+                AvailableCapacity = availability.AvailableCapacity,
+                MaximumCapacity = availability.MaximumCapacity,
+                OptionList = await _context.Options
+                    .Where(o => o.ActivityId == availability.ActivityId)
+                    .Select(o => new SelectListItem
+                    {
+                        Value = o.Id.ToString(),
+                        Text = o.Name
+                    }).ToListAsync(),
+                TicketCategories = availability.TicketCategoryCapacities.Select(tc => new TicketCategoryInputModel
+                {
+                    TicketCategoryId = tc.TicketCategoryId,
+                    Capacity = tc.Capacity,
+                    Name = "" // dilersen isme göre DB'den çekebilirsin
+                }).ToList()
+            };
 
-            return activity;
+            return View("CreateAvailability", model);
         }
 
         [HttpPost]
-        public async Task<ActionResult<Activity>> PostActivity(Activity activity)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditAvailability(CreateAvailabilityViewModel model)
         {
-            _context.Activities.Add(activity);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetActivity), new { id = activity.Id }, activity);
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutActivity(int id, Activity activity)
-        {
-            if (id != activity.Id)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                model.OptionList = await _context.Options
+                    .Where(o => o.ActivityId == model.ActivityId)
+                    .Select(o => new SelectListItem
+                    {
+                        Value = o.Id.ToString(),
+                        Text = o.Name
+                    }).ToListAsync();
+
+                return View("CreateAvailability", model);
             }
 
-            _context.Entry(activity).State = EntityState.Modified;
+            var availability = await _context.Availabilities
+                .Include(a => a.TicketCategoryCapacities)
+                .FirstOrDefaultAsync(a => a.Id == model.Id);
+
+            if (availability == null)
+                return NotFound();
+
+            availability.OptionId = model.OptionId;
+            availability.Date = model.StartDate;
+            availability.StartTime = new DateTimeOffset(DateTime.Today.Add(model.StartTime.ToTimeSpan()));
+            availability.AvailableCapacity = model.AvailableCapacity;
+            availability.MaximumCapacity = model.MaximumCapacity;
+
+            // Kategori kapasite güncelle
+            _context.TicketCategoryCapacities.RemoveRange(availability.TicketCategoryCapacities);
+
+            availability.TicketCategoryCapacities = model.TicketCategories
+                .Where(tc => tc.TicketCategoryId > 0)
+                .Select(tc => new TicketCategoryCapacity
+                {
+                    TicketCategoryId = tc.TicketCategoryId,
+                    Capacity = tc.Capacity
+                }).ToList();
+
+            await _context.SaveChangesAsync();
 
             try
             {
-                await _context.SaveChangesAsync();
+                if (availability.AvailableCapacity < 30 || availability.AvailableCapacity > 0)
+                {
+                    await _experienceBankService.NotifyAvailabilityUpdatedAsync(
+                        supplierId: availability.PartnerSupplierId,
+                        activityId: availability.ActivityId.ToString(),
+                        optionId: availability.OptionId.ToString(),
+                        localDateTime: availability.Date.ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                        availableCapacity: availability.AvailableCapacity,
+                        oldCapacity: availability.MaximumCapacity // örnek olarak eski kapasiteyi gönder
+                    );
+                }
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!ActivityExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                _logger.LogError(ex, "ExperienceBank availability notify failed (EditAvailability)");
             }
 
-            return NoContent();
+
+
+            return RedirectToAction("Availabilities", new { activityId = model.ActivityId });
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteActivity(int id)
+        [HttpPost]
+        public async Task<IActionResult> DeleteAvailability(int id)
         {
-            var activity = await _context.Activities.FindAsync(id);
-            if (activity == null)
-            {
-                return NotFound();
-            }
+            var availability = await _context.Availabilities
+                .Include(a => a.TicketCategoryCapacities)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
-            _context.Activities.Remove(activity);
+            if (availability == null)
+                return NotFound();
+
+            _context.TicketCategoryCapacities.RemoveRange(availability.TicketCategoryCapacities);
+            _context.Availabilities.Remove(availability);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            try
+            {
+                await _experienceBankService.NotifyAvailabilityUpdatedAsync(
+                    supplierId: availability.PartnerSupplierId,
+                    activityId: availability.ActivityId.ToString(),
+                    optionId: availability.OptionId.ToString(),
+                    localDateTime: availability.Date.ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                    availableCapacity: 0,
+                    oldCapacity: availability.AvailableCapacity
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ExperienceBank availability notify failed (DeleteAvailability)");
+            }
+
+
+            return RedirectToAction("Availabilities", new { activityId = availability.ActivityId });
         }
 
-        private bool ActivityExists(int id)
+        public async Task<IActionResult> Availabilities(int activityId)
         {
-            return _context.Activities.Any(e => e.Id == id);
+            var activity = await _context.Activities
+        .Include(a => a.Availabilities)
+            .ThenInclude(av => av.Option)
+        .Include(a => a.Availabilities)
+            .ThenInclude(av => av.TicketCategoryCapacities)
+                .ThenInclude(tcc => tcc.TicketCategory)
+        .FirstOrDefaultAsync(a => a.Id == activityId);
+
+            if (activity == null) return NotFound();
+
+            return View(activity);
         }
+
+
+        [HttpGet]
+        public async Task<IActionResult> CheckAvailabilityExists(int activityId, int optionId, string date)
+        {
+            if (!DateOnly.TryParse(date, out var parsedDate))
+                return Json(new { exists = false });
+
+            var exists = await _context.Availabilities
+                .AnyAsync(a =>
+                    a.ActivityId == activityId &&
+                    a.OptionId == optionId &&
+                    a.Date == parsedDate);
+
+            return Json(new { exists });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteAllAvailabilities(int activityId)
+        {
+            var availabilities = await _context.Availabilities
+                .Where(a => a.ActivityId == activityId)
+                .Include(a => a.TicketCategoryCapacities)
+                .ToListAsync();
+
+            if (!availabilities.Any())
+                return RedirectToAction("Availabilities", new { activityId });
+
+            foreach (var availability in availabilities)
+            {
+                // Önce TicketCategoryCapacities sil
+                _context.TicketCategoryCapacities.RemoveRange(availability.TicketCategoryCapacities);
+
+                // ExperienceBank notify (try-catch içinde)
+                try
+                {
+                    await _experienceBankService.NotifyAvailabilityUpdatedAsync(
+                        supplierId: availability.PartnerSupplierId,
+                        activityId: availability.ActivityId.ToString(),
+                        optionId: availability.OptionId.ToString(),
+                        localDateTime: availability.Date.ToString("yyyy-MM-ddTHH:mm:sszzz"),
+                        availableCapacity: 0,
+                        oldCapacity: availability.AvailableCapacity
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "ExperienceBank availability notify failed (DeleteAllAvailabilities)");
+                }
+            }
+
+            // Availabilities sil
+            _context.Availabilities.RemoveRange(availabilities);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Availabilities", new { activityId });
+        }
+
+
+        #endregion
     }
-} 
+}
