@@ -296,7 +296,7 @@ namespace TourManagementApi.Controllers.Api
 
             var status = "CANCELLED";
 
-            var result = await _bookingService.CancelReservationAsync(booking.OrderNumber, status);
+            var result = await _bookingService.CancelReservationAsync(booking);
 
             if (!result)
             {

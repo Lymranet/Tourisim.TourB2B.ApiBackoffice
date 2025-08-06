@@ -332,29 +332,48 @@ namespace TourManagementApi.Services
             return DateTime.TryParse(input, out var dt) ? dt : null;
         }
 
-        public async Task<bool> CancelReservationAsync(string orderNumber, string status = "CANCELLED")
+        public async Task<bool> CancelReservationAsync(RezdyBookingRequest booking)
         {
             try
             {
-                var reservation = await _context.Reservations
-                    .FirstOrDefaultAsync(r => r.PartnerBookingId == orderNumber);
-
-                if (reservation == null)
+                if (string.IsNullOrWhiteSpace(booking?.OrderNumber))
+                {
+                    _logger.LogWarning("CancelReservationAsync: OrderNumber is null or empty.");
                     return false;
+                }
 
-                reservation.Status = status;
-                reservation.IsCancelled = true;
-                reservation.CancelledAt = DateTime.UtcNow;
+                var existingBooking = await _context.Bookings
+                     .FirstOrDefaultAsync(b => b.OrderNumber == booking.OrderNumber);
+
+                if (existingBooking == null)
+                {
+                    _logger.LogWarning("CancelReservationAsync: Booking not found for OrderNumber = {OrderNumber}", booking.OrderNumber);
+                    return false;
+                }
+
+                // Zaten CANCELLED durumundaysa tekrar işlem yapılmaz
+                if (string.Equals(existingBooking.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("CancelReservationAsync: Booking with OrderNumber = {OrderNumber} is already CANCELLED.", booking.OrderNumber);
+                    return true;
+                }
+
+                existingBooking.Status = booking.Status ?? "CANCELLED";
+                existingBooking.DateUpdated = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                _logger.LogInformation("CancelReservationAsync: Booking with OrderNumber = {OrderNumber} successfully marked as CANCELLED.", booking.OrderNumber);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Cancel reservation failed for {OrderNumber}", orderNumber);
+                _logger.LogError(ex, "CancelReservationAsync: Failed to cancel booking with OrderNumber = {OrderNumber}", booking?.OrderNumber);
                 return false;
             }
         }
+
+
     }
 }
 
