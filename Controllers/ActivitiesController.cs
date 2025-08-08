@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic.FileIO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
@@ -15,11 +16,11 @@ using System.Threading.Tasks;
 using TourManagementApi.Data;
 using TourManagementApi.Helper;
 using TourManagementApi.Models;
+using TourManagementApi.Models.Api;
 using TourManagementApi.Models.Common;
 using TourManagementApi.Models.ViewModels;
 using TourManagementApi.Services;
 using Addon = TourManagementApi.Models.Addon;
-using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers
 {
@@ -121,6 +122,7 @@ namespace TourManagementApi.Controllers
                     HttpContext.Session.SetString("B2BAgencyId", Id);
                 }
                 var activities = _context.Activities.Where(a => a.B2BAgencyId == Id)
+                    .Include(a => a.Availabilities)
                     .Include(a => a.Options)
                     .Include(a => a.TourCompany)
                    .Select(a => new ActivityBasicViewModel
@@ -136,8 +138,7 @@ namespace TourManagementApi.Controllers
                        CountryCode = a.CountryCode ?? string.Empty,
                        DestinationCode = a.DestinationCode ?? string.Empty,
                        DestinationName = a.DestinationName ?? string.Empty,
-
-                       // Yeni eklenen property'leri set et
+                       CoverImageUrl = a.CoverImage,
                        CreatedAt = a.CreatedAt,
                        UpdatedAt = a.UpdatedAt,
                        Rating = a.Rating,
@@ -155,6 +156,151 @@ namespace TourManagementApi.Controllers
                 return View(new List<Activity>());
             }
         }
+        public IActionResult Preview(int id)
+        {
+            var activity = _context.Activities
+                .Include(a => a.Options).ThenInclude(o => o.TicketCategories)
+                .Include(a => a.Options).ThenInclude(o => o.OpeningHours)
+                .Include(a => a.Addons)
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.RoutePoints)
+                .Include(a => a.Translations)
+                .Include(a => a.ActivityLanguages)
+                .Include(a => a.Availabilities)
+                .Include(a => a.CancellationPolicyConditions)
+                .Include(a => a.TourCompany)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (activity == null)
+                return NotFound();
+
+            var model = new ActivityPreviewViewModel
+            {
+                Id = activity.Id,
+                Title = activity.Title,
+                Description = activity.Description,
+                Category = activity.Category,
+                Duration = activity.Duration,
+                Status = activity.Status,
+                Rating = activity.Rating,
+                IsFreeCancellation = activity.IsFreeCancellation,
+                Label = activity.Label,
+                CountryCode = activity.CountryCode,
+                DestinationCode = activity.DestinationCode,
+                DestinationName = activity.DestinationName,
+                CoverImage = activity.CoverImage,
+                PreviewImage = activity.PreviewImage,
+                MediaVideos = activity.Media_Videos,
+                ContactInfoName = activity.ContactInfo_Name,
+                ContactInfoEmail = activity.ContactInfo_Email,
+                ContactInfoPhone = activity.ContactInfo_Phone,
+                ContactInfoRole = activity.ContactInfo_Role,
+                Exclusions = activity.Exclusions,
+                Inclusions = activity.Inclusions,
+                ImportantInfo = activity.ImportantInfo,
+                Highlights = activity.Highlights,
+                Itinerary = activity.Itinerary,
+                DetailsUrl = activity.DetailsUrl,
+                ExclusionsJson = activity.ExclusionsJson,
+                InclusionsJson = activity.InclusionsJson,
+                ImportantInfoJson = activity.ImportantInfoJson,
+                GuestFieldsJson = activity.GuestFieldsJson,
+                GuestFields = activity.GuestFields,
+                CreatedAt = activity.CreatedAt,
+                UpdatedAt = activity.UpdatedAt,
+                TourCompanyName = activity.TourCompany?.CompanyName,
+                PartnerSupplierId = activity.PartnerSupplierId,
+                B2BAgencyId = activity.B2BAgencyId,
+
+                Options = activity.Options.ToList(),
+                Addons = activity.Addons.ToList(),
+                MeetingPoints = activity.MeetingPoints.ToList(),
+                RoutePoints = activity.RoutePoints.ToList(),
+                Translations = activity.Translations.ToList(),
+                ActivityLanguages = activity.ActivityLanguages.ToList(),
+                CancellationPolicies = activity.CancellationPolicyConditions.ToList(),
+                Availabilities = activity.Availabilities.ToList()
+            };
+
+            // Galeri JSON parse et
+            if (!string.IsNullOrEmpty(activity.GalleryImages))
+            {
+                try
+                {
+                    var images = System.Text.Json.JsonSerializer.Deserialize<List<string>>(activity.GalleryImages);
+                    model.GalleryImages = images ?? new List<string>();
+                }
+                catch { }
+            }
+
+            return View("Preview", model);
+        }
+
+        public IActionResult Preview2(int id)
+        {
+            var activity = _context.Activities
+                .Include(a => a.Options)
+                .Include(a => a.ActivityLanguages)
+                .Include(a => a.Addons)
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.CancellationPolicyConditions)
+                .Include(a => a.RoutePoints)
+                .Include(a => a.Translations)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            var missingFields = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(activity.Description))
+                missingFields.Add("Açıklama");
+
+            if (string.IsNullOrWhiteSpace(activity.Category))
+                missingFields.Add("Kategori");
+
+            if (string.IsNullOrWhiteSpace(activity.DestinationName))
+                missingFields.Add("Lokasyon adı");
+
+            if (string.IsNullOrWhiteSpace(activity.CountryCode))
+                missingFields.Add("Ülke Kodu");
+
+            if (string.IsNullOrWhiteSpace(activity.CoverImage))
+                missingFields.Add("Kapak Görseli");
+
+            if (activity.Options == null || !activity.Options.Any())
+                missingFields.Add("Seçenek (Option)");
+
+            if (activity.Addons == null || !activity.Addons.Any())
+                missingFields.Add("Ek Ürün (Addon)");
+
+            if (activity.MeetingPoints == null || !activity.MeetingPoints.Any())
+                missingFields.Add("Buluşma Noktası");
+
+            if (activity.RoutePoints == null || !activity.RoutePoints.Any())
+                missingFields.Add("Güzergah (Route Points)");
+
+            if (activity.Translations == null || !activity.Translations.Any())
+                missingFields.Add("Çeviri");
+
+            if (activity.CancellationPolicyConditions == null || !activity.CancellationPolicyConditions.Any())
+                missingFields.Add("İptal Politikası");
+
+            if (activity.ActivityLanguages == null || !activity.ActivityLanguages.Any())
+                missingFields.Add("Dil Tanımı");
+
+            var viewModel = new ActivityPreviewViewModel
+            {
+                ActivityId = activity.Id,
+                Title = activity.Title,
+                MissingFields = missingFields
+            };
+
+            return View(viewModel);
+        }
+
 
         [HttpPatch]
         [IgnoreAntiforgeryToken]
@@ -418,7 +564,53 @@ namespace TourManagementApi.Controllers
         #endregion
 
 
-        // Controller aksiyonu
+        #region Yield
+
+
+        [HttpPost]
+        public IActionResult SavePricing([FromBody] FiyatlandirmaViewModel1 model)
+        {
+            try
+            {
+                if (model == null)
+                    return BadRequest(new { success = false, message = "Model boş." });
+
+                var ticketCategories = _context.TicketCategories
+                    .Where(a => a.OptionId == model.OptionId)
+                    .ToList();
+
+                if (!ticketCategories.Any())
+                    return NotFound(new { success = false, message = "İlgili OptionId için kayıt bulunamadı." });
+
+                foreach (var a in ticketCategories)
+                {
+                    a.SalePrice = a.Amount + (a.Amount * model.Percentage / 100);
+                    a.SalePercentage = model.Percentage;
+                }
+
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = $"OptionId {model.OptionId} güncellendi." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = ex.Message,
+                    stack = ex.StackTrace
+                });
+            }
+        }
+
+
+
+
+
+
+
+
+
         public async Task<IActionResult> PricingYield(int id)
         {
             var activity = await _context.Activities
@@ -470,7 +662,7 @@ namespace TourManagementApi.Controllers
             return View(vm);
         }
 
-
+        #endregion
 
         #region Location
 

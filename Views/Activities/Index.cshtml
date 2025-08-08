@@ -24,7 +24,19 @@
         { "18", "Sightseeing Tours" }
     };
 }
+<style>
+    td img:hover {
+        transform: scale(1.8);
+        transition: 0.3s;
+        z-index: 10;
+        position: relative;
+    }
 
+    a.text-decoration-none:hover {
+        text-decoration: underline;
+        color: #0d6efd; /* Bootstrap primary */
+    }
+</style>
 <h2>Turlar</h2>
 
 <div class="mb-3 d-flex flex-wrap gap-2">
@@ -41,17 +53,16 @@
             <th>ID</th>
             <th>Tedarikçi</th>
             <th>Başlık</th>
+            <th>Görsel</th>
             <th>Kategori</th>
-
-            <th>Seçenekler</th>
+            <th>Seç.</th>
             @* <th>Rezervasyon</th> *@
-         @*    <th>Kapasite</th> *@
-            <th>Oluşturulma</th>
-            <th>Güncellenme</th>
+             <th>Kap.</th> 
+            <th>Oluş.</th>
+            <th>Güncell.</th>
             @* <th>Rating</th> *@
     @*         <th>Ücretsiz İptal</th> *@
-            <th>Lokasyon</th>
-
+            <th>Lok.</th>
             <th>Durum</th>
             <th>İşlemler</th>
         </tr>
@@ -65,7 +76,32 @@
                 <td><input type="checkbox" name="selectedActivities" value="@item.ActivityId" /></td>
                 <td>@item.ActivityId</td>
                 <td>@(item?.TourCompany ?? "-")</td>
-                <td>@(item?.Title ?? "-")</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item?.Title))
+                    {
+                        <a asp-action="Preview" asp-route-id="@item.ActivityId" class="text-decoration-none">
+                            @item.Title
+                        </a>
+                        <a asp-action="Preview2" asp-route-id="@item.ActivityId" title="Eksikler" class="btn btn-outline-secondary btn-sm">
+                          Eksikler
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="text-muted">-</span>
+                    }
+                </td>
+
+                <td>
+                    @if (!string.IsNullOrEmpty(item.CoverImageUrl))
+                    {
+                        <img src="https://tour.hotelwidget.com@(item.CoverImageUrl)" alt="Kapak Görseli" width="80" height="60" style="object-fit: cover; border-radius: 4px;" />
+                    }
+                    else
+                    {
+                        <span class="text-muted">Yok</span>
+                    }
+                </td>
                 <td>
                     @{
                         List<string> categoryIds = new List<string>();
@@ -95,8 +131,8 @@
                         @optionCount
                     </a>
                 </td>
-                @*                 <td>@(item.Reservations?.Count ?? 0)</td>
-@*                 <td>@(item.Availabilities?.Count ?? 0)</td> *@
+                @*                 <td>@(item.Reservations?.Count ?? 0)</td> *@
+                <td>@(item.AvailabilitiesCount)</td>
                 <td>@(item.CreatedAt.HasValue? item.CreatedAt.Value.ToString("yyyy-MM-dd") : "-")</td>
                 <td>@(item.UpdatedAt.HasValue? item.UpdatedAt.Value.ToString("yyyy-MM-dd") : "-")</td>
 

@@ -15,7 +15,8 @@
 
         <button type="button" class="btn btn-primary" onclick="hesaplaTumunu()">Hesapla</button>
 
-        <button type="button" class="btn btn-primary" onclick="hesaplaTumunu()">Kaydet</button>
+        <button type="button" class="btn btn-success" onclick="kaydetTumunu()">Kaydet</button>
+
 
     </div>
 
@@ -161,7 +162,7 @@
         return parseFloat(cleaned) || 0;
     }
 
-       function hesaplaTumunu() {
+   function hesaplaTumunu() {
         const satisYuzdeInput = document.getElementById('satisYuzde');
         const satisYuzde = parseFloat(satisYuzdeInput?.value) || 50;
 
@@ -236,6 +237,48 @@
              }
         });
     }
+
+         function kaydetTumunu() {
+        const percentage = parseInt(document.getElementById('satisYuzde').value) || 0;
+
+        document.querySelectorAll('[id^="maliyet_"]').forEach(span => {
+            const optionId = parseInt(span.id.split('_')[1]);
+
+            const model = {
+                optionId: optionId,
+                percentage: percentage
+            };
+
+            fetch('/Activities/SavePricing', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(model)
+            })
+            .then(async res => {
+                const contentType = res.headers.get("content-type");
+
+                if (res.ok && contentType && contentType.includes("application/json")) {
+                    const data = await res.json();
+                    if (data.success) {
+                        console.log(`Option ${optionId} başarıyla kaydedildi.`);
+                    } else {
+                        console.error(`Hata (Option ${optionId}):`, data.message);
+                    }
+                } else {
+                    const text = await res.text(); // hata mesajı HTML olabilir
+                    console.error(`Hata (Option ${optionId}): Response JSON değil:\n${text}`);
+                }
+            })
+            .catch(err => {
+                console.error(`Hata (Option ${optionId}):`, err);
+            });
+        });
+
+        alert("Tüm seçenekler için fiyat güncelleme işlemi başlatıldı.");
+    }
+
 
 </script>
 

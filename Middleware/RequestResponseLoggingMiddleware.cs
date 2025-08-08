@@ -19,6 +19,19 @@ namespace TourManagementApi.Middleware
             _next = next;
             _logger = logger;
         }
+        private async Task SafeAppendToFileAsync(string filePath, string content)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(content);
+            using var stream = new FileStream(
+                filePath,
+                FileMode.Append,
+                FileAccess.Write,
+                FileShare.ReadWrite, // ⬅️ başka işlemler de okuyabilsin/yazabilsin
+                4096,
+                useAsync: true
+            );
+            await stream.WriteAsync(data, 0, data.Length);
+        }
 
         public async Task Invoke(HttpContext context)
         {
@@ -77,7 +90,7 @@ namespace TourManagementApi.Middleware
             requestLog.AppendLine(requestBody);
             requestLog.AppendLine("==========================\n");
 
-            await File.AppendAllTextAsync(requestLogPath, requestLog.ToString());
+            await SafeAppendToFileAsync(requestLogPath, requestLog.ToString());
 
             var originalBodyStream = context.Response.Body;
             using var responseBody = new MemoryStream();
@@ -107,7 +120,7 @@ namespace TourManagementApi.Middleware
                 errorDetails.AppendLine($"StackTrace: {ex.StackTrace}");
                 errorDetails.AppendLine("*********************\n");
 
-                await File.AppendAllTextAsync(errorLogPath, errorDetails.ToString());
+                await SafeAppendToFileAsync(errorLogPath, errorDetails.ToString());
                 _logger.LogError(ex, "Exception caught in RequestResponseLoggingMiddleware");
                 throw;
             }
@@ -129,7 +142,7 @@ namespace TourManagementApi.Middleware
             responseLog.AppendLine(responseText);
             responseLog.AppendLine("===========================\n");
 
-            await File.AppendAllTextAsync(responseLogPath, responseLog.ToString());
+            await SafeAppendToFileAsync(responseLogPath, responseLog.ToString());
 
             await responseBody.CopyToAsync(originalBodyStream);
         }

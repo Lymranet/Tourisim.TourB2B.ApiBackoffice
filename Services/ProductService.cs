@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Text.Json;
 using TourManagementApi.Data;
@@ -58,7 +59,6 @@ namespace TourManagementApi.Services
 
             //return activities.Select(a => a.ToRezdyDto(apiKey, baseImageUrl, baseImageUrl)).ToList();
         }
-
         public ProductResponseModel? GetByCode(string productCode)
         {
             // Find the RezdyProductDto by productCode
@@ -79,7 +79,27 @@ namespace TourManagementApi.Services
                 BookingFields = new List<BookingFieldDto>() // Map as needed if data is available
             };
         }
+        public bool Exists(string productCode, string externalProductCode)
+        {
+            // Find the RezdyProductDto by productCode
+            int activityId=0;
+            int optionId=0;
+            if (externalProductCode.Contains("-"))
+            {
+                var id = externalProductCode.Split('-');
+                activityId = int.Parse(id[0]);
+                optionId = int.Parse(id[1]);
+            }
+            var rezdyProduct = _context.Activities.Any(a=>a.Id==activityId);
+            var rezdyOption = _context.Options.Any(o => o.Id == optionId && o.ActivityId == activityId);
+            if (rezdyProduct && rezdyOption)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
-
-
 }

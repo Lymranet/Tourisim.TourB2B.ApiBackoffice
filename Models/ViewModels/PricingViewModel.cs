@@ -16,7 +16,7 @@
 
         public List<TicketCategoryPricingViewModel> TicketCategories { get; set; } = new();
 
-        public decimal PpCost => ToplamMaliyet/TicketCategories.Count;
+        public decimal PpCost => ToplamMaliyet / TicketCategories.Count;
         public decimal TasaronMaliyeti => TicketCategories.Sum(tc => tc.SupplierCost);
 
         public decimal AracMaliyeti { get; set; }
@@ -28,11 +28,11 @@
         public decimal RehberBonus { get; set; }
         public decimal PlatformKomOrani { get; set; } = 0.3m;
 
-        public decimal Karlilik { get; set; } 
+        public decimal Karlilik { get; set; }
 
-        public decimal ToplamMaliyet => AracMaliyeti + TopMaliyeti + TasaronMaliyeti + KomisyonMaliyeti + GelirVergisi ;
+        public decimal ToplamMaliyet => AracMaliyeti + TopMaliyeti + TasaronMaliyeti + KomisyonMaliyeti + GelirVergisi;
 
-        public decimal HesaplananSatisFiyati =>  (ToplamMaliyet + PlatformKomisyonTutari + RehberBonus) / (1 - PlatformKomOrani);
+        public decimal HesaplananSatisFiyati => (ToplamMaliyet + PlatformKomisyonTutari + RehberBonus) / (1 - PlatformKomOrani);
     }
 
     public class FiyatlandirmaViewModel
@@ -42,4 +42,10 @@
         public List<OptionPricingViewModel> Options { get; set; } = new();
     }
 
+
+    public class FiyatlandirmaViewModel1
+    {
+        public int OptionId { get; set; }
+        public int Percentage { get; set; }
+    }
 }
