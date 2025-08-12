@@ -339,6 +339,7 @@ namespace TourManagementApi.Controllers
                     var activity = await _context.Activities.FindAsync(id.Value);
                     if (activity == null) return NotFound();
 
+                    var cancellationPolicy = _context.CancellationPolicyConditions.Where(a => a.ActivityId == id.Value).ToList();
                     var vm = new ActivityBasicViewModel
                     {
                         ActivityId = activity.Id,
@@ -366,7 +367,34 @@ namespace TourManagementApi.Controllers
                         DestinationCode = activity.DestinationCode,
                         DestinationName = activity.DestinationName,
                         TourCompanyId = activity.TourCompanyId,
-                        TourCompanies = tourCompanies
+                        TourCompanies = tourCompanies,
+                        CancellationPolicies = cancellationPolicy.OrderByDescending(c => c.MinDurationBeforeStartTimeSec)
+                        .Select(c =>
+                        {
+                            // kullanıcıya "day" veya "hour" olarak anlamlı döndür
+                            // 24 saat ve katları gün olarak, diğerleri saat olarak gösterelim
+                            if (c.MinDurationBeforeStartTimeSec % (24 * 3600) == 0)
+                            {
+                                return new CancellationPolicyConditionInput
+                                {
+                                    MinDurationUnit = "day",
+                                    MinDurationValue = c.MinDurationBeforeStartTimeSec / (24 * 3600),
+                                    RefundPercentage = c.RefundPercentage,
+                                    IsFreeCancellation = c.IsFreeCancellation
+                                };
+                            }
+                            else
+                            {
+                                return new CancellationPolicyConditionInput
+                                {
+                                    MinDurationUnit = "hour",
+                                    MinDurationValue = c.MinDurationBeforeStartTimeSec / 3600,
+                                    RefundPercentage = c.RefundPercentage,
+                                    IsFreeCancellation = c.IsFreeCancellation
+                                };
+                            }
+                        }).ToList(),
+                        IsFreeCancellationSummary = activity.IsFreeCancellation ?? false
                     };
                     return View(vm);
                 }
@@ -379,7 +407,12 @@ namespace TourManagementApi.Controllers
 
             return View(new ActivityBasicViewModel
             {
-                TourCompanies = tourCompanies
+                TourCompanies = tourCompanies,
+                CancellationPolicies = new List<CancellationPolicyConditionInput>
+        {
+            // yeni kayıt için 1 örnek satır
+            new CancellationPolicyConditionInput { MinDurationValue = 24, MinDurationUnit = "hour", RefundPercentage = 100, IsFreeCancellation = true }
+        }
             });
         }
 
@@ -421,6 +454,54 @@ namespace TourManagementApi.Controllers
                 {
                     finalGalleryList.AddRange(model.ExistingGalleryImages);
                 }
+
+
+                //
+                // 1) Önce mevcut koşulları temizle (update senaryosu)
+                //
+                var existingConds = await _context.CancellationPolicyConditions
+                    .Where(c => c.ActivityId == activity.Id)
+                    .ToListAsync();
+
+                if (existingConds.Any())
+                {
+                    _context.CancellationPolicyConditions.RemoveRange(existingConds);
+                    await _context.SaveChangesAsync();
+                }
+                var newConds = new List<CancellationPolicyCondition>();
+                if (model.CancellationPolicies != null)
+                {
+                    foreach (var row in model.CancellationPolicies)
+                    {
+                        // basit validasyon
+                        if (row.MinDurationValue < 0 || row.RefundPercentage < 0 || row.RefundPercentage > 100)
+                            continue;
+
+                        var seconds = row.MinDurationUnit == "day"
+                            ? row.MinDurationValue * 24 * 3600
+                            : row.MinDurationValue * 3600;
+
+                        newConds.Add(new CancellationPolicyCondition
+                        {
+                            ActivityId = activity.Id,
+                            MinDurationBeforeStartTimeSec = seconds,
+                            RefundPercentage = row.RefundPercentage,
+                            IsFreeCancellation = row.IsFreeCancellation
+                        });
+                    }
+                }
+                // 3) Activity.IsFreeCancellation özetini hesapla
+                // Kural: herhangi bir satır free ise ya da Refund=100 ise (ve min süre > 0) "free cancellation" vardır.
+                activity.IsFreeCancellation = newConds.Any(c => c.IsFreeCancellation || c.RefundPercentage == 100);
+
+                if (newConds.Any())
+                {
+                    await _context.CancellationPolicyConditions.AddRangeAsync(newConds);
+                }
+                newConds = newConds
+                .OrderByDescending(c => c.MinDurationBeforeStartTimeSec)
+                .ToList();
+
                 activity.B2BAgencyId = agencyId;
                 activity.Title = model.Title ?? string.Empty;
                 activity.Category = TxtJson.SerializeStringList(model.Categories?.Take(3).ToList() ?? new List<string>());
