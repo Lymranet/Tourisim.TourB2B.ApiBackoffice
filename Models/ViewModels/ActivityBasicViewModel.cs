@@ -75,8 +75,16 @@ namespace TourManagementApi.Models.ViewModels
         public int ReservationsCount { get; set; }
         public int AvailabilitiesCount { get; set; }
         public bool IsFreeCancellationSummary { get; internal set; }
-    }
 
+        public List<TicketCategorySaleVm> TicketCategoriesWithSalePrice { get; set; } = new();
+    }
+    public class TicketCategorySaleVm
+    {
+        public string Name { get; set; } = "";
+        public decimal SalePrice { get; set; }
+        public string Currency { get; set; } = "";
+        public int OptionId { get; set; }   // istersen gösterimde işe yarar
+    }
     public class ContactInfoViewModel
     {
         [Required(ErrorMessage = "İletişim ismi zorunludur.")]

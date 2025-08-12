@@ -144,7 +144,17 @@ namespace TourManagementApi.Controllers
                        Rating = a.Rating,
                        IsFreeCancellation = a.IsFreeCancellation,
                        ReservationsCount = a.Reservations.Count(),
-                       AvailabilitiesCount = a.Availabilities.Count()
+                       AvailabilitiesCount = a.Availabilities.Count(),
+                       TicketCategoriesWithSalePrice = a.Options
+                            .SelectMany(o => o.TicketCategories.Select(tc => new TicketCategorySaleVm
+                            {
+                                Name = tc.Name,
+                                SalePrice = tc.SalePrice ?? 0,   // SalePrice null ise 0 yazmak yerine filtre deleyebilirsin:
+                                Currency = tc.Currency,
+                                OptionId = o.Id
+                            }))
+                            .Where(x => x.SalePrice > 0) // veya .Where(tc => tc.SalePrice != null) üstte nullable tutarsan
+                            .ToList()
                    })
 
                     .ToList();

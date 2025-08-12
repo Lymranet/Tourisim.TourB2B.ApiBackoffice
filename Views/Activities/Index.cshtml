@@ -57,7 +57,8 @@
             <th>Kategori</th>
             <th>Seç.</th>
             @* <th>Rezervasyon</th> *@
-             <th>Kap.</th> 
+             <th>Kap.</th>
+            <th>Satış F.</th>
             <th>Oluş.</th>
             <th>Güncell.</th>
             @* <th>Rating</th> *@
@@ -133,6 +134,42 @@
                 </td>
                 @*                 <td>@(item.Reservations?.Count ?? 0)</td> *@
                 <td>@(item.AvailabilitiesCount)</td>
+                <td>
+                    @{
+                        var saleList = item.TicketCategoriesWithSalePrice ?? new List<TourManagementApi.Models.ViewModels.TicketCategorySaleVm>();
+                        var count = saleList.Count;
+                    }
+
+                    @if (count > 0)
+                    {
+                        var popId = $"pop-{item.ActivityId}";
+                        <button type="button"
+                                class="btn btn-sm btn-outline-primary sale-pop"
+                                data-pop="#@popId">
+                            @count fiyat
+                        </button>
+
+                        <!-- Popover içeriği için gizli şablon -->
+                        <div id="@popId" class="d-none">
+                            @foreach (var group in saleList.GroupBy(x => x.OptionId))
+                            {
+                                <div class="mb-1">
+                                    <div><strong>Option #@group.Key</strong></div>
+                                    <ul class="mb-1 ps-3">
+                                        @foreach (var tc in group)
+                                        {
+                                            <li>@tc.Name: @tc.SalePrice.ToString("0.##") @tc.Currency</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <span class="text-muted">-</span>
+                    }
+                </td>
                 <td>@(item.CreatedAt.HasValue? item.CreatedAt.Value.ToString("yyyy-MM-dd") : "-")</td>
                 <td>@(item.UpdatedAt.HasValue? item.UpdatedAt.Value.ToString("yyyy-MM-dd") : "-")</td>
 
@@ -197,6 +234,28 @@
 
 @section Scripts {
     <script type="text/javascript">
+
+            document.addEventListener('DOMContentLoaded', function () {
+            // Her buton için, yanındaki gizli div'den içeriği alıp popover olarak bağla
+            document.querySelectorAll('.sale-pop').forEach(function (btn) {
+                const contentEl = document.querySelector(btn.getAttribute('data-pop'));
+                if (!contentEl) return;
+
+                new bootstrap.Popover(btn, {
+                    content: contentEl.innerHTML,
+                    html: true,
+                    trigger: 'hover focus',   // hover ve klavye odağında aç
+                    placement: 'auto',
+                    container: 'body'
+                });
+            });
+        });
+
+
+
+
+
+
         // Select all checkbox
         $('#selectAll').click(function () {
             $('input[name="selectedActivities"]').prop('checked', this.checked);
