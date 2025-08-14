@@ -10,7 +10,7 @@
 </p>
 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
-<form asp-action="CreateLocation" method="post" autocomplete="off">
+<form asp-action="CreateLocation" method="post" autocomplete="off" style="width:98%;">
     <input type="hidden" asp-for="ActivityId" />
 
     <div class="card mb-4">
@@ -19,6 +19,7 @@
             <div>
                 <button type="button" class="btn btn-sm btn-info" onclick="togglePointType('meeting')">Buluşma Noktası Modu</button>
                 <button type="button" class="btn btn-sm btn-warning" onclick="togglePointType('route')">Rota Noktası Modu</button>
+                <button type="button" class="btn btn-sm btn-dark" onclick="togglePointType('sales')">Satış Bölgesi Modu</button>
             </div>
         </div>
         <div class="card-body">
@@ -95,6 +96,38 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Satış Bölgesi</span>
+                    <small class="text-muted">Haritada dikdörtgeni çizip/düzenleyin</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Etiket (opsiyonel)</label>
+                            <input class="form-control" asp-for="SalesArea.Label" placeholder="Örn: Antalya Merkez Kıyı Şeridi" />
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-dark" onclick="startDrawRectangle()">Dikdörtgen Çiz</button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="clearSalesArea()">Temizle</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hiddenlar -->
+                    <input type="hidden" asp-for="SalesArea.NorthLat" id="salesNorthLat" />
+                    <input type="hidden" asp-for="SalesArea.SouthLat" id="salesSouthLat" />
+                    <input type="hidden" asp-for="SalesArea.EastLng" id="salesEastLng" />
+                    <input type="hidden" asp-for="SalesArea.WestLng" id="salesWestLng" />
+
+                    <div class="mt-3 small text-muted" id="salesAreaPreview"></div>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <button type="submit" class="btn btn-primary">Kaydet</button>
@@ -129,298 +162,369 @@
 
 @section Scripts {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
     <script>
+        // --- Global değişkenler ---
         let map, meetingPointMarkers = [], routePointMarkers = [], routeLine;
-        let currentPointType = 'meeting'; // 'meeting' veya 'route'
+        let currentPointType = 'meeting'; // 'meeting' | 'route' | 'sales'
         let tempLat, tempLng, tempAddress;
 
+        let salesRect;                 // L.Rectangle
+        let drawRectangle;             // L.Draw.Rectangle
+        let drawing = false;
+
         const meetingPointIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+          iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
         });
-
         const routePointIcon = L.icon({
-            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34]
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+          iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
         });
 
-        function initMap() {
-            map = L.map('locationMap').setView([39.9208, 32.8541], 6);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '© OpenStreetMap'
-            }).addTo(map);
-
-            map.on('click', function(e) {
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
-                tempLat = lat;
-                tempLng = lng;
-
-                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data && data.display_name) {
-                            tempAddress = data.display_name;
-                            const name = data.address.road || data.address.suburb || data.address.city_district || '';
-                            showAddPointModal(name);
-                        }
-                    });
-            });
-
-            loadExistingPoints();
-            updateCounters();
-        }
-
+        // --- Yardımcılar: UI durum değişimi ---
         function togglePointType(type) {
-            currentPointType = type;
-            document.querySelectorAll('.btn-info, .btn-warning').forEach(btn => btn.classList.remove('active'));
-            if (type === 'meeting') {
-                document.querySelector('.btn-info').classList.add('active');
-            } else {
-                document.querySelector('.btn-warning').classList.add('active');
-            }
+          currentPointType = type;
+
+          // üç butonun "active" durumunu birlikte yönet
+          document.querySelectorAll('.btn-info, .btn-warning, .btn-dark')
+            .forEach(btn => btn.classList.remove('active'));
+
+          if (type === 'meeting')      document.querySelector('.btn-info')?.classList.add('active');
+          else if (type === 'route')   document.querySelector('.btn-warning')?.classList.add('active');
+          else if (type === 'sales')   document.querySelector('.btn-dark')?.classList.add('active');
         }
 
+        // --- Harita kurulumu (TEK adet!) ---
+        function initMap() {
+          map = L.map('locationMap').setView([39.9208, 32.8541], 6);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap'
+          }).addTo(map);
+
+          // Sadece dikdörtgen çizimi için Leaflet.Draw aracı
+          drawRectangle = new L.Draw.Rectangle(map, {
+            shapeOptions: { weight: 2, fillOpacity: 0.15, color: '#0d0d0d' }
+          });
+
+          // Çizim tamamlandığında (yalnızca satış modunda yakala)
+          map.on(L.Draw.Event.CREATED, function (e) {
+            if (currentPointType !== 'sales') return;
+            if (salesRect) map.removeLayer(salesRect);
+            salesRect = e.layer;
+            salesRect.addTo(map);
+            bindSalesRectEvents();
+            saveSalesBounds(salesRect.getBounds());
+          });
+
+          // Harita tıklaması: meeting/route ekleme
+          map.on('click', onMapClickForPoints);
+
+          loadExistingPoints();
+          loadExistingSalesAreaFromModel();
+          updateCounters();
+        }
+
+        function onMapClickForPoints(e) {
+          if (currentPointType === 'sales') return; // satış modunda nokta ekleme yok
+          const lat = e.latlng.lat;
+          const lng = e.latlng.lng;
+          tempLat = lat;
+          tempLng = lng;
+
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.display_name) {
+                tempAddress = data.display_name;
+                const name = (data.address?.road || data.address?.suburb || data.address?.city_district || '');
+                showAddPointModal(name);
+              }
+            });
+        }
+
+        // --- SATIŞ BÖLGESİ: çiz, temizle, bağla, kaydet ---
+        function startDrawRectangle() {
+          togglePointType('sales');
+          drawing = true;
+          // Burada artık drawRectangle garanti oluşturuldu (tek initMap sayesinde)
+          drawRectangle.enable();
+        }
+
+        function clearSalesArea() {
+          if (salesRect) {
+            map.removeLayer(salesRect);
+            salesRect = null;
+          }
+          document.getElementById('salesNorthLat').value = '';
+          document.getElementById('salesSouthLat').value = '';
+          document.getElementById('salesEastLng').value = '';
+          document.getElementById('salesWestLng').value = '';
+          document.getElementById('salesAreaPreview').innerHTML = '';
+        }
+
+        function bindSalesRectEvents() {
+          // Leaflet.Editable varsa aktif et; yoksa bu satırı yoksayar
+          salesRect.editing?.enable();
+
+          salesRect.on('edit', function () {
+            saveSalesBounds(salesRect.getBounds());
+          });
+
+          salesRect.on('click', function () {
+            const b = salesRect.getBounds();
+            L.popup()
+              .setLatLng(b.getCenter())
+              .setContent('Satış bölgesi seçili.')
+              .openOn(map);
+          });
+        }
+
+        function saveSalesBounds(bounds) {
+          const north = bounds.getNorth();
+          const south = bounds.getSouth();
+          const east  = bounds.getEast();
+          const west  = bounds.getWest();
+
+          document.getElementById('salesNorthLat').value = north;
+          document.getElementById('salesSouthLat').value = south;
+          document.getElementById('salesEastLng').value  = east;
+          document.getElementById('salesWestLng').value  = west;
+
+          document.getElementById('salesAreaPreview').innerHTML =
+            `Seçim: N:${north.toFixed(5)} S:${south.toFixed(5)} E:${east.toFixed(5)} W:${west.toFixed(5)}`;
+        }
+
+        function loadExistingSalesAreaFromModel() {
+          const north = parseFloat(document.getElementById('salesNorthLat').value || '0');
+          const south = parseFloat(document.getElementById('salesSouthLat').value || '0');
+          const east  = parseFloat(document.getElementById('salesEastLng').value  || '0');
+          const west  = parseFloat(document.getElementById('salesWestLng').value  || '0');
+
+          if (![north, south, east, west].every(v => !isNaN(v)) ||
+              (north === 0 && south === 0 && east === 0 && west === 0)) return;
+
+          const bounds = L.latLngBounds([[south, west], [north, east]]);
+          salesRect = L.rectangle(bounds, { weight: 2, fillOpacity: 0.15, color: '#0d0d0d' }).addTo(map);
+          bindSalesRectEvents();
+          map.fitBounds(bounds, { padding: [50, 50] });
+          saveSalesBounds(bounds);
+        }
+
+        // --- Modal & Nokta ekleme (mevcut kodundan toparlandı) ---
         function showAddPointModal(suggestedName) {
-            const modal = new bootstrap.Modal(document.getElementById('addPointModal'));
-            document.getElementById('pointName').value = suggestedName;
-            
-            if (currentPointType === 'meeting') {
-                document.getElementById('addPointModalTitle').textContent = 'Buluşma Noktası Ekle';
-                document.getElementById('addressGroup').style.display = 'block';
-                document.getElementById('pointAddress').value = tempAddress;
-            } else {
-                document.getElementById('addPointModalTitle').textContent = 'Rota Noktası Ekle';
-                document.getElementById('addressGroup').style.display = 'none';
-            }
-            
-            modal.show();
+          const modal = new bootstrap.Modal(document.getElementById('addPointModal'));
+          document.getElementById('pointName').value = suggestedName || '';
+
+          if (currentPointType === 'meeting') {
+            document.getElementById('addPointModalTitle').textContent = 'Buluşma Noktası Ekle';
+            document.getElementById('addressGroup').style.display = 'block';
+            document.getElementById('pointAddress').value = tempAddress || '';
+          } else {
+            document.getElementById('addPointModalTitle').textContent = 'Rota Noktası Ekle';
+            document.getElementById('addressGroup').style.display = 'none';
+          }
+          modal.show();
         }
 
         function savePoint() {
-            const name = document.getElementById('pointName').value;
-            if (currentPointType === 'meeting') {
-                addMeetingPoint(tempLat, tempLng, tempAddress, name);
-            } else {
-                addRoutePoint(tempLat, tempLng, name);
-            }
-            bootstrap.Modal.getInstance(document.getElementById('addPointModal')).hide();
-            updateCounters();
+          const name = document.getElementById('pointName').value;
+          if (currentPointType === 'meeting') {
+            addMeetingPoint(tempLat, tempLng, tempAddress, name);
+          } else if (currentPointType === 'route') {
+            addRoutePoint(tempLat, tempLng, name);
+          }
+          bootstrap.Modal.getInstance(document.getElementById('addPointModal')).hide();
+          updateCounters();
         }
 
         function loadExistingPoints() {
-            // Buluşma noktalarını yükle
-            document.querySelectorAll('.meeting-point-item').forEach(item => {
-                const lat = item.querySelector('input[name$=".Latitude"]').value;
-                const lng = item.querySelector('input[name$=".Longitude"]').value;
-                const name = item.querySelector('input[name$=".Name"]').value;
-                const address = item.querySelector('input[name$=".Address"]').value;
-                
-                if (lat && lng) {
-                    const marker = L.marker([lat, lng], { icon: meetingPointIcon })
-                        .bindPopup(name)
-                        .addTo(map);
-                    meetingPointMarkers.push(marker);
-                }
-            });
-
-            // Rota noktalarını yükle
-            document.querySelectorAll('.route-point-item').forEach(item => {
-                const lat = item.querySelector('input[name$=".Latitude"]').value;
-                const lng = item.querySelector('input[name$=".Longitude"]').value;
-                const name = item.querySelector('input[name$=".Name"]').value;
-                
-                if (lat && lng) {
-                    const marker = L.marker([lat, lng], { icon: routePointIcon })
-                        .bindPopup(name)
-                        .addTo(map);
-                    routePointMarkers.push(marker);
-                }
-            });
-
-            // Haritayı noktaları kapsayacak şekilde ayarla
-            if (meetingPointMarkers.length > 0 || routePointMarkers.length > 0) {
-                const allMarkers = [...meetingPointMarkers, ...routePointMarkers];
-                const bounds = L.latLngBounds(allMarkers.map(marker => marker.getLatLng()));
-                map.fitBounds(bounds, { padding: [50, 50] });
+          // Buluşma noktaları
+          document.querySelectorAll('.meeting-point-item').forEach(item => {
+            const lat = item.querySelector('input[name$=".Latitude"]').value;
+            const lng = item.querySelector('input[name$=".Longitude"]').value;
+            const name = item.querySelector('input[name$=".Name"]').value;
+            const address = item.querySelector('input[name$=".Address"]').value;
+            if (lat && lng) {
+              const marker = L.marker([lat, lng], { icon: meetingPointIcon })
+                .bindPopup(name).addTo(map);
+              meetingPointMarkers.push(marker);
             }
+          });
 
-            updateRouteLine();
-            updateCounters();
+          // Rota noktaları
+          document.querySelectorAll('.route-point-item').forEach(item => {
+            const lat = item.querySelector('input[name$=".Latitude"]').value;
+            const lng = item.querySelector('input[name$=".Longitude"]').value;
+            const name = item.querySelector('input[name$=".Name"]').value;
+            if (lat && lng) {
+              const marker = L.marker([lat, lng], { icon: routePointIcon })
+                .bindPopup(name).addTo(map);
+              routePointMarkers.push(marker);
+            }
+          });
+
+          // Görünümü ayarla
+          if (meetingPointMarkers.length > 0 || routePointMarkers.length > 0) {
+            const allMarkers = [...meetingPointMarkers, ...routePointMarkers];
+            const bounds = L.latLngBounds(allMarkers.map(m => m.getLatLng()));
+            map.fitBounds(bounds, { padding: [50, 50] });
+          }
+
+          updateRouteLine();
+          updateCounters();
         }
 
         function addMeetingPoint(lat, lng, address, name) {
-            const container = document.getElementById('meetingPointsContainer');
-            const index = container.children.length;
-            const html = `
-                <div class="meeting-point-item border rounded p-3 mb-3">
-                    <div class="d-flex justify-content-between mb-2">
-                        <h6>Buluşma Noktası #${index + 1}</h6>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removeMeetingPoint(this)">Sil</button>
-                    </div>
-                    <input type="hidden" name="MeetingPoints[${index}].Name" value="${name || ''}" />
-                    <input type="hidden" name="MeetingPoints[${index}].Latitude" value="${lat || ''}" />
-                    <input type="hidden" name="MeetingPoints[${index}].Longitude" value="${lng || ''}" />
-                    <input type="hidden" name="MeetingPoints[${index}].Address" value="${address || ''}" />
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="form-group mb-2">
-                                <label>Buluşma Noktası Adı</label>
-                                <input class="form-control name-input" value="${name || ''}" onchange="updateMeetingPointField(this, 'Name')" />
-                            </div>
-                            <div class="form-group">
-                                <label>Adres</label>
-                                <input class="form-control address-input" value="${address || ''}" readonly />
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            container.insertAdjacentHTML('beforeend', html);
+          const container = document.getElementById('meetingPointsContainer');
+          const index = container.children.length;
+          const html = `
+            <div class="meeting-point-item border rounded p-3 mb-3">
+              <div class="d-flex justify-content-between mb-2">
+                <h6>Buluşma Noktası #${index + 1}</h6>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeMeetingPoint(this)">Sil</button>
+              </div>
+              <input type="hidden" name="MeetingPoints[${index}].Name" value="${name || ''}" />
+              <input type="hidden" name="MeetingPoints[${index}].Latitude" value="${lat || ''}" />
+              <input type="hidden" name="MeetingPoints[${index}].Longitude" value="${lng || ''}" />
+              <input type="hidden" name="MeetingPoints[${index}].Address" value="${address || ''}" />
+              <div class="row">
+                <div class="col-12">
+                  <div class="form-group mb-2">
+                    <label>Buluşma Noktası Adı</label>
+                    <input class="form-control name-input" value="${name || ''}" onchange="updateMeetingPointField(this, 'Name')" />
+                  </div>
+                  <div class="form-group">
+                    <label>Adres</label>
+                    <input class="form-control address-input" value="${address || ''}" readonly />
+                  </div>
+                </div>
+              </div>
+            </div>`;
+          container.insertAdjacentHTML('beforeend', html);
 
-            if (lat && lng) {
-                const marker = L.marker([lat, lng], { icon: meetingPointIcon }).addTo(map);
-                meetingPointMarkers.push(marker);
-            }
-            updateCounters();
+          if (lat && lng) {
+            const marker = L.marker([lat, lng], { icon: meetingPointIcon }).addTo(map);
+            meetingPointMarkers.push(marker);
+          }
+          updateCounters();
         }
 
         function addRoutePoint(lat, lng, name) {
-            const container = document.getElementById('routePointsContainer');
-            const index = container.children.length;
-            const html = `
-                <div class="route-point-item border rounded p-3 mb-3">
-                    <div class="d-flex justify-content-between mb-2">
-                        <h6>Rota Noktası #${index + 1}</h6>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="removeRoutePoint(this)">Sil</button>
-                    </div>
-                    <input type="hidden" name="RoutePoints[${index}].Name" value="${name || ''}" />
-                    <input type="hidden" name="RoutePoints[${index}].Latitude" value="${lat || ''}" />
-                    <input type="hidden" name="RoutePoints[${index}].Longitude" value="${lng || ''}" />
-                    <div class="form-group mb-2">
-                        <label>Rota Noktası Adı</label>
-                        <input class="form-control name-input" value="${name || ''}" onchange="updateRoutePointField(this, 'Name')" />
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
+          const container = document.getElementById('routePointsContainer');
+          const index = container.children.length;
+          const html = `
+            <div class="route-point-item border rounded p-3 mb-3">
+              <div class="d-flex justify-content-between mb-2">
+                <h6>Rota Noktası #${index + 1}</h6>
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeRoutePoint(this)">Sil</button>
+              </div>
+              <input type="hidden" name="RoutePoints[${index}].Name" value="${name || ''}" />
+              <input type="hidden" name="RoutePoints[${index}].Latitude" value="${lat || ''}" />
+              <input type="hidden" name="RoutePoints[${index}].Longitude" value="${lng || ''}" />
+              <div class="form-group mb-2">
+                <label>Rota Noktası Adı</label>
+                <input class="form-control name-input" value="${name || ''}" onchange="updateRoutePointField(this, 'Name')" />
+              </div>
+            </div>`;
+          container.insertAdjacentHTML('beforeend', html);
 
-            const marker = L.marker([lat, lng], { icon: routePointIcon }).addTo(map);
-            routePointMarkers.push(marker);
-            updateRouteLine();
-            updateCounters();
+          const marker = L.marker([lat, lng], { icon: routePointIcon }).addTo(map);
+          routePointMarkers.push(marker);
+          updateRouteLine();
+          updateCounters();
         }
 
         function removeMeetingPoint(button) {
-            const item = button.closest('.meeting-point-item');
-            const index = Array.from(item.parentNode.children).indexOf(item);
-            if (meetingPointMarkers[index]) {
-                map.removeLayer(meetingPointMarkers[index]);
-                meetingPointMarkers.splice(index, 1);
-            }
-            item.remove();
-            reindexMeetingPoints();
-            updateCounters();
+          const item = button.closest('.meeting-point-item');
+          const index = Array.from(item.parentNode.children).indexOf(item);
+          if (meetingPointMarkers[index]) {
+            map.removeLayer(meetingPointMarkers[index]);
+            meetingPointMarkers.splice(index, 1);
+          }
+          item.remove();
+          reindexMeetingPoints();
+          updateCounters();
         }
 
         function removeRoutePoint(button) {
-            const item = button.closest('.route-point-item');
-            const container = item.parentElement;
-            const index = Array.from(container.children).indexOf(item);
-            
-            if (routePointMarkers[index]) {
-                map.removeLayer(routePointMarkers[index]);
-                routePointMarkers.splice(index, 1);
-            }
-            
-            item.remove();
-            
-            // Kalan noktaların indekslerini güncelle
-            container.querySelectorAll('.route-point-item').forEach((item, i) => {
-                item.querySelector('h6').textContent = `Rota Noktası #${i + 1}`;
-                item.querySelectorAll('input[type="hidden"]').forEach(input => {
-                    const name = input.name.replace(/\[\d+\]/, `[${i}]`);
-                    input.name = name;
-                });
+          const item = button.closest('.route-point-item');
+          const container = item.parentElement;
+          const index = Array.from(container.children).indexOf(item);
+
+          if (routePointMarkers[index]) {
+            map.removeLayer(routePointMarkers[index]);
+            routePointMarkers.splice(index, 1);
+          }
+          item.remove();
+
+          container.querySelectorAll('.route-point-item').forEach((it, i) => {
+            it.querySelector('h6').textContent = `Rota Noktası #${i + 1}`;
+            it.querySelectorAll('input[type="hidden"]').forEach(input => {
+              input.name = input.name.replace(/\[\d+\]/, `[${i}]`);
             });
-            
-            updateRouteLine();
-            updateCounters();
+          });
+          updateRouteLine();
+          updateCounters();
         }
 
         function reindexMeetingPoints() {
-            document.querySelectorAll('.meeting-point-item').forEach((item, index) => {
-                item.querySelector('h6').textContent = `Buluşma Noktası #${index + 1}`;
-                item.querySelectorAll('input[type="hidden"]').forEach(input => {
-                    const fieldName = input.name.split('.')[1];
-                    input.name = `MeetingPoints[${index}].${fieldName}`;
-                });
+          document.querySelectorAll('.meeting-point-item').forEach((it, i) => {
+            it.querySelector('h6').textContent = `Buluşma Noktası #${i + 1}`;
+            it.querySelectorAll('input[type="hidden"]').forEach(input => {
+              const fieldName = input.name.split('.')[1];
+              input.name = `MeetingPoints[${i}].${fieldName}`;
             });
-        }
-
-        function reindexRoutePoints() {
-            document.querySelectorAll('.route-point-item').forEach((item, index) => {
-                item.querySelector('h6').textContent = `Rota Noktası #${index + 1}`;
-                item.querySelectorAll('input[type="hidden"]').forEach(input => {
-                    const fieldName = input.name.split('.')[1];
-                    input.name = `RoutePoints[${index}].${fieldName}`;
-                });
-            });
+          });
         }
 
         function updateMeetingPointField(input, field) {
-            const item = input.closest('.meeting-point-item');
-            item.querySelector(`input[name$=".${field}"]`).value = input.value;
+          const item = input.closest('.meeting-point-item');
+          const hidden = item.querySelector(`input[name$=".${field}"]`);
+          if (hidden) hidden.value = input.value;
         }
 
         function updateRoutePointField(input, field) {
-            const item = input.closest('.route-point-item');
-            const hiddenInput = item.querySelector(`input[name$="].${field}"]`);
-            if (hiddenInput) {
-                hiddenInput.value = input.value;
-            }
+          const item = input.closest('.route-point-item');
+          const hidden = item.querySelector(`input[name$=".${field}"]`);
+          if (hidden) hidden.value = input.value;
         }
 
         function updateRouteLine() {
-            if (routeLine) {
-                map.removeLayer(routeLine);
-            }
-
-            if (routePointMarkers.length > 1) {
-                const coordinates = routePointMarkers.map(marker => marker.getLatLng());
-                routeLine = L.polyline(coordinates, { color: 'red', weight: 3 }).addTo(map);
-            }
+          if (routeLine) map.removeLayer(routeLine);
+          if (routePointMarkers.length > 1) {
+            const coordinates = routePointMarkers.map(m => m.getLatLng());
+            routeLine = L.polyline(coordinates, { color: 'red', weight: 3 }).addTo(map);
+          }
         }
 
         function updateCounters() {
-            const meetingPointCount = document.querySelectorAll('.meeting-point-item').length;
-            const routePointCount = document.querySelectorAll('.route-point-item').length;
-            
-            document.getElementById('meetingPointCount').textContent = meetingPointCount.toString();
-            document.getElementById('routePointCount').textContent = routePointCount.toString();
+          const meetingPointCount = document.querySelectorAll('.meeting-point-item').length;
+          const routePointCount   = document.querySelectorAll('.route-point-item').length;
+          document.getElementById('meetingPointCount').textContent = meetingPointCount.toString();
+          document.getElementById('routePointCount').textContent   = routePointCount.toString();
         }
 
         function searchAddress() {
-            const query = document.getElementById('addressSearch').value;
-            if (!query) return;
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const place = data[0];
-                        map.setView([place.lat, place.lon], 15);
-                    }
-                });
+          const query = document.getElementById('addressSearch').value;
+          if (!query) return;
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.length > 0) {
+                const place = data[0];
+                map.setView([Number(place.lat), Number(place.lon)], 15);
+              }
+            });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            initMap();
-            togglePointType('meeting');
+        document.addEventListener('DOMContentLoaded', function () {
+          initMap();
+          togglePointType('meeting'); // varsayılan
         });
     </script>
+
 } 

@@ -760,50 +760,64 @@ namespace TourManagementApi.Controllers
         [HttpGet]
         public async Task<IActionResult> CreateLocation(int? id)
         {
-            if (!id.HasValue)
+            try
             {
-                return RedirectToAction(nameof(Index));
-            }
+                if (!id.HasValue)
+                    return RedirectToAction(nameof(Index));
 
-            var activity = await _context.Activities
-                .Include(a => a.MeetingPoints)
-                .Include(a => a.RoutePoints)
-                .FirstOrDefaultAsync(a => a.Id == id);
+                var activity = await _context.Activities
+                    .Include(a => a.MeetingPoints)
+                    .Include(a => a.RoutePoints)
+                    .FirstOrDefaultAsync(a => a.Id == id);
 
-            if (activity == null)
-            {
-                return NotFound();
-            }
+                if (activity == null)
+                    return NotFound();
 
-            var viewModel = new ActivityLocationViewModel
-            {
-                ActivityId = activity.Id,
-                MeetingPoints = activity.MeetingPoints?.Select(mp => new MeetingPointViewModel
+                // Satış alanını çek
+                var salesArea = await _context.ActivitySalesAreas
+                    .FirstOrDefaultAsync(x => x.ActivityId == activity.Id);
+
+                var viewModel = new ActivityLocationViewModel
                 {
-                    Name = mp.Name,
-                    Address = mp.Address,
-                    Latitude = mp.Latitude,
-                    Longitude = mp.Longitude
-                }).ToList() ?? new List<MeetingPointViewModel>(),
-                RoutePoints = activity.RoutePoints?.Select(rp => new RoutePointViewModel
-                {
-                    Name = rp.Name,
-                    Latitude = rp.Latitude,
-                    Longitude = rp.Longitude
-                }).ToList() ?? new List<RoutePointViewModel>()
-            };
+                    ActivityId = activity.Id,
+                    MeetingPoints = activity.MeetingPoints?.Select(mp => new MeetingPointViewModel
+                    {
+                        Name = mp.Name,
+                        Address = mp.Address,
+                        Latitude = mp.Latitude,
+                        Longitude = mp.Longitude
+                    }).ToList() ?? new List<MeetingPointViewModel>(),
+                    RoutePoints = activity.RoutePoints?.Select(rp => new RoutePointViewModel
+                    {
+                        Name = rp.Name,
+                        Latitude = rp.Latitude,
+                        Longitude = rp.Longitude
+                    }).ToList() ?? new List<RoutePointViewModel>(),
+                    SalesArea = salesArea == null ? new SalesAreaDto() : new SalesAreaDto
+                    {
+                        Label = salesArea.Label,
+                        NorthLat = salesArea.NorthLat,
+                        SouthLat = salesArea.SouthLat,
+                        EastLng = salesArea.EastLng,
+                        WestLng = salesArea.WestLng
+                    }
+                };
 
-            return View(viewModel);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                return View();
+            }
         }
+
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreateLocation(ActivityLocationViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             try
             {
@@ -813,10 +827,9 @@ namespace TourManagementApi.Controllers
                     .FirstOrDefaultAsync(a => a.Id == model.ActivityId);
 
                 if (activity == null)
-                {
                     return NotFound();
-                }
 
+                // --- Buluşma Noktaları ---
                 activity.MeetingPoints.Clear();
                 if (model.MeetingPoints != null)
                 {
@@ -832,6 +845,7 @@ namespace TourManagementApi.Controllers
                     }
                 }
 
+                // --- Rota Noktaları ---
                 activity.RoutePoints.Clear();
                 if (model.RoutePoints != null)
                 {
@@ -846,6 +860,38 @@ namespace TourManagementApi.Controllers
                     }
                 }
 
+                // --- Satış Bölgesi (tek dikdörtgen – upsert) ---
+                var sa = model.SalesArea;
+                var hasBox = sa != null &&
+                             !(sa.NorthLat == 0 && sa.SouthLat == 0 && sa.EastLng == 0 && sa.WestLng == 0);
+
+                var existingArea = await _context.ActivitySalesAreas
+                    .FirstOrDefaultAsync(x => x.ActivityId == model.ActivityId);
+
+                if (hasBox)
+                {
+                    if (existingArea == null)
+                    {
+                        existingArea = new ActivitySalesArea
+                        {
+                            ActivityId = model.ActivityId
+                        };
+                        _context.ActivitySalesAreas.Add(existingArea);
+                    }
+
+                    existingArea.Label = sa.Label;
+                    existingArea.NorthLat = sa.NorthLat;
+                    existingArea.SouthLat = sa.SouthLat;
+                    existingArea.EastLng = sa.EastLng;
+                    existingArea.WestLng = sa.WestLng;
+                }
+                else
+                {
+                    // kutu temizlendiyse varsa sil
+                    if (existingArea != null)
+                        _context.ActivitySalesAreas.Remove(existingArea);
+                }
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
@@ -855,6 +901,9 @@ namespace TourManagementApi.Controllers
                 return View(model);
             }
         }
+
+
+
 
         #endregion
 

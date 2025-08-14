@@ -12,6 +12,9 @@ namespace TourManagementApi.Models.ViewModels
 
         [Display(Name = "Rota Noktaları")]
         public List<RoutePointViewModel> RoutePoints { get; set; } = new();
+
+        // ↓ Satış bölgesi (tek dikdörtgen)
+        public SalesAreaDto SalesArea { get; set; } = new();
     }
 
     public class MeetingPointViewModel
@@ -47,4 +50,14 @@ namespace TourManagementApi.Models.ViewModels
         [Display(Name = "Boylam")]
         public string Longitude { get; set; } = string.Empty;
     }
-} 
+
+    // ↓ Satış alanı DTO (double tip; gizli inputlardan JS dolduruyor)
+    public class SalesAreaDto
+    {
+        public string? Label { get; set; }
+        public decimal NorthLat { get; set; }
+        public decimal SouthLat { get; set; }
+        public decimal EastLng { get; set; }
+        public decimal WestLng { get; set; }
+    }
+}

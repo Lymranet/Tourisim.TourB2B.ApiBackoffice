@@ -78,6 +78,9 @@ public partial class TourManagementDbContext : DbContext
 
     public virtual DbSet<Translation> Translations { get; set; }
 
+    public DbSet<ActivitySalesArea> ActivitySalesAreas { get; set; }
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Activity>(entity =>
