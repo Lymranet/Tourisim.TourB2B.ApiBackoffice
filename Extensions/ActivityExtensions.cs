@@ -49,10 +49,10 @@ namespace TourManagementApi.Extensions
             }
             else
             {
-                priceOptions = option.TicketCategories.Select(tc => new PriceOption
+                priceOptions = option.TicketCategories.Where(a=>a.SalePrice!=null).Select(tc => new PriceOption
                 {
                     Label = tc.Type,
-                    Price = tc.Amount,
+                    Price = tc.SalePrice.Value,
                     SeatsUsed = tc.MaxSeats > 0 ? tc.MaxSeats : 1
                     // MinQuantity, MaxQuantity, PriceGroupType otomatik olarak null kalacak ve JSON'a yazılmayacak
                 }).ToList();
