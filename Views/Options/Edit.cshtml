@@ -163,6 +163,7 @@
                                     <div class="col-md-4">
                                         <label>Para Birimi</label>
                                         <select name="TicketCategories[@i].Currency" class="form-control">
+                                            <option value="GBP" selected="@(Model.TicketCategories[i].Currency == "GBP")">GBP</option>
                                             <option value="TRY" selected="@(Model.TicketCategories[i].Currency == "TRY")">TRY</option>
                                             <option value="USD" selected="@(Model.TicketCategories[i].Currency == "USD")">USD</option>
                                             <option value="EUR" selected="@(Model.TicketCategories[i].Currency == "EUR")">EUR</option>
@@ -243,6 +244,7 @@
                                 <div class="col-md-2">
                                     <label>Para Birimi</label>
                                     <select name="TicketCategories[0].Currency" class="form-control">
+                                        <option value="GBP" selected>GBP</option>
                                         <option value="TRY">TRY</option>
                                         <option value="USD">USD</option>
                                         <option value="EUR">EUR</option>
@@ -359,6 +361,7 @@ $(document).ready(function () {
                         <div class="col-md-4">
                             <label>Para Birimi</label>
                             <select name="TicketCategories[${ticketCategoryIndex}].Currency" class="form-control">
+                               <option value="GBP" selected>GBP</option>
                                 <option value="TRY">TRY</option>
                                 <option value="USD">USD</option>
                                 <option value="EUR">EUR</option>

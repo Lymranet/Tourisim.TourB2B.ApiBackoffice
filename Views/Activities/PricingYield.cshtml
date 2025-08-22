@@ -170,7 +170,7 @@
             const id = span.id.split('_')[1];
             
 
-            const currencyCode = document.querySelector(`#toplamSatis_${id}`)?.getAttribute("data-currency") || "USD";
+            const currencyCode = document.querySelector(`#toplamSatis_${id}`)?.getAttribute("data-currency") || "GBP";
             const arac = parseFloat(document.querySelector(`[name='arac_${id}']`)?.value) || 0;
             const top = parseFloat(document.querySelector(`[name='top_${id}']`)?.value) || 0;
             const bonus = parseFloat(document.querySelector(`[name='bonus_${id}']`)?.value) || 0;
