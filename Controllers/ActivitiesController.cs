@@ -694,15 +694,58 @@ namespace TourManagementApi.Controllers
             }
         }
 
-
-
-
-
-
-
-
-
         public async Task<IActionResult> PricingYield(int id)
+        {
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .ThenInclude(o => o.TicketCategories)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (activity == null) return NotFound();
+
+            var vm = new FiyatlandirmaViewModel
+            {
+                ActivityId = activity.Id,
+                ActivityTitle = activity.Title,
+                Options = activity.Options.Select(o =>
+                {
+                    var platformKomOrani = 0.3m;
+
+                    var ticketCategories = o.TicketCategories.Select(tc => new TicketCategoryPricingViewModel
+                    {
+                        TicketCategoryId = tc.Id,
+                        TicketCategoryName = tc.Name,
+                        Amount = (tc.Amount * 150 / 100), // Satış fiyatı örneği
+                        Currency = tc.Currency,
+                        SupplierCost = tc.Amount
+                    }).ToList();
+
+                    var toplamSatis = ticketCategories.Sum(tc => tc.Amount);
+                    var toplamTaseronMaliyeti = ticketCategories.Sum(tc => tc.SupplierCost);
+                    var komisyonMaliyeti = toplamSatis * platformKomOrani;
+                    var kalanTutar = toplamSatis - komisyonMaliyeti - toplamTaseronMaliyeti;
+                    var toplamMaliyet = ticketCategories.Sum(tc => tc.SupplierCost) + komisyonMaliyeti;
+                    return new OptionPricingViewModel
+                    {
+                        OptionId = o.Id,
+                        OptionName = o.Name,
+                        TicketCategories = ticketCategories,
+                        AracMaliyeti = 0,
+                        TopMaliyeti = 0,
+                        GelirVergisi = (kalanTutar * 20 / 100),
+                        RehberBonus = 0,
+                        PlatformKomisyonTutari = komisyonMaliyeti + 0,
+                        KomisyonMaliyeti = komisyonMaliyeti,
+                        PlatformKomOrani = platformKomOrani,
+                        Karlilik = (toplamSatis - toplamMaliyet) / toplamSatis
+                    };
+                }).ToList()
+            };
+
+            return View(vm);
+        }
+
+        public async Task<IActionResult> PricingYield2(int id)
         {
             var activity = await _context.Activities
                 .Include(a => a.Options)

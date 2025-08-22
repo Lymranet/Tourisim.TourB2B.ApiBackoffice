@@ -8,9 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Logs\2025\**" />
     <Compile Remove="Views\Activity\**" />
+    <Content Remove="Logs\2025\**" />
     <Content Remove="Views\Activity\**" />
+    <EmbeddedResource Remove="Logs\2025\**" />
     <EmbeddedResource Remove="Views\Activity\**" />
+    <None Remove="Logs\2025\**" />
     <None Remove="Views\Activity\**" />
   </ItemGroup>
 

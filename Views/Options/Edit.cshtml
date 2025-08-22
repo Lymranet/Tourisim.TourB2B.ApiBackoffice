@@ -156,6 +156,7 @@
                                         <select name="TicketCategories[@i].Type" class="form-control">
                                             <option value="Adult" selected="@(Model.TicketCategories[i].Type == "Adult")">Yetişkin</option>
                                             <option value="Child" selected="@(Model.TicketCategories[i].Type == "Child")">Çocuk</option>
+                                            <option value="Infant" selected="@(Model.TicketCategories[i].Type == "Infant")">Bebek</option>
                                             <option value="Group" selected="@(Model.TicketCategories[i].Type == "Group")">Grup</option>
                                         </select>
                                         <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[@i].Type" data-valmsg-replace="true"></span>
@@ -237,6 +238,7 @@
                                     <select name="TicketCategories[0].Type" class="form-control">
                                         <option value="Adult">Yetişkin</option>
                                         <option value="Child">Çocuk</option>
+                                        <option value="Infant">Bebek</option>
                                         <option value="Group">Grup</option>
                                     </select>
                                     <span class="text-danger field-validation-valid" data-valmsg-for="TicketCategories[0].Type" data-valmsg-replace="true"></span>
@@ -355,6 +357,7 @@ $(document).ready(function () {
                             <select name="TicketCategories[${ticketCategoryIndex}].Type" class="form-control">
                                 <option value="Adult">Yetişkin</option>
                                 <option value="Child">Çocuk</option>
+                                        <option value="Infant">Bebek</option>
                                 <option value="Group">Grup</option>
                             </select>
                         </div>
