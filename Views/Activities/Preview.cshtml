@@ -1,0 +1,191 @@
+﻿@using TourManagementApi.Models.ViewModels
+@model ActivityPreviewViewModel
+
+@{
+    ViewData["Title"] = "Tur Önizleme";
+    Func<string?, bool> IsMissing = (val) => string.IsNullOrWhiteSpace(val);
+    Func<IEnumerable<object>, bool> IsEmptyList = (list) => list == null || !list.Any();
+}
+
+<h2>@Model.Title</h2>
+<hr />
+
+<h4>Temel Bilgiler</h4>
+<table class="table table-bordered">
+    <tr><th>Açıklama</th><td class="@(IsMissing(Model.Description) ? "text-danger" : "")">@Model.Description</td></tr>
+    <tr><th>Kategori</th><td class="@(IsMissing(Model.Category) ? "text-danger" : "")">@Model.Category</td></tr>
+    <tr><th>Durum</th><td>@Model.Status</td></tr>
+    <tr><th>Süre</th><td>@Model.Duration dk</td></tr>
+    <tr><th>Ücretsiz İptal</th><td>@(Model.IsFreeCancellation == true ? "Evet" : "Hayır")</td></tr>
+    <tr><th>Rating</th><td>@Model.Rating</td></tr>
+</table>
+
+<h4>Lokasyon</h4>
+<table class="table table-bordered">
+    <tr><th>Ülke</th><td class="@(IsMissing(Model.CountryCode) ? "text-danger" : "")">@Model.CountryCode</td></tr>
+    <tr><th>Şehir</th><td class="@(IsMissing(Model.DestinationName) ? "text-danger" : "")">@Model.DestinationName</td></tr>
+    <tr><th>Şehir Kodu</th><td>@Model.DestinationCode</td></tr>
+</table>
+
+<h4>Görseller</h4>
+@if (!string.IsNullOrEmpty(Model.CoverImage))
+{
+    <div><strong>Kapak Görseli:</strong><br /><img src="https://tour.hotelwidget.com/@Model.CoverImage" style="width: 200px; height:auto;" class="mb-3" /></div>
+}
+@if (Model.GalleryImages.Any())
+{
+    <div>
+        <strong>Galeri:</strong><br />
+        @foreach (var img in Model.GalleryImages)
+        {
+            <img src="https://tour.hotelwidget.com/@img" style="width: 120px; height: 80px; object-fit:cover; margin: 4px; border-radius: 4px;" />
+        }
+    </div>
+}
+@if (!string.IsNullOrEmpty(Model.PreviewImage))
+{
+    <div><strong>Önizleme Görseli:</strong><br /><img src="https://tour.hotelwidget.com/@Model.PreviewImage" style="width: 200px; height:auto;" class="mb-3" /></div>
+}
+@if (!string.IsNullOrEmpty(Model.MediaVideos))
+{
+    <h5>Video</h5>
+    <div class="ratio ratio-16x9">
+        <iframe src="@Model.MediaVideos" title="Video" allowfullscreen></iframe>
+    </div>
+}
+
+<h4>İletişim Bilgileri</h4>
+<table class="table table-bordered">
+    <tr><th>Ad Soyad</th><td>@Model.ContactInfoName</td></tr>
+    <tr><th>Email</th><td>@Model.ContactInfoEmail</td></tr>
+    <tr><th>Telefon</th><td>@Model.ContactInfoPhone</td></tr>
+    <tr><th>Görev</th><td>@Model.ContactInfoRole</td></tr>
+</table>
+
+<h4>İçerik</h4>
+<table class="table table-bordered">
+    <tr><th>Highlights</th><td>@Model.Highlights</td></tr>
+    <tr><th>Itinerary</th><td>@Model.Itinerary</td></tr>
+    <tr><th>Important Info</th><td>@Model.ImportantInfo</td></tr>
+    <tr><th>Inclusions</th><td>@Model.Inclusions</td></tr>
+    <tr><th>Exclusions</th><td>@Model.Exclusions</td></tr>
+</table>
+
+<h4>JSON Alanları</h4>
+<details>
+    <summary class="mb-2">InclusionsJson</summary>
+    <pre>@Model.InclusionsJson</pre>
+</details>
+<details>
+    <summary class="mb-2">ExclusionsJson</summary>
+    <pre>@Model.ExclusionsJson</pre>
+</details>
+<details>
+    <summary class="mb-2">ImportantInfoJson</summary>
+    <pre>@Model.ImportantInfoJson</pre>
+</details>
+<details>
+    <summary class="mb-2">GuestFieldsJson</summary>
+    <pre>@Model.GuestFieldsJson</pre>
+</details>
+
+<h4>Ek Ürünler (Addons)</h4>
+@if (Model.Addons.Any())
+{
+    <ul>
+        @foreach (var addon in Model.Addons)
+        {
+            <li>@addon.Title - @addon.PriceAmount @addon.Currency</li>
+        }
+    </ul>
+}
+else
+{
+    <p class="text-muted">Tanımlı ek ürün yok.</p>
+}
+
+<h4>Seçenekler (Options)</h4>
+@if (Model.Options.Any())
+{
+    @foreach (var opt in Model.Options)
+    {
+        <div class="mb-2 border p-2">
+            <strong>@opt.Name</strong> (@opt.FromDate.ToShortDateString() - @opt.UntilDate.ToShortDateString())<br />
+            Süre: @opt.Duration | Başlangıç: @opt.StartTime - Bitiş: @opt.EndTime<br />
+            Günler: @opt.Weekdays<br />
+            <strong>Bilet Kategorileri:</strong>
+            <ul>
+                @foreach (var tc in opt.TicketCategories)
+                {
+                    <li>@tc.Name - @tc.Amount @tc.Currency (@tc.MinSeats-@tc.MaxSeats kişi)</li>
+                }
+            </ul>
+        </div>
+    }
+}
+else
+{
+    <p class="text-muted">Tanımlı seçenek yok.</p>
+}
+
+<h4>Buluşma Noktaları</h4>
+@if (Model.MeetingPoints.Any())
+{
+    <ul>
+        @foreach (var mp in Model.MeetingPoints)
+        {
+            <li>@mp.Name - @mp.Address (@mp.Latitude, @mp.Longitude)</li>
+        }
+    </ul>
+}
+else
+{
+    <p class="text-muted">Buluşma noktası yok.</p>
+}
+
+<h4>Güzergah (Route Points)</h4>
+@if (Model.RoutePoints.Any())
+{
+    <ul>
+        @foreach (var rp in Model.RoutePoints)
+        {
+            <li>@rp.Name (@rp.Latitude, @rp.Longitude)</li>
+        }
+    </ul>
+}
+else
+{
+    <p class="text-muted">Güzergah noktası yok.</p>
+}
+
+<h4>Çeviriler</h4>
+@if (Model.Translations.Any())
+{
+    <ul>
+        @foreach (var t in Model.Translations)
+        {
+            <li><strong>@t.Language</strong>: @t.Title</li>
+        }
+    </ul>
+}
+else
+{
+    <p class="text-muted">Çeviri yok.</p>
+}
+
+<h4>İptal Politikası</h4>
+@if (Model.CancellationPolicies.Any())
+{
+    <ul>
+        @foreach (var c in Model.CancellationPolicies)
+        {
+            <li>@c.RefundPercentage% iade, @c.MinDurationBeforeStartTimeSec saniye önce iptal</li>
+        }
+    </ul>
+}
+else
+{
+    <p class="text-muted">İptal politikası tanımlanmamış.</p>
+}
+
+<a asp-action="Index" class="btn btn-secondary mt-4">Turlara Geri Dön</a>

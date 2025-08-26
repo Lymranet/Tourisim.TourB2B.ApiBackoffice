@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace TourManagementApi.Models.Api.RezdyConnectModels
 {
@@ -102,10 +103,16 @@ namespace TourManagementApi.Models.Api.RezdyConnectModels
         public int SeatsUsed { get; set; } = 1;
 
         // Yeni alanlar
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public int? MinQuantity { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public int? MaxQuantity { get; set; }
-        public string PriceGroupType { get; set; } // "EACH" veya "TOTAL"
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? PriceGroupType { get; set; } // "EACH" veya "TOTAL"
     }
+
+
+
     public class ExtraDto
     {
         public string Name { get; set; }

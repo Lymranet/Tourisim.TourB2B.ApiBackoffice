@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic.FileIO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using System;
@@ -15,11 +16,11 @@ using System.Threading.Tasks;
 using TourManagementApi.Data;
 using TourManagementApi.Helper;
 using TourManagementApi.Models;
+using TourManagementApi.Models.Api;
 using TourManagementApi.Models.Common;
 using TourManagementApi.Models.ViewModels;
 using TourManagementApi.Services;
 using Addon = TourManagementApi.Models.Addon;
-using TourManagementApi.Models.Api;
 
 namespace TourManagementApi.Controllers
 {
@@ -121,6 +122,7 @@ namespace TourManagementApi.Controllers
                     HttpContext.Session.SetString("B2BAgencyId", Id);
                 }
                 var activities = _context.Activities.Where(a => a.B2BAgencyId == Id)
+                    .Include(a => a.Availabilities)
                     .Include(a => a.Options)
                     .Include(a => a.TourCompany)
                    .Select(a => new ActivityBasicViewModel
@@ -136,14 +138,23 @@ namespace TourManagementApi.Controllers
                        CountryCode = a.CountryCode ?? string.Empty,
                        DestinationCode = a.DestinationCode ?? string.Empty,
                        DestinationName = a.DestinationName ?? string.Empty,
-
-                       // Yeni eklenen property'leri set et
+                       CoverImageUrl = a.CoverImage,
                        CreatedAt = a.CreatedAt,
                        UpdatedAt = a.UpdatedAt,
                        Rating = a.Rating,
                        IsFreeCancellation = a.IsFreeCancellation,
                        ReservationsCount = a.Reservations.Count(),
-                       AvailabilitiesCount = a.Availabilities.Count()
+                       AvailabilitiesCount = a.Availabilities.Count(),
+                       TicketCategoriesWithSalePrice = a.Options
+                            .SelectMany(o => o.TicketCategories.Select(tc => new TicketCategorySaleVm
+                            {
+                                Name = tc.Name,
+                                SalePrice = tc.SalePrice ?? 0,   // SalePrice null ise 0 yazmak yerine filtre deleyebilirsin:
+                                Currency = tc.Currency,
+                                OptionId = o.Id
+                            }))
+                            .Where(x => x.SalePrice > 0) // veya .Where(tc => tc.SalePrice != null) üstte nullable tutarsan
+                            .ToList()
                    })
 
                     .ToList();
@@ -155,6 +166,151 @@ namespace TourManagementApi.Controllers
                 return View(new List<Activity>());
             }
         }
+        public IActionResult Preview(int id)
+        {
+            var activity = _context.Activities
+                .Include(a => a.Options).ThenInclude(o => o.TicketCategories)
+                .Include(a => a.Options).ThenInclude(o => o.OpeningHours)
+                .Include(a => a.Addons)
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.RoutePoints)
+                .Include(a => a.Translations)
+                .Include(a => a.ActivityLanguages)
+                .Include(a => a.Availabilities)
+                .Include(a => a.CancellationPolicyConditions)
+                .Include(a => a.TourCompany)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (activity == null)
+                return NotFound();
+
+            var model = new ActivityPreviewViewModel
+            {
+                Id = activity.Id,
+                Title = activity.Title,
+                Description = activity.Description,
+                Category = activity.Category,
+                Duration = activity.Duration,
+                Status = activity.Status,
+                Rating = activity.Rating,
+                IsFreeCancellation = activity.IsFreeCancellation,
+                Label = activity.Label,
+                CountryCode = activity.CountryCode,
+                DestinationCode = activity.DestinationCode,
+                DestinationName = activity.DestinationName,
+                CoverImage = activity.CoverImage,
+                PreviewImage = activity.PreviewImage,
+                MediaVideos = activity.Media_Videos,
+                ContactInfoName = activity.ContactInfo_Name,
+                ContactInfoEmail = activity.ContactInfo_Email,
+                ContactInfoPhone = activity.ContactInfo_Phone,
+                ContactInfoRole = activity.ContactInfo_Role,
+                Exclusions = activity.Exclusions,
+                Inclusions = activity.Inclusions,
+                ImportantInfo = activity.ImportantInfo,
+                Highlights = activity.Highlights,
+                Itinerary = activity.Itinerary,
+                DetailsUrl = activity.DetailsUrl,
+                ExclusionsJson = activity.ExclusionsJson,
+                InclusionsJson = activity.InclusionsJson,
+                ImportantInfoJson = activity.ImportantInfoJson,
+                GuestFieldsJson = activity.GuestFieldsJson,
+                GuestFields = activity.GuestFields,
+                CreatedAt = activity.CreatedAt,
+                UpdatedAt = activity.UpdatedAt,
+                TourCompanyName = activity.TourCompany?.CompanyName,
+                PartnerSupplierId = activity.PartnerSupplierId,
+                B2BAgencyId = activity.B2BAgencyId,
+
+                Options = activity.Options.ToList(),
+                Addons = activity.Addons.ToList(),
+                MeetingPoints = activity.MeetingPoints.ToList(),
+                RoutePoints = activity.RoutePoints.ToList(),
+                Translations = activity.Translations.ToList(),
+                ActivityLanguages = activity.ActivityLanguages.ToList(),
+                CancellationPolicies = activity.CancellationPolicyConditions.ToList(),
+                Availabilities = activity.Availabilities.ToList()
+            };
+
+            // Galeri JSON parse et
+            if (!string.IsNullOrEmpty(activity.GalleryImages))
+            {
+                try
+                {
+                    var images = System.Text.Json.JsonSerializer.Deserialize<List<string>>(activity.GalleryImages);
+                    model.GalleryImages = images ?? new List<string>();
+                }
+                catch { }
+            }
+
+            return View("Preview", model);
+        }
+
+        public IActionResult Preview2(int id)
+        {
+            var activity = _context.Activities
+                .Include(a => a.Options)
+                .Include(a => a.ActivityLanguages)
+                .Include(a => a.Addons)
+                .Include(a => a.MeetingPoints)
+                .Include(a => a.CancellationPolicyConditions)
+                .Include(a => a.RoutePoints)
+                .Include(a => a.Translations)
+                .FirstOrDefault(a => a.Id == id);
+
+            if (activity == null)
+            {
+                return NotFound();
+            }
+
+            var missingFields = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(activity.Description))
+                missingFields.Add("Açıklama");
+
+            if (string.IsNullOrWhiteSpace(activity.Category))
+                missingFields.Add("Kategori");
+
+            if (string.IsNullOrWhiteSpace(activity.DestinationName))
+                missingFields.Add("Lokasyon adı");
+
+            if (string.IsNullOrWhiteSpace(activity.CountryCode))
+                missingFields.Add("Ülke Kodu");
+
+            if (string.IsNullOrWhiteSpace(activity.CoverImage))
+                missingFields.Add("Kapak Görseli");
+
+            if (activity.Options == null || !activity.Options.Any())
+                missingFields.Add("Seçenek (Option)");
+
+            if (activity.Addons == null || !activity.Addons.Any())
+                missingFields.Add("Ek Ürün (Addon)");
+
+            if (activity.MeetingPoints == null || !activity.MeetingPoints.Any())
+                missingFields.Add("Buluşma Noktası");
+
+            if (activity.RoutePoints == null || !activity.RoutePoints.Any())
+                missingFields.Add("Güzergah (Route Points)");
+
+            if (activity.Translations == null || !activity.Translations.Any())
+                missingFields.Add("Çeviri");
+
+            if (activity.CancellationPolicyConditions == null || !activity.CancellationPolicyConditions.Any())
+                missingFields.Add("İptal Politikası");
+
+            if (activity.ActivityLanguages == null || !activity.ActivityLanguages.Any())
+                missingFields.Add("Dil Tanımı");
+
+            var viewModel = new ActivityPreviewViewModel
+            {
+                ActivityId = activity.Id,
+                Title = activity.Title,
+                MissingFields = missingFields
+            };
+
+            return View(viewModel);
+        }
+
 
         [HttpPatch]
         [IgnoreAntiforgeryToken]
@@ -193,6 +349,7 @@ namespace TourManagementApi.Controllers
                     var activity = await _context.Activities.FindAsync(id.Value);
                     if (activity == null) return NotFound();
 
+                    var cancellationPolicy = _context.CancellationPolicyConditions.Where(a => a.ActivityId == id.Value).ToList();
                     var vm = new ActivityBasicViewModel
                     {
                         ActivityId = activity.Id,
@@ -220,7 +377,34 @@ namespace TourManagementApi.Controllers
                         DestinationCode = activity.DestinationCode,
                         DestinationName = activity.DestinationName,
                         TourCompanyId = activity.TourCompanyId,
-                        TourCompanies = tourCompanies
+                        TourCompanies = tourCompanies,
+                        CancellationPolicies = cancellationPolicy.OrderByDescending(c => c.MinDurationBeforeStartTimeSec)
+                        .Select(c =>
+                        {
+                            // kullanıcıya "day" veya "hour" olarak anlamlı döndür
+                            // 24 saat ve katları gün olarak, diğerleri saat olarak gösterelim
+                            if (c.MinDurationBeforeStartTimeSec % (24 * 3600) == 0)
+                            {
+                                return new CancellationPolicyConditionInput
+                                {
+                                    MinDurationUnit = "day",
+                                    MinDurationValue = c.MinDurationBeforeStartTimeSec / (24 * 3600),
+                                    RefundPercentage = c.RefundPercentage,
+                                    IsFreeCancellation = c.IsFreeCancellation
+                                };
+                            }
+                            else
+                            {
+                                return new CancellationPolicyConditionInput
+                                {
+                                    MinDurationUnit = "hour",
+                                    MinDurationValue = c.MinDurationBeforeStartTimeSec / 3600,
+                                    RefundPercentage = c.RefundPercentage,
+                                    IsFreeCancellation = c.IsFreeCancellation
+                                };
+                            }
+                        }).ToList(),
+                        IsFreeCancellationSummary = activity.IsFreeCancellation ?? false
                     };
                     return View(vm);
                 }
@@ -233,7 +417,12 @@ namespace TourManagementApi.Controllers
 
             return View(new ActivityBasicViewModel
             {
-                TourCompanies = tourCompanies
+                TourCompanies = tourCompanies,
+                CancellationPolicies = new List<CancellationPolicyConditionInput>
+        {
+            // yeni kayıt için 1 örnek satır
+            new CancellationPolicyConditionInput { MinDurationValue = 24, MinDurationUnit = "hour", RefundPercentage = 100, IsFreeCancellation = true }
+        }
             });
         }
 
@@ -275,6 +464,54 @@ namespace TourManagementApi.Controllers
                 {
                     finalGalleryList.AddRange(model.ExistingGalleryImages);
                 }
+
+
+                //
+                // 1) Önce mevcut koşulları temizle (update senaryosu)
+                //
+                var existingConds = await _context.CancellationPolicyConditions
+                    .Where(c => c.ActivityId == activity.Id)
+                    .ToListAsync();
+
+                if (existingConds.Any())
+                {
+                    _context.CancellationPolicyConditions.RemoveRange(existingConds);
+                    await _context.SaveChangesAsync();
+                }
+                var newConds = new List<CancellationPolicyCondition>();
+                if (model.CancellationPolicies != null)
+                {
+                    foreach (var row in model.CancellationPolicies)
+                    {
+                        // basit validasyon
+                        if (row.MinDurationValue < 0 || row.RefundPercentage < 0 || row.RefundPercentage > 100)
+                            continue;
+
+                        var seconds = row.MinDurationUnit == "day"
+                            ? row.MinDurationValue * 24 * 3600
+                            : row.MinDurationValue * 3600;
+
+                        newConds.Add(new CancellationPolicyCondition
+                        {
+                            ActivityId = activity.Id,
+                            MinDurationBeforeStartTimeSec = seconds,
+                            RefundPercentage = row.RefundPercentage,
+                            IsFreeCancellation = row.IsFreeCancellation
+                        });
+                    }
+                }
+                // 3) Activity.IsFreeCancellation özetini hesapla
+                // Kural: herhangi bir satır free ise ya da Refund=100 ise (ve min süre > 0) "free cancellation" vardır.
+                activity.IsFreeCancellation = newConds.Any(c => c.IsFreeCancellation || c.RefundPercentage == 100);
+
+                if (newConds.Any())
+                {
+                    await _context.CancellationPolicyConditions.AddRangeAsync(newConds);
+                }
+                newConds = newConds
+                .OrderByDescending(c => c.MinDurationBeforeStartTimeSec)
+                .ToList();
+
                 activity.B2BAgencyId = agencyId;
                 activity.Title = model.Title ?? string.Empty;
                 activity.Category = TxtJson.SerializeStringList(model.Categories?.Take(3).ToList() ?? new List<string>());
@@ -418,7 +655,45 @@ namespace TourManagementApi.Controllers
         #endregion
 
 
-        // Controller aksiyonu
+        #region Yield
+
+
+        [HttpPost]
+        public IActionResult SavePricing([FromBody] FiyatlandirmaViewModel1 model)
+        {
+            try
+            {
+                if (model == null)
+                    return BadRequest(new { success = false, message = "Model boş." });
+
+                var ticketCategories = _context.TicketCategories
+                    .Where(a => a.OptionId == model.OptionId)
+                    .ToList();
+
+                if (!ticketCategories.Any())
+                    return NotFound(new { success = false, message = "İlgili OptionId için kayıt bulunamadı." });
+
+                foreach (var a in ticketCategories)
+                {
+                    a.SalePrice = a.Amount + (a.Amount * model.Percentage / 100);
+                    a.SalePercentage = model.Percentage;
+                }
+
+                _context.SaveChanges();
+
+                return Json(new { success = true, message = $"OptionId {model.OptionId} güncellendi." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = ex.Message,
+                    stack = ex.StackTrace
+                });
+            }
+        }
+
         public async Task<IActionResult> PricingYield(int id)
         {
             var activity = await _context.Activities
@@ -470,57 +745,122 @@ namespace TourManagementApi.Controllers
             return View(vm);
         }
 
+        public async Task<IActionResult> PricingYield2(int id)
+        {
+            var activity = await _context.Activities
+                .Include(a => a.Options)
+                .ThenInclude(o => o.TicketCategories)
+                .FirstOrDefaultAsync(a => a.Id == id);
 
+            if (activity == null) return NotFound();
+
+            var vm = new FiyatlandirmaViewModel
+            {
+                ActivityId = activity.Id,
+                ActivityTitle = activity.Title,
+                Options = activity.Options.Select(o =>
+                {
+                    var platformKomOrani = 0.3m;
+
+                    var ticketCategories = o.TicketCategories.Select(tc => new TicketCategoryPricingViewModel
+                    {
+                        TicketCategoryId = tc.Id,
+                        TicketCategoryName = tc.Name,
+                        Amount = (tc.Amount * 150 / 100), // Satış fiyatı örneği
+                        Currency = tc.Currency,
+                        SupplierCost = tc.Amount
+                    }).ToList();
+
+                    var toplamSatis = ticketCategories.Sum(tc => tc.Amount);
+                    var toplamTaseronMaliyeti = ticketCategories.Sum(tc => tc.SupplierCost);
+                    var komisyonMaliyeti = toplamSatis * platformKomOrani;
+                    var kalanTutar = toplamSatis - komisyonMaliyeti - toplamTaseronMaliyeti;
+                    var toplamMaliyet = ticketCategories.Sum(tc => tc.SupplierCost) + komisyonMaliyeti;
+                    return new OptionPricingViewModel
+                    {
+                        OptionId = o.Id,
+                        OptionName = o.Name,
+                        TicketCategories = ticketCategories,
+                        AracMaliyeti = 0,
+                        TopMaliyeti = 0,
+                        GelirVergisi = (kalanTutar * 20 / 100),
+                        RehberBonus = 0,
+                        PlatformKomisyonTutari = komisyonMaliyeti + 0,
+                        KomisyonMaliyeti = komisyonMaliyeti,
+                        PlatformKomOrani = platformKomOrani,
+                        Karlilik = (toplamSatis - toplamMaliyet) / toplamSatis
+                    };
+                }).ToList()
+            };
+
+            return View(vm);
+        }
+
+        #endregion
 
         #region Location
 
         [HttpGet]
         public async Task<IActionResult> CreateLocation(int? id)
         {
-            if (!id.HasValue)
+            try
             {
-                return RedirectToAction(nameof(Index));
-            }
+                if (!id.HasValue)
+                    return RedirectToAction(nameof(Index));
 
-            var activity = await _context.Activities
-                .Include(a => a.MeetingPoints)
-                .Include(a => a.RoutePoints)
-                .FirstOrDefaultAsync(a => a.Id == id);
+                var activity = await _context.Activities
+                    .Include(a => a.MeetingPoints)
+                    .Include(a => a.RoutePoints)
+                    .FirstOrDefaultAsync(a => a.Id == id);
 
-            if (activity == null)
-            {
-                return NotFound();
-            }
+                if (activity == null)
+                    return NotFound();
 
-            var viewModel = new ActivityLocationViewModel
-            {
-                ActivityId = activity.Id,
-                MeetingPoints = activity.MeetingPoints?.Select(mp => new MeetingPointViewModel
+                // Satış alanını çek
+                var salesArea = await _context.ActivitySalesAreas
+                    .FirstOrDefaultAsync(x => x.ActivityId == activity.Id);
+
+                var viewModel = new ActivityLocationViewModel
                 {
-                    Name = mp.Name,
-                    Address = mp.Address,
-                    Latitude = mp.Latitude,
-                    Longitude = mp.Longitude
-                }).ToList() ?? new List<MeetingPointViewModel>(),
-                RoutePoints = activity.RoutePoints?.Select(rp => new RoutePointViewModel
-                {
-                    Name = rp.Name,
-                    Latitude = rp.Latitude,
-                    Longitude = rp.Longitude
-                }).ToList() ?? new List<RoutePointViewModel>()
-            };
+                    ActivityId = activity.Id,
+                    MeetingPoints = activity.MeetingPoints?.Select(mp => new MeetingPointViewModel
+                    {
+                        Name = mp.Name,
+                        Address = mp.Address,
+                        Latitude = mp.Latitude,
+                        Longitude = mp.Longitude
+                    }).ToList() ?? new List<MeetingPointViewModel>(),
+                    RoutePoints = activity.RoutePoints?.Select(rp => new RoutePointViewModel
+                    {
+                        Name = rp.Name,
+                        Latitude = rp.Latitude,
+                        Longitude = rp.Longitude
+                    }).ToList() ?? new List<RoutePointViewModel>(),
+                    SalesArea = salesArea == null ? new SalesAreaDto() : new SalesAreaDto
+                    {
+                        Label = salesArea.Label,
+                        NorthLat = salesArea.NorthLat,
+                        SouthLat = salesArea.SouthLat,
+                        EastLng = salesArea.EastLng,
+                        WestLng = salesArea.WestLng
+                    }
+                };
 
-            return View(viewModel);
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                return View();
+            }
         }
+
 
         [HttpPost]
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> CreateLocation(ActivityLocationViewModel model)
         {
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
             try
             {
@@ -530,10 +870,9 @@ namespace TourManagementApi.Controllers
                     .FirstOrDefaultAsync(a => a.Id == model.ActivityId);
 
                 if (activity == null)
-                {
                     return NotFound();
-                }
 
+                // --- Buluşma Noktaları ---
                 activity.MeetingPoints.Clear();
                 if (model.MeetingPoints != null)
                 {
@@ -549,6 +888,7 @@ namespace TourManagementApi.Controllers
                     }
                 }
 
+                // --- Rota Noktaları ---
                 activity.RoutePoints.Clear();
                 if (model.RoutePoints != null)
                 {
@@ -563,6 +903,38 @@ namespace TourManagementApi.Controllers
                     }
                 }
 
+                // --- Satış Bölgesi (tek dikdörtgen – upsert) ---
+                var sa = model.SalesArea;
+                var hasBox = sa != null &&
+                             !(sa.NorthLat == 0 && sa.SouthLat == 0 && sa.EastLng == 0 && sa.WestLng == 0);
+
+                var existingArea = await _context.ActivitySalesAreas
+                    .FirstOrDefaultAsync(x => x.ActivityId == model.ActivityId);
+
+                if (hasBox)
+                {
+                    if (existingArea == null)
+                    {
+                        existingArea = new ActivitySalesArea
+                        {
+                            ActivityId = model.ActivityId
+                        };
+                        _context.ActivitySalesAreas.Add(existingArea);
+                    }
+
+                    existingArea.Label = sa.Label;
+                    existingArea.NorthLat = sa.NorthLat;
+                    existingArea.SouthLat = sa.SouthLat;
+                    existingArea.EastLng = sa.EastLng;
+                    existingArea.WestLng = sa.WestLng;
+                }
+                else
+                {
+                    // kutu temizlendiyse varsa sil
+                    if (existingArea != null)
+                        _context.ActivitySalesAreas.Remove(existingArea);
+                }
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Index");
             }
@@ -572,6 +944,9 @@ namespace TourManagementApi.Controllers
                 return View(model);
             }
         }
+
+
+
 
         #endregion
 

@@ -1,0 +1,23 @@
+﻿@using TourManagementApi.Models.ViewModels
+@model ActivityPreviewViewModel
+
+<h2>Tur Önizleme: @Model.Title</h2>
+
+@if (Model.MissingFields.Any())
+{
+    <div class="alert alert-warning">
+        <strong>Eksik Bilgiler:</strong>
+        <ul>
+            @foreach (var field in Model.MissingFields)
+            {
+                <li>@field</li>
+            }
+        </ul>
+    </div>
+}
+else
+{
+    <div class="alert alert-success">
+        Tüm bilgiler eksiksiz girilmiş.
+    </div>
+}

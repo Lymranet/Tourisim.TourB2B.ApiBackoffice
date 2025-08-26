@@ -44,62 +44,6 @@
                 }
             </tbody>
         </table>
-        <table class="tabletable-sm">
-            <tr>
-                <th>Toplam Satış</th>
-                <td>
-                    <input type="text" class="form-control" id="toplamSatis_@option.OptionId" data-currency="@option.TicketCategories.First().Currency" readonly value="@option.TicketCategories.Sum(x => x.Amount).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))" />
-                </td>
-            </tr>
-            <tr><th>Araç Maliyeti</th><td><input type="number" step="0.01" class="form-control" name="arac_@option.OptionId" value="@option.AracMaliyeti" /></td></tr>
-            <tr><th>Top/Dağ Maliyeti</th><td><input type="number" step="0.01" class="form-control" name="top_@option.OptionId" value="@option.TopMaliyeti" /></td></tr>
-            <tr><th>Rehber Bonus</th><td><input type="number" step="0.01" class="form-control" name="bonus_@option.OptionId" value="@option.RehberBonus" /></td></tr>
-            <tr><th>Gelir Vergisi</th><td><input type="number" step="0.01" class="form-control" readonly name="vergi_@option.OptionId" value="@option.GelirVergisi.ToString("N2")" /></td></tr>
-           
-            <tr>
-                <th>Taşeron Toplamı</th>
-                <td>
-                    <input type="text" class="form-control" id="tasaronToplam_@option.OptionId" readonly value="@option.TasaronMaliyeti.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))" />
-                </td>
-            </tr>
-            <tr><th>Platform Komisyon Oranı</th><td><input type="number" readonly step="0.01" class="form-control" name="orani_@option.OptionId" value="@option.PlatformKomOrani" /></td></tr>
-            <tr><th>Platform Komisyon Maliyeti</th><td><input type="number" readonly step="0.01" class="form-control" name="platkom_@option.OptionId" value="@option.PlatformKomisyonTutari.ToString("N2")" /></td></tr>
-            <tr>
-                <th>Komisyon Maliyeti</th>
-                <td>
-                    <input type="number" step="0.01" class="form-control" id="komisyon_@option.OptionId" name="komisyon_@option.OptionId" value="@option.KomisyonMaliyeti.ToString("N2")" readonly />
-                </td>
-            </tr>
-            <tr><th>PP Cost</th><td><input type="number" readonly step="0.01" class="form-control" id="ppcost_@option.OptionId" name="ppCost_@option.OptionId" value="@option.PpCost.ToString("N2")" /></td></tr>
-            <tr class="table-secondary">
-                <th>Kalan Tutar</th>
-                <td>
-                    <strong id="kalan_@option.OptionId">@((option.TicketCategories.Sum(x => x.Amount) - option.TasaronMaliyeti - option.KomisyonMaliyeti).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US")))</strong>
-                </td>
-            </tr>
-            <tr class="table-secondary">
-                <th>Net Kalan</th>
-                <td>
-                    <strong id="netkalan_@option.OptionId">
-                        @((option.TicketCategories.Sum(x => x.Amount) - option.TasaronMaliyeti - option.KomisyonMaliyeti - option.GelirVergisi).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US")))
-                    </strong>
-                </td>
-            </tr>
-            <tr class="table-secondary">
-                <th>Toplam Maliyet</th>
-                <td><strong id="maliyet_@option.OptionId">@option.ToplamMaliyet.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</strong></td>
-            </tr>
-            <tr class="table-secondary">
-                <th>Hesaplanan Satış Fiyatı</th>
-                <td><strong id="satis_@option.OptionId">@option.HesaplananSatisFiyati.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</strong></td>
-            </tr>
-            <tr class="table-secondary">
-                <th>Karlılık (%)</th>
-                <td>
-                    <input type="text" readonly class="form-control" id="karlilik_@option.OptionId" value="@((option.Karlilik * 100).ToString("N2"))" style="background-color:greenyellow;font-weight:bold;font-size:20px;" />
-                </td>
-            </tr>
-        </table>
     }
    
     <div class="row mt-5">

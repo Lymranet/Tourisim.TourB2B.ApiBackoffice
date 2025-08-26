@@ -343,6 +343,98 @@
             </div>
         </div>
     </div>
+    <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>İptal Politikası</span>
+        <span class="badge bg-@(Model.IsFreeCancellationSummary ? "success" : "secondary")">
+            @(Model.IsFreeCancellationSummary ? "Ücretsiz İptal Var" : "Ücretsiz İptal Yok")
+        </span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">
+            Rezervasyon başlangıç saatinden geriye doğru süreye göre iade oranlarını tanımlayın.
+            Ücretsiz iptal için ilgili satırda "Ücretsiz"i işaretleyin veya İade % = 100 girin.
+        </p>
+
+        <div class="table-responsive">
+            <table class="table table-sm align-middle" id="cxlTable">
+                <thead>
+                    <tr>
+                        <th style="width: 260px;">Başlangıca Kalan Süre</th>
+                        <th style="width: 180px;">İade %</th>
+                        <th style="width: 160px;">Ücretsiz</th>
+                        <th style="width: 80px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.CancellationPolicies != null && Model.CancellationPolicies.Any())
+                    {
+                            @for (int i = 0; i < Model.CancellationPolicies.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="input-group">
+                                            <input asp-for="@Model.CancellationPolicies[i].MinDurationValue"
+                                                   type="number" min="0" class="form-control" />
+
+                                            <select asp-for="@Model.CancellationPolicies[i].MinDurationUnit"
+                                                    class="form-select">
+                                                <option value="hour">Saat</option>
+                                                <option value="day">Gün</option>
+                                            </select>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <input asp-for="@Model.CancellationPolicies[i].RefundPercentage"
+                                               type="number" min="0" max="100" class="form-control" />
+                                    </td>
+
+                                    <td class="text-center">
+                                        <input asp-for="@Model.CancellationPolicies[i].IsFreeCancellation"
+                                               class="form-check-input" type="checkbox" />
+                                    </td>
+
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCxlRow(this)">Sil</button>
+                                    </td>
+                                </tr>
+                            }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td>
+                                <div class="input-group">
+                                    <input type="number" min="0" class="form-control"
+                                           name="CancellationPolicies[0].MinDurationValue" value="24" />
+                                    <select class="form-select" name="CancellationPolicies[0].MinDurationUnit">
+                                        <option value="hour" selected>Saat</option>
+                                        <option value="day">Gün</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td><input type="number" min="0" max="100" class="form-control" name="CancellationPolicies[0].RefundPercentage" value="100" /></td>
+                                <td class="text-center">
+                                    <input type="hidden" name="CancellationPolicies[0].IsFreeCancellation" value="false" />
+                                    <input type="checkbox" class="form-check-input"
+                                           name="CancellationPolicies[0].IsFreeCancellation"
+                                           value="true" checked />
+                                </td>
+
+                            <td class="text-end">
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCxlRow(this)">Sil</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <button type="button" class="btn btn-secondary btn-sm" id="addCxlRowBtn">Kural Satırı Ekle</button>
+        <small class="text-muted ms-2">Sıralama, kalan süreye göre otomatik normalize edilir.</small>
+    </div>
+</div>
 
     <div class="card mb-4">
         <div class="card-header">Destinasyon</div>
@@ -419,6 +511,56 @@
 </form>
 
 @section Scripts {
+    <script>
+        // --- İptal Politikası: satır ekleme/silme ---
+        document.getElementById('addCxlRowBtn').addEventListener('click', function () {
+            const tbody = document.querySelector('#cxlTable tbody');
+            const idx = tbody.querySelectorAll('tr').length;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <div class="input-group">
+                        <input type="number" min="0" class="form-control"
+                               name="CancellationPolicies[${idx}].MinDurationValue" value="24" />
+                        <select class="form-select" name="CancellationPolicies[${idx}].MinDurationUnit">
+                            <option value="hour">Saat</option>
+                            <option value="day" selected>Gün</option>
+                        </select>
+                    </div>
+                </td>
+                <td><input type="number" min="0" max="100" class="form-control"
+                           name="CancellationPolicies[${idx}].RefundPercentage" value="50" /></td>
+                        <td class="text-center">
+          <input type="hidden"
+                 name="CancellationPolicies[${idx}].IsFreeCancellation"
+                 value="false" />
+          <input type="checkbox" class="form-check-input"
+                 name="CancellationPolicies[${idx}].IsFreeCancellation"
+                 value="true" />
+        </td>
+                <td class="text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCxlRow(this)">Sil</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        function removeCxlRow(btn) {
+            const tr = btn.closest('tr');
+            const tbody = tr.parentElement;
+            tr.remove();
+
+            // indeksleri yeniden sırala ki model binder doğru eşlesin
+            Array.from(tbody.querySelectorAll('tr')).forEach((row, i) => {
+                row.querySelectorAll('input, select').forEach(input => {
+                    input.name = input.name.replace(/CancellationPolicies\[\d+\]/, `CancellationPolicies[${i}]`);
+                });
+            });
+        }
+    </script>
+
+
     <script>
 
          document.addEventListener('DOMContentLoaded', function () {

@@ -32,17 +32,35 @@ namespace TourManagementApi.Extensions
             var languages = activity.ActivityLanguages.Select(l => l.LanguageCode).ToList();
             if (!languages.Any()) languages.Add("en_us");
 
-            // Fiyat opsiyonları
-            var priceOptions = option.TicketCategories
-                .Select(tc => new PriceOption
+            var cat = option.TicketCategories.FirstOrDefault();
+            List<PriceOption> priceOptions = new List<PriceOption>();
+
+            if (cat != null && cat.Type == "Group")
+            {
+                priceOptions = option.TicketCategories.Select(tc => new PriceOption
                 {
                     Label = tc.Type,
                     Price = tc.SalePrice,
                     SeatsUsed = tc.MaxSeats > 0 ? tc.MaxSeats : 1,
                     MinQuantity = tc.MinSeats > 0 ? tc.MinSeats : (int?)null,
                     MaxQuantity = tc.MaxSeats > 0 ? tc.MaxSeats : (int?)null,
-                    PriceGroupType = tc.Type == "Group" ? "TOTAL" : "EACH"
+                    PriceGroupType = "TOTAL"
                 }).ToList();
+            }
+            else
+            {
+                priceOptions = option.TicketCategories.Where(a=>a.SalePrice!=null).Select(tc => new PriceOption
+                {
+                    Label = tc.Type,
+                    Price = tc.SalePrice.Value,
+                    SeatsUsed = tc.MaxSeats > 0 ? tc.MaxSeats : 1
+                    // MinQuantity, MaxQuantity, PriceGroupType otomatik olarak null kalacak ve JSON'a yazılmayacak
+                }).ToList();
+            }
+
+
+            // Fiyat opsiyonları
+
 
 
             // Reklam fiyatı (min fiyat)

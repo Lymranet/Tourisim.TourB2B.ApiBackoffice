@@ -63,7 +63,7 @@ namespace TourManagementApi.Models.ViewModels
 
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
-
+        public List<CancellationPolicyConditionInput> CancellationPolicies { get; set; } = new();
         public double? Rating { get; set; }
         public bool? IsFreeCancellation { get; set; }
 
@@ -74,9 +74,17 @@ namespace TourManagementApi.Models.ViewModels
 
         public int ReservationsCount { get; set; }
         public int AvailabilitiesCount { get; set; }
+        public bool IsFreeCancellationSummary { get; internal set; }
 
+        public List<TicketCategorySaleVm> TicketCategoriesWithSalePrice { get; set; } = new();
     }
-
+    public class TicketCategorySaleVm
+    {
+        public string Name { get; set; } = "";
+        public decimal SalePrice { get; set; }
+        public string Currency { get; set; } = "";
+        public int OptionId { get; set; }   // istersen gösterimde işe yarar
+    }
     public class ContactInfoViewModel
     {
         [Required(ErrorMessage = "İletişim ismi zorunludur.")]
@@ -93,7 +101,14 @@ namespace TourManagementApi.Models.ViewModels
         [MinLength(10, ErrorMessage = "Telefon en az 10 karakter olmalıdır.")]
         public string? Phone { get; set; }
     }
-
+    public class CancellationPolicyConditionInput
+    {
+        // Kullanıcı deneyimi için saat/gün seçimi sunacağız; backend saniyeye çevirecek
+        public int MinDurationValue { get; set; }  // ör: 24
+        public string MinDurationUnit { get; set; } = "hour"; // "hour" | "day"
+        public int RefundPercentage { get; set; }  // 0..100
+        public bool IsFreeCancellation { get; set; }
+    }
     public class DeleteGalleryImageRequest
     {
         public string ImagePath { get; set; }
