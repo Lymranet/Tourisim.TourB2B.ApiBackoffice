@@ -29,5 +29,8 @@ public partial class TicketCategory
 
     public virtual Option Option { get; set; } = null!;
 
+    public decimal? SalePrice { get; set; }
+    public int? SalePercentage { get; set; }
+
     public virtual ICollection<TicketCategoryCapacity> TicketCategoryCapacities { get; set; } = new List<TicketCategoryCapacity>();
 }

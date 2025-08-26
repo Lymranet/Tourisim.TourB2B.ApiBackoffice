@@ -37,7 +37,7 @@ namespace TourManagementApi.Extensions
                 .Select(tc => new PriceOption
                 {
                     Label = tc.Type,
-                    Price = tc.Amount,
+                    Price = tc.SalePrice,
                     SeatsUsed = tc.MaxSeats > 0 ? tc.MaxSeats : 1,
                     MinQuantity = tc.MinSeats > 0 ? tc.MinSeats : (int?)null,
                     MaxQuantity = tc.MaxSeats > 0 ? tc.MaxSeats : (int?)null,

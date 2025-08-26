@@ -58,7 +58,7 @@ namespace TourManagementApi.Services
                     PriceOptions = a.Option.TicketCategories.Select(tc => new PriceOptionLite
                     {
                         Label = tc.Type,
-                        Price = tc.Amount
+                        Price = tc.SalePrice ?? tc.Amount * 1.5,
                     }).ToList()
                 }).ToList();
 
