@@ -37,7 +37,7 @@
                 {
                     <tr>
                         <td>@tc.TicketCategoryName</td>
-                        <td>@tc.Amount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</td>
+                        <td>@tc.SalePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</td>
                         <td>@tc.Currency</td>
                         <td>@tc.SupplierCost.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</td>
                     </tr>
@@ -48,7 +48,7 @@
             <tr>
                 <th>Toplam Satış</th>
                 <td>
-                    <input type="text" class="form-control" id="toplamSatis_@option.OptionId" data-currency="@option.TicketCategories.First().Currency" readonly value="@option.TicketCategories.Sum(x => x.Amount).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))" />
+                    <input type="text" class="form-control" id="toplamSatis_@option.OptionId" data-currency="@option.TicketCategories.First().Currency" readonly value="@option.TicketCategories.Sum(x => x.SupplierCost).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))" />
                 </td>
             </tr>
             <tr><th>Araç Maliyeti</th><td><input type="number" step="0.01" class="form-control" name="arac_@option.OptionId" value="@option.AracMaliyeti" /></td></tr>
@@ -74,14 +74,14 @@
             <tr class="table-secondary">
                 <th>Kalan Tutar</th>
                 <td>
-                    <strong id="kalan_@option.OptionId">@((option.TicketCategories.Sum(x => x.Amount) - option.TasaronMaliyeti - option.KomisyonMaliyeti).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US")))</strong>
+                    <strong id="kalan_@option.OptionId">@((option.TicketCategories.Sum(x => x.SalePrice) - option.TasaronMaliyeti - option.KomisyonMaliyeti).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US")))</strong>
                 </td>
             </tr>
             <tr class="table-secondary">
                 <th>Net Kalan</th>
                 <td>
                     <strong id="netkalan_@option.OptionId">
-                        @((option.TicketCategories.Sum(x => x.Amount) - option.TasaronMaliyeti - option.KomisyonMaliyeti - option.GelirVergisi).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US")))
+                        @((option.TicketCategories.Sum(x => x.SalePrice) - option.TasaronMaliyeti - option.KomisyonMaliyeti - option.GelirVergisi).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US")))
                     </strong>
                 </td>
             </tr>

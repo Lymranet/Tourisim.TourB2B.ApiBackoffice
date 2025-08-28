@@ -1,0 +1,448 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class Booking
+{
+    public long BookingId { get; set; }
+
+    public string? ApiKey { get; set; }
+
+    public string? Comments { get; set; }
+
+    public decimal? Commission { get; set; }
+
+    public string? Coupon { get; set; }
+
+    public string? Status { get; set; }
+
+    public string? Code { get; set; }
+
+    public DateTime? DateConfirmed { get; set; }
+
+    public DateTime? DateCreated { get; set; }
+
+    public DateTime? DatePaid { get; set; }
+
+    public DateTime? DateReconciled { get; set; }
+
+    public DateTime? DateUpdated { get; set; }
+
+    public string? InternalNotes { get; set; }
+
+    public string? OrderNumber { get; set; }
+
+    public string? PaymentOption { get; set; }
+
+    public string? ResellerAlias { get; set; }
+
+    public string? ResellerComments { get; set; }
+
+    public long? ResellerId { get; set; }
+
+    public string? ResellerName { get; set; }
+
+    public string? ResellerReference { get; set; }
+
+    public string? ResellerSource { get; set; }
+
+    public bool? SendNotifications { get; set; }
+
+    public string? Source { get; set; }
+
+    public string? SourceChannel { get; set; }
+
+    public string? SourceReferrer { get; set; }
+
+    public string? SupplierAlias { get; set; }
+
+    public long? SupplierId { get; set; }
+
+    public string? SupplierName { get; set; }
+
+    public decimal? Surcharge { get; set; }
+
+    public decimal? TotalAmount { get; set; }
+
+    public string? TotalCurrency { get; set; }
+
+    public decimal? TotalDue { get; set; }
+
+    public decimal? TotalPaid { get; set; }
+
+    public string? BarcodeType { get; set; }
+
+    public virtual ICollection<BookingCreatedBy> BookingCreatedBies { get; set; } = new List<BookingCreatedBy>();
+
+    public virtual ICollection<BookingCreditCard> BookingCreditCards { get; set; } = new List<BookingCreditCard>();
+
+    public virtual ICollection<BookingCustomer> BookingCustomers { get; set; } = new List<BookingCustomer>();
+
+    public virtual ICollection<BookingField> BookingFields { get; set; } = new List<BookingField>();
+
+    public virtual ICollection<BookingItem> BookingItems { get; set; } = new List<BookingItem>();
+
+    public virtual ICollection<BookingPayment> BookingPayments { get; set; } = new List<BookingPayment>();
+
+    public virtual ICollection<BookingResellerUser> BookingResellerUsers { get; set; } = new List<BookingResellerUser>();
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingCreatedBy
+{
+    public long CreatedById { get; set; }
+
+    public long? BookingId { get; set; }
+
+    public string? Code { get; set; }
+
+    public string? Email { get; set; }
+
+    public string? FirstName { get; set; }
+
+    public string? LastName { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingCreditCard
+{
+    public long CreditCardId { get; set; }
+
+    public long? BookingId { get; set; }
+
+    public string? CardToken { get; set; }
+
+    public string? CardType { get; set; }
+
+    public string? ExpiryMonth { get; set; }
+
+    public string? ExpiryYear { get; set; }
+
+    public string? CardName { get; set; }
+
+    public string? CardNumber { get; set; }
+
+    public string? CardSecurityNumber { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingCustomer
+{
+    public long CustomerId { get; set; }
+
+    public long? BookingId { get; set; }
+
+    public string? AboutUs { get; set; }
+
+    public string? AddressLine { get; set; }
+
+    public string? AddressLine2 { get; set; }
+
+    public string? City { get; set; }
+
+    public string? CompanyName { get; set; }
+
+    public string? CountryCode { get; set; }
+
+    public string? Dob { get; set; }
+
+    public string? Email { get; set; }
+
+    public string? Fax { get; set; }
+
+    public string? FirstName { get; set; }
+
+    public string? Gender { get; set; }
+
+    public long? CustomerExternalId { get; set; }
+
+    public string? LastName { get; set; }
+
+    public bool? Marketing { get; set; }
+
+    public string? MiddleName { get; set; }
+
+    public string? Mobile { get; set; }
+
+    public string? Name { get; set; }
+
+    public bool? Newsletter { get; set; }
+
+    public string? Phone { get; set; }
+
+    public string? PostCode { get; set; }
+
+    public string? PreferredLanguage { get; set; }
+
+    public string? Skype { get; set; }
+
+    public string? State { get; set; }
+
+    public string? Title { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingExtra
+{
+    public long ExtraId { get; set; }
+
+    public long? ItemId { get; set; }
+
+    public string? Name { get; set; }
+
+    public string? ExtraPriceType { get; set; }
+
+    public int? Price { get; set; }
+
+    public int? Quantity { get; set; }
+
+    public string? Description { get; set; }
+
+    public virtual BookingItem? Item { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingField
+{
+    public long FieldId { get; set; }
+
+    public long? BookingId { get; set; }
+
+    public string? Label { get; set; }
+
+    public string? Value { get; set; }
+
+    public string? BarcodeType { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingItem
+{
+    public long ItemId { get; set; }
+
+    public long? BookingId { get; set; }
+
+    public string? ProductCode { get; set; }
+
+    public int? TotalQuantity { get; set; }
+
+    public string? ProductName { get; set; }
+
+    public decimal? Amount { get; set; }
+
+    public decimal? Subtotal { get; set; }
+
+    public decimal? TotalItemTax { get; set; }
+
+    public string? StartTime { get; set; }
+
+    public string? StartTimeLocal { get; set; }
+
+    public string? EndTime { get; set; }
+
+    public string? EndTimeLocal { get; set; }
+
+    public string? ExternalProductCode { get; set; }
+
+    public string? TransferFrom { get; set; }
+
+    public string? TransferTo { get; set; }
+
+    public bool? TransferReturn { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+
+    public virtual ICollection<BookingExtra> BookingExtras { get; set; } = new List<BookingExtra>();
+
+    public virtual ICollection<BookingParticipant> BookingParticipants { get; set; } = new List<BookingParticipant>();
+
+    public virtual ICollection<BookingPickupLocation> BookingPickupLocations { get; set; } = new List<BookingPickupLocation>();
+
+    public virtual ICollection<BookingQuantity> BookingQuantities { get; set; } = new List<BookingQuantity>();
+
+    public virtual ICollection<BookingVoucher> BookingVouchers { get; set; } = new List<BookingVoucher>();
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingParticipant
+{
+    public long ParticipantId { get; set; }
+
+    public long? ItemId { get; set; }
+
+    public virtual ICollection<BookingParticipantField> BookingParticipantFields { get; set; } = new List<BookingParticipantField>();
+
+    public virtual BookingItem? Item { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingParticipantField
+{
+    public long FieldId { get; set; }
+
+    public long? ParticipantId { get; set; }
+
+    public string? Label { get; set; }
+
+    public string? Value { get; set; }
+
+    public string? BarcodeType { get; set; }
+
+    public virtual BookingParticipant? Participant { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingPayment
+{
+    public long PaymentId { get; set; }
+
+    public long? BookingId { get; set; }
+
+    public double? Amount { get; set; }
+
+    public string? Type { get; set; }
+
+    public string? Currency { get; set; }
+
+    public string? Date { get; set; }
+
+    public string? Label { get; set; }
+
+    public string? Recipient { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingPickupLocation
+{
+    public long PickupLocationId { get; set; }
+
+    public long? ItemId { get; set; }
+
+    public string? LocationName { get; set; }
+
+    public string? Address { get; set; }
+
+    public long? Latitude { get; set; }
+
+    public long? Longitude { get; set; }
+
+    public int? MinutesPrior { get; set; }
+
+    public string? PickupInstructions { get; set; }
+
+    public string? PickupTime { get; set; }
+
+    public virtual BookingItem? Item { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingQuantity
+{
+    public long QuantityId { get; set; }
+
+    public long? ItemId { get; set; }
+
+    public string? OptionLabel { get; set; }
+
+    public int? Value { get; set; }
+
+    public double? OptionPrice { get; set; }
+
+    public int? OptionSeatsUsed { get; set; }
+
+    public virtual BookingItem? Item { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingResellerUser
+{
+    public long ResellerUserId { get; set; }
+
+    public long? BookingId { get; set; }
+
+    public string? Code { get; set; }
+
+    public string? Email { get; set; }
+
+    public string? FirstName { get; set; }
+
+    public string? LastName { get; set; }
+
+    public virtual Booking? Booking { get; set; }
+}
+using System;
+using System.Collections.Generic;
+
+namespace TourManagementApi.Models;
+
+public partial class BookingVoucher
+{
+    public long VoucherId { get; set; }
+
+    public long? ItemId { get; set; }
+
+    public string? Code { get; set; }
+
+    public string? ExpiryDate { get; set; }
+
+    public string? InternalNotes { get; set; }
+
+    public string? InternalReference { get; set; }
+
+    public string? IssueDate { get; set; }
+
+    public string? Status { get; set; }
+
+    public long? Value { get; set; }
+
+    public string? ValueType { get; set; }
+
+    public virtual BookingItem? Item { get; set; }
+}

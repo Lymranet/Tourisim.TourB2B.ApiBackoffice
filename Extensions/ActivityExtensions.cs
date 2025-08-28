@@ -37,10 +37,10 @@ namespace TourManagementApi.Extensions
 
             if (cat != null && cat.Type == "Group")
             {
-                priceOptions = option.TicketCategories.Select(tc => new PriceOption
+                priceOptions = option.TicketCategories.Where(a => a.SalePrice.HasValue).Select(tc => new PriceOption
                 {
                     Label = tc.Type,
-                    Price = tc.SalePrice,
+                    Price = tc.SalePrice.Value,
                     SeatsUsed = tc.MaxSeats > 0 ? tc.MaxSeats : 1,
                     MinQuantity = tc.MinSeats > 0 ? tc.MinSeats : (int?)null,
                     MaxQuantity = tc.MaxSeats > 0 ? tc.MaxSeats : (int?)null,
@@ -49,7 +49,7 @@ namespace TourManagementApi.Extensions
             }
             else
             {
-                priceOptions = option.TicketCategories.Where(a=>a.SalePrice!=null).Select(tc => new PriceOption
+                priceOptions = option.TicketCategories.Where(a=>a.SalePrice.HasValue).Select(tc => new PriceOption
                 {
                     Label = tc.Type,
                     Price = tc.SalePrice.Value,

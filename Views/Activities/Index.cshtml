@@ -215,7 +215,7 @@
                             <li><a class="dropdown-item" asp-action="CreateAddons" asp-route-id="@item.ActivityId">Ek Ürünler</a></li>
                             <li><a class="dropdown-item" asp-controller="Activities" asp-action="Availabilities" asp-route-activityId="@item.ActivityId">Kapasite Tanımları</a></li>
                             <li><a class="dropdown-item" asp-action="ManageLanguages" asp-route-id="@(item?.ActivityId ?? 0)">Dil Yönetimi</a></li>
-                            <li><a class="dropdown-item" asp-action="PricingYield" asp-route-id="@item.ActivityId">Fiyatlandırma</a></li>
+                            <li><a class="dropdown-item" asp-action="PricingYield2" asp-route-id="@item.ActivityId">Fiyatlandırma</a></li>
                             <li>
                                 <form asp-action="DeleteActivity" asp-controller="Activities" method="post" onsubmit="return confirm('Bu tur ve tüm alt verileri silinecek. Emin misiniz?');">
                                     <input type="hidden" name="id" value="@item.ActivityId" />

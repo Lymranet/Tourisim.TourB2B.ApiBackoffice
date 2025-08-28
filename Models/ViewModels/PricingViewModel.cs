@@ -4,8 +4,10 @@
     {
         public int TicketCategoryId { get; set; }
         public string TicketCategoryName { get; set; } = "";
-        public decimal Amount { get; set; }
-        public string Currency { get; set; } = "TRY";
+        public decimal SalePrice { get; set; }
+        public int SalePercentage { get; set; }
+
+        public string Currency { get; set; } = "GBP";
         public decimal SupplierCost { get; set; } // Taşeron alış fiyatı
     }
 
@@ -33,6 +35,9 @@
         public decimal ToplamMaliyet => AracMaliyeti + TopMaliyeti + TasaronMaliyeti + KomisyonMaliyeti + GelirVergisi;
 
         public decimal HesaplananSatisFiyati => (ToplamMaliyet + PlatformKomisyonTutari + RehberBonus) / (1 - PlatformKomOrani);
+
+        public int SalePercentage { get; set; }
+
     }
 
     public class FiyatlandirmaViewModel
@@ -41,7 +46,11 @@
         public string ActivityTitle { get; set; } = "";
         public List<OptionPricingViewModel> Options { get; set; } = new();
     }
-
+    public class SaveActivityPricingDto
+    {
+        public int ActivityId { get; set; }
+        public int Percentage { get; set; }
+    }
 
     public class FiyatlandirmaViewModel1
     {

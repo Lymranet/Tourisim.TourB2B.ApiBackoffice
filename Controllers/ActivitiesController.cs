@@ -570,10 +570,11 @@ namespace TourManagementApi.Controllers
 
                 try
                 {
-                    await _experienceBankService.NotifyActivityUpdatedAsync(
-                        activityId: activity.Id.ToString(),
-                        partnerSupplierId: activity.PartnerSupplierId
-                    );
+                    //Todo: REZDY NOTIFICATION
+                    //await _experienceBankService.NotifyActivityUpdatedAsync(
+                    //    activityId: activity.Id.ToString(),
+                    //    partnerSupplierId: activity.PartnerSupplierId
+                    //);
                 }
                 catch (Exception ex)
                 {
@@ -659,6 +660,49 @@ namespace TourManagementApi.Controllers
 
 
         [HttpPost]
+        [IgnoreAntiforgeryToken] // En basit çözüm için ekliyoruz
+        public IActionResult SaveActivityPricing([FromBody] SaveActivityPricingDto dto)
+        {
+            if (dto == null)
+                return BadRequest(new { success = false, message = "Boş istek." });
+
+            // Activity'ye bağlı OptionId'leri bul
+            var optionIds = _context.Options
+                .Where(o => o.ActivityId == dto.ActivityId)
+                .Select(o => o.Id)
+                .ToList();
+
+            if (!optionIds.Any())
+                return NotFound(new { success = false, message = "Bu Activity için Option bulunamadı." });
+
+            // Bu option'lara bağlı tüm TicketCategory'ler
+            var ticketCategories = (
+                from tc in _context.TicketCategories
+                join o in _context.Options on tc.OptionId equals o.Id
+                where o.ActivityId == dto.ActivityId
+                select tc
+            ).ToList();
+
+            if (!ticketCategories.Any())
+                return NotFound(new { success = false, message = "Güncellenecek TicketCategory bulunamadı." });
+
+            foreach (var tc in ticketCategories)
+            {
+                tc.SalePercentage = dto.Percentage;
+                tc.SalePrice = tc.Amount + (tc.Amount * dto.Percentage / 100m); // decimal için 100m
+            }
+
+            _context.SaveChanges();
+
+            return Ok(new
+            {
+                success = true,
+                message = $"ActivityId {dto.ActivityId} için {ticketCategories.Count} satır güncellendi."
+            });
+        }
+
+
+        [HttpPost]
         public IActionResult SavePricing([FromBody] FiyatlandirmaViewModel1 model)
         {
             try
@@ -715,12 +759,12 @@ namespace TourManagementApi.Controllers
                     {
                         TicketCategoryId = tc.Id,
                         TicketCategoryName = tc.Name,
-                        Amount = (tc.Amount * 150 / 100), // Satış fiyatı örneği
+                        SalePrice = tc.SalePrice.Value, // Satış fiyatı örneği
                         Currency = tc.Currency,
                         SupplierCost = tc.Amount
                     }).ToList();
 
-                    var toplamSatis = ticketCategories.Sum(tc => tc.Amount);
+                    var toplamSatis = ticketCategories.Sum(tc => tc.SupplierCost);
                     var toplamTaseronMaliyeti = ticketCategories.Sum(tc => tc.SupplierCost);
                     var komisyonMaliyeti = toplamSatis * platformKomOrani;
                     var kalanTutar = toplamSatis - komisyonMaliyeti - toplamTaseronMaliyeti;
@@ -747,53 +791,63 @@ namespace TourManagementApi.Controllers
 
         public async Task<IActionResult> PricingYield2(int id)
         {
-            var activity = await _context.Activities
+            try
+            {
+                var activity = await _context.Activities
                 .Include(a => a.Options)
                 .ThenInclude(o => o.TicketCategories)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
-            if (activity == null) return NotFound();
+                if (activity == null) return NotFound();
 
-            var vm = new FiyatlandirmaViewModel
-            {
-                ActivityId = activity.Id,
-                ActivityTitle = activity.Title,
-                Options = activity.Options.Select(o =>
+                var vm = new FiyatlandirmaViewModel
                 {
-                    var platformKomOrani = 0.3m;
-
-                    var ticketCategories = o.TicketCategories.Select(tc => new TicketCategoryPricingViewModel
+                    ActivityId = activity.Id,
+                    ActivityTitle = activity.Title,
+                    Options = activity.Options.Select(o =>
                     {
-                        TicketCategoryId = tc.Id,
-                        TicketCategoryName = tc.Name,
-                        Amount = (tc.Amount * 150 / 100), // Satış fiyatı örneği
-                        Currency = tc.Currency,
-                        SupplierCost = tc.Amount
-                    }).ToList();
+                        var platformKomOrani = 0.3m;
 
-                    var toplamSatis = ticketCategories.Sum(tc => tc.Amount);
-                    var toplamTaseronMaliyeti = ticketCategories.Sum(tc => tc.SupplierCost);
-                    var komisyonMaliyeti = toplamSatis * platformKomOrani;
-                    var kalanTutar = toplamSatis - komisyonMaliyeti - toplamTaseronMaliyeti;
-                    var toplamMaliyet = ticketCategories.Sum(tc => tc.SupplierCost) + komisyonMaliyeti;
-                    return new OptionPricingViewModel
-                    {
-                        OptionId = o.Id,
-                        OptionName = o.Name,
-                        TicketCategories = ticketCategories,
-                        AracMaliyeti = 0,
-                        TopMaliyeti = 0,
-                        GelirVergisi = (kalanTutar * 20 / 100),
-                        RehberBonus = 0,
-                        PlatformKomisyonTutari = komisyonMaliyeti + 0,
-                        KomisyonMaliyeti = komisyonMaliyeti,
-                        PlatformKomOrani = platformKomOrani,
-                        Karlilik = (toplamSatis - toplamMaliyet) / toplamSatis
-                    };
-                }).ToList()
-            };
+                        var ticketCategories = o.TicketCategories.Select(tc => new TicketCategoryPricingViewModel
+                        {
+                            TicketCategoryId = tc.Id,
+                            TicketCategoryName = tc.Name,
+                            SalePrice = tc.SalePrice.HasValue? tc.SalePrice.Value:0, // Satış fiyatı örneği
+                            Currency = tc.Currency,
+                            SalePercentage = tc.SalePercentage.HasValue ? tc.SalePercentage.Value:0,
+                            SupplierCost = tc.Amount
+                        }).ToList();
 
-            return View(vm);
+                        var toplamSatis = ticketCategories.Sum(tc => tc.SupplierCost);
+                        var toplamTaseronMaliyeti = ticketCategories.Sum(tc => tc.SupplierCost);
+                        var komisyonMaliyeti = toplamSatis * platformKomOrani;
+                        var kalanTutar = toplamSatis - komisyonMaliyeti - toplamTaseronMaliyeti;
+                        var toplamMaliyet = ticketCategories.Sum(tc => tc.SupplierCost) + komisyonMaliyeti;
+                        return new OptionPricingViewModel
+                        {
+                            OptionId = o.Id,
+                            OptionName = o.Name,
+                            TicketCategories = ticketCategories,
+                            AracMaliyeti = 0,
+                            TopMaliyeti = 0,
+                            GelirVergisi = (kalanTutar * 20 / 100),
+                            RehberBonus = 0,
+                            PlatformKomisyonTutari = komisyonMaliyeti + 0,
+                            KomisyonMaliyeti = komisyonMaliyeti,
+                            PlatformKomOrani = platformKomOrani,
+                            Karlilik = (toplamSatis - toplamMaliyet) / toplamSatis,
+                            SalePercentage = ticketCategories.Any(a => a.SalePercentage != null && a.SalePercentage > 0)? ticketCategories.Where(a => a.SalePercentage != null && a.SalePercentage > 0).FirstOrDefault().SalePercentage:0
+                        };
+                    }).ToList()
+                };
+
+                return View(vm);
+            }
+            catch (Exception ex)
+            {
+                return View();
+            }
+            
         }
 
         #endregion

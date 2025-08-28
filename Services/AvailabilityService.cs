@@ -165,12 +165,12 @@ namespace TourManagementApi.Services
                     EndTimeLocal = a.StartTime?.LocalDateTime.AddMinutes(60).ToString("yyyy-MM-dd HH:mm:ss") ?? "",
                     LastUpdated = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                     Seats = a.MaximumCapacity,
-                    SeatsAvailable = a.AvailableCapacity,
-                    PriceOptions = a.Option.TicketCategories.Select(tc => new PriceOptionLite
-                    {
-                        Label = tc.Type,
-                        Price = tc.SalePrice ?? tc.Amount * 1.5,
-                    }).ToList()
+                    SeatsAvailable = a.AvailableCapacity//,
+                    //PriceOptions = a.Option.TicketCategories.Where(a=>a.SalePrice.HasValue).Select(tc => new PriceOptionLite
+                    //{
+                    //    Label = tc.Type,
+                    //    Price = tc.SalePrice.Value
+                    //}).ToList()
                 }).ToList();
 
                 return result;

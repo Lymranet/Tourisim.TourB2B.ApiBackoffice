@@ -1,76 +1,115 @@
-﻿@model TourManagementApi.Models.ViewModels.ReservationFilterViewModel
-
+﻿@model TourManagementApi.Models.ViewModels.BookingListFilterVM
 @{
-    ViewData["Title"] = "Rezervasyon Listesi";
-    var activityList = Model?.Activities ?? new List<TourManagementApi.Models.Activity>();
+    ViewData["Title"] = "Rezervasyonlar";
+    Func<string, string> badge = s => s switch
+    {
+        "CONFIRMED" => "badge bg-success",
+        "CANCELLED" => "badge bg-danger",
+        "PROCESSING" => "badge bg-warning text-dark",
+        "NEW" or "PENDING_SUPPLIER" or "PENDING_CUSTOMER" => "badge bg-secondary",
+        _ => "badge bg-info"
+    };
 }
 
-    <h2>Rezervasyonlar</h2>
+<h2 class="mb-3">Rezervasyonlar</h2>
 
-    <form method="get" class="row g-3 mb-4">
-        <div class="col-md-3">
-            <label class="form-label">Tur</label>
-            <select asp-for="ActivityId" class="form-control" asp-items="@(new SelectList(activityList, "Id", "Title", Model.ActivityId))">
-                <option value="">Tümü</option>
-            </select>
-
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">Durum</label>
-            <select asp-for="Status" class="form-control">
-                <option value="">Tümü</option>
-                <option value="Confirmed">Onaylandı</option>
-                <option value="Cancelled">İptal Edildi</option>
-                <option value="Pending">Bekliyor</option>
-            </select>
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">Başlangıç Tarihi</label>
-            <input asp-for="FromDate" type="date" class="form-control" />
-        </div>
-
-        <div class="col-md-3">
-            <label class="form-label">Bitiş Tarihi</label>
-            <input asp-for="ToDate" type="date" class="form-control" />
-        </div>
-
-        <div class="col-md-12">
-            <button type="submit" class="btn btn-primary">Filtrele</button>
-        </div>
-    </form>
-
-<table class="datatable2 table-bordered">
-        <thead>
-            <tr>
-                <th>Tur</th>
-                <th>Seçenek</th>
-                <th>Rezervasyon Tarihi</th>
-                <th>Tur Tarihi</th>
-                <th>İsim</th>
-                <th>Kişi Sayısı</th>
-                <th>Tutar</th>
-                <th>Durum</th>
-                <th>İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var res in Model.Reservations)
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <label class="form-label">Tur</label>
+        <select name="ActivityId" class="form-select">
+            <option value="">Tümü</option>
+            @foreach (var a in Model.Activities)
             {
+                <option value="@a.Id" selected="@(Model.ActivityId==a.Id)">@a.Title</option>
+            }
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">Durum</label>
+        <select name="Status" class="form-select">
+            <option value="">Tümü</option>
+            @foreach (var s in new[] { "CONFIRMED", "CANCELLED", "PROCESSING", "NEW", "PENDING_SUPPLIER", "PENDING_CUSTOMER" })
+            {
+                <option value="@s" selected="@(Model.Status==s)">@s</option>
+}
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <label class="form-label">Başlangıç</label>
+        <input type="date" name="FromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Bitiş</label>
+        <input type="date" name="ToDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control" />
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100">Filtrele</button>
+    </div>
+</form>
+
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Sipariş No</th>
+            <th>Ürün</th>
+            <th>Tur</th>
+            <th>Rez. Tarihi</th>
+            <th>Tur Tarihi</th>
+            <th>Müşteri</th>
+            <th>Kişi</th>
+            <th>Tutar</th>
+            <th>Durum</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model.Items)
+        {
             <tr>
-                <td>@res.Activity?.Title</td>
-                <td>@res.Option?.Name</td>
-                <td>@res.ReservationDate.ToString("dd.MM.yyyy")</td>
-                <td>@res.ScheduledDate.ToString("dd.MM.yyyy")</td>
-                <td>@res.ContactName</td>
-                <td>@res.GuestCount</td>
-                <td>@($"{res.TotalAmount} {res.Currency}")</td>
-                <td>@res.Status</td>
-                <td>
-                    <a asp-action="Detail" asp-route-id="@res.Id" class="btn btn-sm btn-info">Detay</a>
+                <td><a asp-action="Detail" asp-route-id="@r.BookingId">@r.OrderNumber</a></td>
+                <td>@r.ProductName</td>
+                <td>@r.ActivityTitle</td>
+                <td>@r.ReservationDate?.ToString("dd.MM.yyyy")</td>
+                <td>@r.StartDate?.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>@r.CustomerName</td>
+                <td>@r.GuestCount</td>
+                <td>@($"{r.TotalAmount:N2} {r.TotalCurrency}")</td>
+                <td><span class="@badge(r.Status)">@r.Status</span></td>
+                <td class="text-end">
+                    <a asp-action="Detail" asp-route-id="@r.BookingId" class="btn btn-sm btn-outline-info me-1">Detay</a>
+
+                    @*<form asp-action="Delete" method="post" class="d-inline"
+                          onsubmit="return confirm('Bu rezervasyonu ve tüm alt detaylarını silmek istediğinizden emin misiniz?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@r.BookingId" />
+                        <button type="submit" class="btn btn-sm btn-danger">Sil</button>
+                    </form>*@
                 </td>
             </tr>
-            }
-        </tbody>
-    </table>
+        }
+    </tbody>
+</table>
+
+@{
+    var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+    if (totalPages < 1) { totalPages = 1; }
+}
+<nav aria-label="Sayfalama">
+    <ul class="pagination">
+        @for (int p = 1; p <= totalPages; p++)
+        {
+            <li class="page-item @(p==Model.Page ? "active" : "")">
+                <a class="page-link"
+                   asp-action="Index"
+                   asp-route-ActivityId="@Model.ActivityId"
+                   asp-route-Status="@Model.Status"
+                   asp-route-FromDate="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                   asp-route-ToDate="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                   asp-route-Page="@p"
+                   asp-route-PageSize="@Model.PageSize">@p</a>
+            </li>
+        }
+    </ul>
+</nav>

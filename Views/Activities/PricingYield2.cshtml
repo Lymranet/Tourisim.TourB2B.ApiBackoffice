@@ -1,5 +1,7 @@
 ﻿@model TourManagementApi.Models.ViewModels.FiyatlandirmaViewModel
-
+@{
+    ViewData["Title"] = Model.ActivityTitle;
+}
 <h2>@Model.ActivityTitle - Fiyatlandırma</h2>
 <div class="mb-3">
     <a asp-action="Index" class="btn btn-secondary">← Turlara Dön</a>
@@ -11,13 +13,13 @@
     <div class="d-flex flex-wrap gap-2 mb-3">
         <label for="satisYuzde" style="font-weight:bold" class="form-label">Satış Fiyatı Yüzdesi</label>
 
-        <input type="number" style="width:150px;font-size:20px; background-color:green;font-weight:bold;" id="satisYuzde" class="form-control" value="50" min="0" max="500" step="1" />
+        <input type="number" style="width:150px;font-size:20px; background-color:green;font-weight:bold;" id="satisYuzde" class="form-control" value="@Model.Options.FirstOrDefault().SalePercentage" min="0" max="500" step="1" />
 
-        <button type="button" class="btn btn-primary" onclick="hesaplaTumunu()">Hesapla</button>
+        @*<button type="button" class="btn btn-primary" onclick="hesaplaTumunu()">Hesapla</button>*@
 
-        <button type="button" class="btn btn-success" onclick="kaydetTumunu()">Kaydet</button>
+        <button type="button" class="btn btn-success" onclick="kaydetActivityPricing()">Kaydet</button>
 
-
+        <input type="hidden" id="activityId" value="@Model.ActivityId" />
     </div>
 
     @foreach (var option in Model.Options)
@@ -27,9 +29,10 @@
             <thead>
                 <tr>
                     <th>Ticket Kategorisi</th>
-                    <th>Satış Fiyatı</th>
                     <th>Para Birimi</th>
                     <th>Taşeron Alış</th>
+                    <th>Satış Yüzdesi</th>
+                    <th>Satış Fiyatı</th>
                 </tr>
             </thead>
             <tbody>
@@ -37,15 +40,17 @@
                 {
                     <tr>
                         <td>@tc.TicketCategoryName</td>
-                        <td>@tc.Amount.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</td>
                         <td>@tc.Currency</td>
-                        <td>@tc.SupplierCost.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-US"))</td>
+                        <td>@tc.SupplierCost.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</td>
+                        <td>@tc.SalePercentage</td>
+                        <td><b>@tc.SalePrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-GB"))</b></td>
+
                     </tr>
                 }
             </tbody>
         </table>
     }
-   
+
     <div class="row mt-5">
         <div class="col-md-6" style="height:400px">
             <h5>Gelir Dağılımı</h5>
@@ -59,8 +64,8 @@
 </form>
 
 <script>
-   let gelirChart, maliyetChart;
-   function guncelleGrafikler(optionId, labels, values, maliyetLabels, maliyetValues) {
+    let gelirChart, maliyetChart;
+    function guncelleGrafikler(optionId, labels, values, maliyetLabels, maliyetValues) {
         // GELİR CHART (bar)
         if (gelirChart) gelirChart.destroy();
         gelirChart = new Chart(document.getElementById('gelirChart'), {
@@ -106,13 +111,13 @@
         return parseFloat(cleaned) || 0;
     }
 
-   function hesaplaTumunu() {
+    function hesaplaTumunu() {
         const satisYuzdeInput = document.getElementById('satisYuzde');
         const satisYuzde = parseFloat(satisYuzdeInput?.value) || 50;
 
         document.querySelectorAll('[id^="maliyet_"]').forEach((span) => {
             const id = span.id.split('_')[1];
-            
+
 
             const currencyCode = document.querySelector(`#toplamSatis_${id}`)?.getAttribute("data-currency") || "GBP";
             const arac = parseFloat(document.querySelector(`[name='arac_${id}']`)?.value) || 0;
@@ -120,7 +125,7 @@
             const bonus = parseFloat(document.querySelector(`[name='bonus_${id}']`)?.value) || 0;
             const orani = parseFloat(document.querySelector(`[name='orani_${id}']`)?.value) || 0.3;
 
-            
+
 
             const ticketRows = span.closest('table').previousElementSibling.querySelectorAll('tbody tr');
             let toplamSatisValue = 0;
@@ -138,13 +143,13 @@
             // Toplam Satış inputunu güncelle
             const toplamSatisInput = document.querySelector(`#toplamSatis_${id}`);
             if (toplamSatisInput) {
-                toplamSatisInput.value = toplamSatisValue.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+                toplamSatisInput.value = toplamSatisValue.toLocaleString('en-GB', { style: 'currency', currency: currencyCode });
             }
 
             // Taşeron Toplam inputunu güncelle
             const tasaronInput = document.querySelector(`#tasaronToplam_${id}`);
             if (tasaronInput) {
-                tasaronInput.value = tasaronToplam.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+                tasaronInput.value = tasaronToplam.toLocaleString('en-GB', { style: 'currency', currency: currencyCode });
             }
 
             const yeniKomisyonMaliyeti = toplamSatisValue * orani;
@@ -160,29 +165,29 @@
             const netKalan = kalanTutar - vergi;
             const ppCost = toplamMaliyet / (ticketRows.length || 1);
 
-           const karlilik = toplamSatisValue > 0 ? ((toplamSatisValue - toplamMaliyet) / toplamSatisValue) * 100: 0;
+            const karlilik = toplamSatisValue > 0 ? ((toplamSatisValue - toplamMaliyet) / toplamSatisValue) * 100 : 0;
 
             document.querySelector(`#karlilik_${id}`).value = karlilik.toFixed(2) + ' %';
 
-            document.querySelector(`#maliyet_${id}`).innerText = toplamMaliyet.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
-            document.querySelector(`#satis_${id}`).innerText = satis.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
-            document.querySelector(`#kalan_${id}`).innerText = kalanTutar.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
-            document.querySelector(`#netkalan_${id}`).innerText = netKalan.toLocaleString('en-US', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#maliyet_${id}`).innerText = toplamMaliyet.toLocaleString('en-GB', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#satis_${id}`).innerText = satis.toLocaleString('en-GB', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#kalan_${id}`).innerText = kalanTutar.toLocaleString('en-GB', { style: 'currency', currency: currencyCode });
+            document.querySelector(`#netkalan_${id}`).innerText = netKalan.toLocaleString('en-GB', { style: 'currency', currency: currencyCode });
             document.querySelector(`#ppcost_${id}`).value = ppCost.toFixed(2);
-             if (!window.grafikCizildi) {
-                   guncelleGrafikler(
-                       id,
-                       ['Toplam Satış', 'Toplam Maliyet', 'Kalan Tutar', 'Net Kalan'],
-                       [toplamSatisValue, toplamMaliyet, kalanTutar, netKalan],
-                       ['Araç', 'Top', 'Bonus', 'Komisyon', 'Vergi', 'Taşeron'],
-                       [arac, top, bonus, yeniKomisyonMaliyeti, vergi, tasaronToplam]
-                   );
-                   window.grafikCizildi = true;
-             }
+            if (!window.grafikCizildi) {
+                guncelleGrafikler(
+                    id,
+                    ['Toplam Satış', 'Toplam Maliyet', 'Kalan Tutar', 'Net Kalan'],
+                    [toplamSatisValue, toplamMaliyet, kalanTutar, netKalan],
+                    ['Araç', 'Top', 'Bonus', 'Komisyon', 'Vergi', 'Taşeron'],
+                    [arac, top, bonus, yeniKomisyonMaliyeti, vergi, tasaronToplam]
+                );
+                window.grafikCizildi = true;
+            }
         });
     }
 
-         function kaydetTumunu() {
+    function kaydetTumunu() {
         const percentage = parseInt(document.getElementById('satisYuzde').value) || 0;
 
         document.querySelectorAll('[id^="maliyet_"]').forEach(span => {
@@ -200,28 +205,60 @@
                 },
                 body: JSON.stringify(model)
             })
-            .then(async res => {
-                const contentType = res.headers.get("content-type");
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
 
-                if (res.ok && contentType && contentType.includes("application/json")) {
-                    const data = await res.json();
-                    if (data.success) {
-                        console.log(`Option ${optionId} başarıyla kaydedildi.`);
+                    if (res.ok && contentType && contentType.includes("application/json")) {
+                        const data = await res.json();
+                        if (data.success) {
+                            console.log(`Option ${optionId} başarıyla kaydedildi.`);
+                        } else {
+                            console.error(`Hata (Option ${optionId}):`, data.message);
+                        }
                     } else {
-                        console.error(`Hata (Option ${optionId}):`, data.message);
+                        const text = await res.text(); // hata mesajı HTML olabilir
+                        console.error(`Hata (Option ${optionId}): Response JSON değil:\n${text}`);
                     }
-                } else {
-                    const text = await res.text(); // hata mesajı HTML olabilir
-                    console.error(`Hata (Option ${optionId}): Response JSON değil:\n${text}`);
-                }
-            })
-            .catch(err => {
-                console.error(`Hata (Option ${optionId}):`, err);
-            });
+                })
+                .catch(err => {
+                    console.error(`Hata (Option ${optionId}):`, err);
+                });
         });
 
         alert("Tüm seçenekler için fiyat güncelleme işlemi başlatıldı.");
     }
+
+function kaydetActivityPricing() {
+    const activityId = parseInt(document.getElementById('activityId')?.value || '0');
+    const percentage = parseInt(document.getElementById('satisYuzde')?.value || '0');
+
+    if (!activityId) {
+        alert("ActivityId bulunamadı.");
+        return;
+    }
+
+    fetch('@Url.Action("SaveActivityPricing","Activities")', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ activityId, percentage })
+    })
+    .then(async res => {
+        const ct = res.headers.get("content-type") || "";
+        const payload = ct.includes("application/json") ? await res.json() : { success:false, message: await res.text() };
+
+        if (res.ok && payload.success) {
+            alert(payload.message || "Güncelleme başarılı.");
+            location.reload();   // ✅ Alertten sonra sayfa yeniden yüklenecek
+        } else {
+            console.error("Hata:", payload);
+            alert(payload.message || "Güncelleme sırasında hata oluştu.");
+        }
+    })
+    .catch(err => {
+        console.error("Hata:", err);
+        alert("İstek gönderilirken hata oluştu.");
+    });
+}
 
 
 </script>
