@@ -21,7 +21,7 @@ namespace TourManagementApi.Controllers.Api
         public RezdyConnectController(
             IProductService productService,
             AvailabilityService availabilityService,
-             IConfiguration configuration,
+            IConfiguration configuration,
             Services.BookingService bookingService)
         {
             _productService = productService;
@@ -34,11 +34,11 @@ namespace TourManagementApi.Controllers.Api
 
         [HttpGet("products")]
         public IActionResult GetProducts(
-    [FromQuery] string apiKey,
-    [FromQuery] int offset = 0,
-    [FromQuery] int limit = 100,
-    [FromQuery(Name = "productCode")] List<string>? productCodes = null,
-    [FromQuery(Name = "externalProductCode")] List<string>? externalProductCodes = null)
+            [FromQuery] string apiKey,
+            [FromQuery] int offset = 0,
+            [FromQuery] int limit = 100,
+            [FromQuery(Name = "productCode")] List<string>? productCodes = null,
+            [FromQuery(Name = "externalProductCode")] List<string>? externalProductCodes = null)
         {
             if (string.IsNullOrWhiteSpace(apiKey) || apiKey != _validApiKey)
             {
@@ -145,13 +145,13 @@ namespace TourManagementApi.Controllers.Api
 
         [HttpGet("availability")]
         public IActionResult GetAvailability(
-     [FromQuery] string apiKey,
-     [FromQuery] string productCode,
-     [FromQuery] string externalProductCode,
-     [FromQuery] DateTime from,
-     [FromQuery] DateTime to,
-     [FromQuery] string fromLocal,
-     [FromQuery] string toLocal)
+             [FromQuery] string apiKey,
+             [FromQuery] string productCode,
+             [FromQuery] string externalProductCode,
+             [FromQuery] DateTime from,
+             [FromQuery] DateTime to,
+             [FromQuery] string fromLocal,
+             [FromQuery] string toLocal)
         {
             if (string.IsNullOrWhiteSpace(apiKey) || apiKey != _validApiKey)
             {
@@ -230,9 +230,9 @@ namespace TourManagementApi.Controllers.Api
         //TODO: Errorcodes 
         [HttpPost("reservation")]
         public async Task<IActionResult> CreateReservation(
-       [FromQuery] string apiKey,
-       [FromQuery] string externalProductCode,
-       [FromBody] RezdyBookingRequest request)
+           [FromQuery] string apiKey,
+           [FromQuery] string externalProductCode,
+           [FromBody] RezdyBookingRequest request)
         {
             if (string.IsNullOrWhiteSpace(apiKey) || apiKey != _validApiKey)
             {
@@ -439,8 +439,8 @@ namespace TourManagementApi.Controllers.Api
 
         [HttpPut("booking")]
         public async Task<IActionResult> ConfirmBooking(
-      [FromQuery] string apiKey,
-      [FromBody] RezdyBookingRequest request)
+          [FromQuery] string apiKey,
+          [FromBody] RezdyBookingRequest request)
         {
             if (string.IsNullOrWhiteSpace(apiKey) || apiKey != _validApiKey)
             {

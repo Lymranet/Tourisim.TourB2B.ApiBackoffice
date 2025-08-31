@@ -19,7 +19,7 @@ namespace TourManagementApi.Services
             _logger = logger;
         }
 
-        public async Task<bool> ConfirmBookingAsync(RezdyBookingRequest booking)
+        public async Task<bool> ConfirmBookingAsync2(RezdyBookingRequest booking)
         {
             try
             {
@@ -37,6 +37,8 @@ namespace TourManagementApi.Services
 
                 ObjectMapperExtensions.MapWithFallback(booking, existingBooking);
 
+
+
                 await _context.SaveChangesAsync();
                 return true;
             }
@@ -47,6 +49,174 @@ namespace TourManagementApi.Services
 
             return false;
         }
+
+        public async Task<bool> ConfirmBookingAsync(RezdyBookingRequest booking)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(booking?.OrderNumber))
+                    return false;
+
+                var existingBooking = await _context.Bookings
+                    .Include(b => b.BookingCustomers)
+                    .Include(b => b.BookingItems).ThenInclude(i => i.BookingQuantities)
+                    .Include(b => b.BookingItems).ThenInclude(i => i.BookingParticipants).ThenInclude(p => p.BookingParticipantFields)
+                    .Include(b => b.BookingPayments)
+                    .FirstOrDefaultAsync(b => b.OrderNumber == booking.OrderNumber);// && b.Status == "PROCESSING");
+
+                if (existingBooking == null)
+                    return false;
+
+                // Ana Booking alanlarını güncelle
+                existingBooking.Status = booking.Status;
+                existingBooking.DateConfirmed = ParseDate(booking.DateConfirmed);
+                existingBooking.DateUpdated = ParseDate(booking.DateUpdated);
+                existingBooking.DatePaid = ParseDate(booking.DatePaid);
+                existingBooking.SupplierId = booking.SupplierId;
+                existingBooking.SupplierName = booking.SupplierName;
+                existingBooking.SupplierAlias = booking.SupplierAlias;
+                existingBooking.ResellerId = booking.ResellerId;
+                existingBooking.ResellerName = booking.ResellerName;
+                existingBooking.ResellerAlias = booking.ResellerAlias;
+                existingBooking.TotalAmount = booking.TotalAmount;
+                existingBooking.TotalPaid = booking.TotalPaid;
+                existingBooking.TotalDue = booking.TotalDue;
+                existingBooking.TotalCurrency = booking.TotalCurrency;
+                existingBooking.Commission = booking.Commission;
+                existingBooking.PaymentOption = booking.PaymentOption;
+                existingBooking.BarcodeType = booking.BarcodeType;
+                existingBooking.ResellerComments = booking.ResellerComments;
+                existingBooking.ResellerReference = booking.ResellerReference;
+                existingBooking.Source = booking.Source;
+                existingBooking.SourceChannel = booking.SourceChannel;
+                existingBooking.ResellerSource = booking.ResellerSource;
+
+                // Customer güncelle
+                existingBooking.BookingCustomers.Clear();
+                if (booking.Customer is not null)
+                {
+                    existingBooking.BookingCustomers.Add(new BookingCustomer
+                    {
+                        BookingId = existingBooking.BookingId,
+                        CustomerExternalId = booking.Customer.Id,
+                        FirstName = booking.Customer.FirstName,
+                        LastName = booking.Customer.LastName,
+                        Name = booking.Customer.Name,
+                        Email = booking.Customer.Email,
+                        Phone = booking.Customer.Phone,
+                        Mobile = booking.Customer.Mobile
+                    });
+                }
+
+                // Payments güncelle
+                existingBooking.BookingPayments.Clear();
+                if (booking.Payments is not null)
+                {
+                    foreach (var p in booking.Payments)
+                    {
+                        existingBooking.BookingPayments.Add(new BookingPayment
+                        {
+                            BookingId = existingBooking.BookingId,
+                            Amount = p.Amount,
+                            Currency = p.Currency,
+                            Date = p.Date,
+                            Label = p.Label,
+                            Recipient = p.Recipient,
+                            Type = p.Type
+                        });
+                    }
+                }
+
+                // Items güncelle
+                existingBooking.BookingItems.Clear();
+                if (booking.Items is not null)
+                {
+                    foreach (var item in booking.Items)
+                    {
+                        var itemEntity = new BookingItem
+                        {
+                            BookingId = existingBooking.BookingId,
+                            ProductCode = item.ProductCode,
+                            ProductName = item.ProductName,
+                            StartTime = item.StartTime,
+                            EndTime = item.EndTime,
+                            StartTimeLocal = item.StartTimeLocal,
+                            EndTimeLocal = item.EndTimeLocal,
+                            ExternalProductCode = item.ExternalProductCode,
+                            TotalQuantity = item.TotalQuantity,
+                            Amount = item.Amount,
+                            Subtotal = item.Subtotal,
+                            TotalItemTax = item.TotalItemTax
+                        };
+
+                        // Quantities
+                        if (item.Quantities is not null)
+                        {
+                            foreach (var q in item.Quantities)
+                            {
+                                itemEntity.BookingQuantities.Add(new BookingQuantity
+                                {
+                                    OptionLabel = q.OptionLabel,
+                                    OptionPrice = q.OptionPrice,
+                                    Value = q.Value,
+                                    OptionSeatsUsed = q.OptionSeatsUsed
+                                });
+                            }
+                        }
+
+                        // Participants
+                        if (item.Participants is not null)
+                        {
+                            foreach (var part in item.Participants)
+                            {
+                                var partEntity = new BookingParticipant();
+                                foreach (var pf in part.Fields)
+                                {
+                                    partEntity.BookingParticipantFields.Add(new BookingParticipantField
+                                    {
+                                        Label = pf.Label,
+                                        Value = pf.Value,
+                                        BarcodeType = pf.BarcodeType
+                                    });
+                                }
+                                itemEntity.BookingParticipants.Add(partEntity);
+                            }
+                        }
+
+                        // Pickup Location
+                        if (item.PickupLocation is not null)
+                        {
+                            itemEntity.BookingPickupLocations.Add(new BookingPickupLocation
+                            {
+                                LocationName = item.PickupLocation.LocationName,
+                                Address = item.PickupLocation.Address,
+                                Latitude = item.PickupLocation.Latitude,
+                                Longitude = item.PickupLocation.Longitude,
+                                MinutesPrior = item.PickupLocation.MinutesPrior,
+                                PickupInstructions = item.PickupLocation.PickupInstructions,
+                                PickupTime = item.PickupLocation.PickupTime
+                            });
+                        }
+
+                        existingBooking.BookingItems.Add(itemEntity);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Booking confirmation failed.");
+                return false;
+            }
+        }
+
+        private static DateTime? ParseDate(string? input)
+        {
+            return DateTime.TryParse(input, out var dt) ? dt : null;
+        }
+
 
         public async Task<RezdyBookingRequest> CreateReservationAsync(RezdyBookingRequest booking, string externalProductCode)
         {
@@ -326,11 +496,6 @@ namespace TourManagementApi.Services
             return booking;
         }
 
-        // Yardımcı fonksiyon:
-        private static DateTime? ParseDate(string? input)
-        {
-            return DateTime.TryParse(input, out var dt) ? dt : null;
-        }
 
         public async Task<bool> CancelReservationAsync(RezdyBookingRequest booking)
         {

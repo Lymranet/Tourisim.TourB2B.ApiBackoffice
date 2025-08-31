@@ -173,7 +173,10 @@ namespace TourManagementApi.Controllers
 
             return (a, o);
         }
-
+        private static DateTime ParseDate(string? input)
+        {
+            return DateTime.Parse(input, null, System.Globalization.DateTimeStyles.RoundtripKind);
+        }
         // LIST
         public async Task<IActionResult> Index(BookingListFilterVM filters)
         {
@@ -192,7 +195,7 @@ namespace TourManagementApi.Controllers
                 ProductName = x.i.ProductName!,
                 ExternalProductCode = x.i.ExternalProductCode,   // <— parse edeceğiz
                 ReservationDate = x.b.DateCreated,
-                StartDate = x.b.DateCreated,              // StartTimeLocal string; listede sıralama için DateCreated
+                StartDate = ParseDate(x.b.BookingItems.FirstOrDefault().StartTime),              // StartTimeLocal string; listede sıralama için DateCreated
                 CustomerName = x.b.BookingCustomers
                     .Select(c => c.Name ?? (c.FirstName + " " + c.LastName))
                     .FirstOrDefault() ?? "",
